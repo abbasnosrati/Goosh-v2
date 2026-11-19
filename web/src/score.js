@@ -57,10 +57,12 @@ export function score(host, e, {
         y = 104 - step(n.m) * 4.5;
       for (let l = 113; l <= y; l += 9) line(x - 9, l, x + 9, l);
       for (let l = 59; l >= y; l -= 9) line(x - 9, l, x + 9, l);
-      const el = draw('circle', {
+      const el = draw('ellipse', {
         cx: x,
         cy: y,
-        r: 4.5,
+        rx: 5.8,
+        ry: 3.9,
+        transform: `rotate(-20 ${x} ${y})`,
         fill: 'currentColor',
         stroke: 'currentColor'
       });
