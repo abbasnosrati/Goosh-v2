@@ -68,7 +68,7 @@ function renderDesktop({el,app,t,collection,navigate}) {
   const copy=el('div',hero,undefined,'g-hero-copy');
   const eyebrow=el('div',copy,undefined,'g-overline');
   icon(eyebrow,'sparkles');
-  el('span',eyebrow,t('ETUDE STUDIO & PRACTICE','استودیوی ساخت و تمرین اتود'));
+  el('span',eyebrow,t('WHAT YOU CAN DO HERE','کارهایی که می‌تونی اینجا انجام بدی'));
   el('h1',copy,t('Create etudes. Practice your way.','ساخت و تمرین اتود، به سبک خودت'));
   el('p',copy,t(
     'Play on the piano or write on the staff. Design etudes, save them and share them as files.',
