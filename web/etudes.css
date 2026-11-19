@@ -1,0 +1,223 @@
+/* Etudes gallery: presentation only. All original handlers and data remain in app.js. */
+#app[data-page="studio"]:has(> .shelves) {
+  width: 100%;
+  max-width: 1424px;
+  margin-inline: auto;
+  padding: clamp(22px, 4vw, 60px) clamp(18px, 4.5vw, 64px) 90px;
+  --etudes-hairline: color-mix(in srgb, var(--line) 55%, transparent);
+  --etudes-quiet: color-mix(in srgb, var(--panel) 85%, var(--bg));
+}
+#app[data-page="studio"]:has(> .shelves) > h1 {
+  font-weight: 800;
+  font-size: clamp(34px, 4vw, 56px);
+  line-height: 1.25;
+  letter-spacing: -.035em;
+  margin: 10px 0 12px;
+}
+#app[data-page="studio"]:has(> .shelves) > h1::before {
+  content: 'YOUR MUSIC LIBRARY';
+  display: block;
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: .16em;
+  line-height: 2.2;
+  color: var(--accent);
+}
+html[lang="fa"] #app[data-page="studio"]:has(> .shelves) > h1::before {
+  content: 'کتابخانه موسیقی تو';
+  letter-spacing: 0;
+}
+#app[data-page="studio"]:has(> .shelves) > h1::after {
+  content: 'Create, browse and organize your etudes.';
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 450;
+  line-height: 1.8;
+  letter-spacing: normal;
+}
+html[lang="fa"] #app[data-page="studio"]:has(> .shelves) > h1::after {
+  content: 'اتودهایت را بساز، مرور کن و در یک فضای منظم نگه دار.';
+}
+#app[data-page="studio"]:has(> .shelves) > .row.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-start;
+  margin: 28px 0 34px;
+  padding: 0;
+  border: 0;
+}
+#app[data-page="studio"]:has(> .shelves) > .row.controls button {
+  min-height: 48px;
+  padding: 11px 22px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 750;
+  transition: box-shadow .2s ease, transform .2s ease, background .2s ease;
+}
+#app[data-page="studio"]:has(> .shelves) > .row.controls button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+#app[data-page="studio"]:has(> .shelves) > .row.controls button:not(.primary) {
+  background: transparent;
+  border: 1px solid var(--etudes-hairline);
+  color: var(--ink);
+}
+@media (hover:hover) {
+  #app[data-page="studio"]:has(> .shelves) > .row.controls button:hover {
+    transform: translateY(-2px);
+  }
+}
+#app[data-page="studio"]:has(> .shelves) .shelves {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 22px;
+  align-items: start;
+  margin-top: 16px;
+}
+#app[data-page="studio"]:has(> .shelves) .shelves::before {
+  content: 'YOUR COLLECTION';
+  grid-column: 1 / -1;
+  font-size: 12px;
+  font-weight: 780;
+  letter-spacing: .14em;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+html[lang="fa"] #app[data-page="studio"]:has(> .shelves) .shelves::before {
+  content: 'مجموعه اتودها';
+  letter-spacing: 0;
+}
+#app[data-page="studio"]:has(> .shelves) .shelves > section {
+  display: contents;
+}
+#app[data-page="studio"]:has(> .shelves) .shelves > section > h2 {
+  display: none;
+}
+#app[data-page="studio"]:has(> .shelves) .shelves > section > p {
+  grid-column: 1 / -1;
+  padding: 14px 0;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+#app[data-page="studio"]:has(> .shelves) .etude-item {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  position: relative;
+  text-align: start;
+  min-height: 255px;
+  margin: 0;
+  padding: 174px 17px 21px;
+  overflow: hidden;
+  border: 1px solid var(--etudes-hairline);
+  border-radius: 22px;
+  background-color: var(--panel);
+  background-image:
+    repeating-linear-gradient(to bottom,
+      transparent 0 15px,
+      color-mix(in srgb, var(--ink) 19%, transparent) 15px 16px,
+      transparent 16px 24px);
+  background-size: calc(100% - 50px) 66px;
+  background-repeat: no-repeat;
+  background-position: center 64px;
+  box-shadow: 0 7px 24px color-mix(in srgb, var(--ink) 5%, transparent);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+#app[data-page="studio"]:has(> .shelves) .etude-item::before {
+  content: '𝄞  ♩  ♫';
+  direction: ltr;
+  position: absolute;
+  left: 35px;
+  top: 64px;
+  width: calc(100% - 70px);
+  font: 37px/1.6 Georgia,serif;
+  text-align: center;
+  letter-spacing: .1em;
+  color: color-mix(in srgb, var(--accent) 65%, var(--ink));
+  pointer-events: none;
+}
+#app[data-page="studio"]:has(> .shelves) .etude-item::after {
+  content: '';
+  position: absolute;
+  inset: 149px 0 0;
+  border-top: 1px solid var(--etudes-hairline);
+  background: var(--panel);
+  pointer-events: none;
+}
+#app[data-page="studio"]:has(> .shelves) .etude-item:nth-of-type(3n+2) {
+  background-color: color-mix(in srgb, var(--accent) 5%, var(--panel));
+}
+#app[data-page="studio"]:has(> .shelves) .etude-item > strong,
+#app[data-page="studio"]:has(> .shelves) .etude-item > small {
+  z-index: 1;
+  width: 100%;
+  text-align: start;
+}
+#app[data-page="studio"]:has(> .shelves) .etude-item strong {
+  font-weight: 760;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+#app[data-page="studio"]:has(> .shelves) .etude-item small {
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 12px;
+}
+#app[data-page="studio"]:has(> .shelves) .shelves section:nth-child(2) .etude-item::before {
+  content: '♬  ♩  ♫';
+}
+#app[data-page="studio"]:has(> .shelves) .shelves section:nth-child(2) .etude-item {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--etudes-hairline));
+}
+@media (hover:hover) {
+  #app[data-page="studio"]:has(> .shelves) .etude-item:hover {
+    transform: translateY(-5px);
+    border-color: color-mix(in srgb,var(--accent) 45%,var(--line));
+    box-shadow: 0 18px 36px color-mix(in srgb,var(--ink) 9%,transparent);
+  }
+}
+@media (min-width: 720px) and (max-width:1199px) {
+  #app[data-page="studio"]:has(> .shelves) .shelves {grid-template-columns: repeat(3,minmax(0,1fr));gap:16px;}
+}
+@media (min-width: 480px) and (max-width:719px) {
+  #app[data-page="studio"]:has(> .shelves) .shelves {grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+}
+@media (max-width:719px) {
+  #app[data-page="studio"]:has(> .shelves) {padding: 24px 15px 115px;}
+  #app[data-page="studio"]:has(> .shelves) > h1 {font-size:32px;}
+  #app[data-page="studio"]:has(> .shelves) > h1::after {font-size:13px;}
+  #app[data-page="studio"]:has(> .shelves) > .row.controls {margin:20px 0 26px;}
+  #app[data-page="studio"]:has(> .shelves) > .row.controls button:not(.primary) {margin-inline-end:auto;}
+  #app[data-page="studio"]:has(> .shelves) > .row.controls button.primary {
+    position: fixed;
+    z-index: 8;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    inset-inline-end: 16px;
+    border-radius: 999px;
+    box-shadow: 0 13px 30px color-mix(in srgb,var(--accent) 29%,transparent);
+  }
+  #app[data-page="studio"]:has(> .shelves) .shelves {gap:14px;}
+  #app[data-page="studio"]:has(> .shelves) .etude-item {min-height:215px;padding:150px 13px 16px;border-radius:17px;}
+  #app[data-page="studio"]:has(> .shelves) .etude-item::after {inset-block-start:131px;}
+  #app[data-page="studio"]:has(> .shelves) .etude-item::before {top:51px;font-size:29px;}
+  #app[data-page="studio"]:has(> .shelves) .etude-item {background-position:center 52px;}
+}
+@media (max-width:479px) {
+  #app[data-page="studio"]:has(> .shelves) .shelves {grid-template-columns: 1fr;}
+  #app[data-page="studio"]:has(> .shelves) .etude-item {min-height:213px;}
+}
+@media (prefers-reduced-motion:reduce) {
+  #app[data-page="studio"]:has(> .shelves) .etude-item,
+  #app[data-page="studio"]:has(> .shelves) > .row.controls button {transition:none;}
+}
