@@ -14,7 +14,7 @@ import {
 import {
   score
 } from './score.js'
-import { renderHome } from './home.js?v=hero-features-1';
+import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),
   app = $('#app');
 let fa = localStorage.lang !== 'en',
