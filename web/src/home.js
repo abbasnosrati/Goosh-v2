@@ -136,7 +136,7 @@ function renderDesktop({el,app,t,collection,navigate}) {
   const cards=el('div',hub,undefined,'g-hub-grid');
   for(const item of [
     {key:'studio',glyph:'pen',name:t('Etudes','اتودها'),sub:t('Compose & share','ساخت و اشتراک‌گذاری'),desc:'',cta:t('Open Etudes','ورود به اتودها')},
-    {key:'practice',glyph:'headphones',name:t('Practice','تمرین‌ها'),sub:t('Practice etudes','تمرین اتودها'),desc:t('Follow your etudes note by note and focus on your performance.','اتودها را نت‌به‌نت تمرین کن و روی اجرای خودت تمرکز داشته باش.'),cta:t('Open Practice','ورود به تمرین')}
+    {key:'practice',glyph:'headphones',name:t('Practice','تمرین‌ها'),sub:t('Practice etudes','تمرین اتودها'),desc:'',cta:t('Open Practice','ورود به تمرین')}
   ]){
     const card=el('button',cards,undefined,'g-hub-card g-hub-'+item.key);
     card.type='button';
