@@ -730,137 +730,6 @@ window.addEventListener('hashchange',()=>{
   cancel();page=route;loadRoute();render();window.scrollTo(0,0);
 });
 
-
-/* The Etudes library is UI only. Existing collection data and Studio actions are reused. */
-function renderEtudesGallery(){
-  app.classList.add('etudes-library');
-  const state={filter:'all',query:'',sort:'recent'};
-  const root=el('div',app,undefined,'etudes-page');
-  const make=(p,tag,text,cls)=>el(tag,p,text,cls);
-  const button=(p,text,cls,fn)=>{const b=make(p,'button',text,cls);b.type='button';b.onclick=fn;return b};
-  const create=()=>{location.hash='studio/'+addEtude(fresh(),'own')};
-  const open=id=>{location.hash='studio/'+id};
-  const fmt=n=>n.toLocaleString(fa?'fa-IR':'en-US');
-  const title=data=>data.title||t('Untitled etude','اتود بدون نام');
-  const origin=entry=>entry.origin==='imported'?t('Imported','واردشده'):t('Personal','شخصی');
-  const seconds=data=>Math.max(0,...data.notes.map(n=>n.at+n.d));
-  const duration=data=>{const n=seconds(data);return n?Math.floor(n/60)?fmt(Math.floor(n/60))+' '+t('min','دقیقه')+' '+fmt(Math.round(n%60))+' '+t('sec','ثانیه'):fmt(Math.round(n))+' '+t('sec','ثانیه'):t('Not timed','بدون زمان‌بندی')};
-
-  function scoreArt(host,data,large=false){
-    const stage=make(host,'div',undefined,'etudes-score'+(large?' etudes-score-large':''));
-    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');
-    svg.setAttribute('viewBox','0 0 460 150');svg.setAttribute('aria-hidden','true');stage.append(svg);
-    const draw=(tag,props,text)=>{const node=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(props))node.setAttribute(k,v);if(text!==undefined)node.textContent=text;svg.append(node);return node};
-    for(let i=0;i<5;i++)draw('line',{x1:20,x2:440,y1:37+i*15,y2:37+i*15,class:'etudes-score-line'});
-    draw('text',{x:27,y:103,class:'etudes-score-clef'},'𝄞');
-    const positions=[0,0,1,1,2,3,3,4,4,5,5,6];
-    const step=m=>Math.floor(m/12)*7+positions[m%12];
-    const notes=[...data.notes].sort((a,b)=>a.at-b.at).slice(0,8);
-    if(!notes.length){draw('text',{x:252,y:81,'text-anchor':'middle',class:'etudes-score-empty'},t('Your next melody starts here','جای اولین نت تو'));return}
-    notes.forEach((note,i)=>{
-      const x=106+i*43,y=Math.max(20,Math.min(127,97-(step(note.m)-step(64))*7.5));
-      draw('ellipse',{cx:x,cy:y,rx:10,ry:6,transform:'rotate(-20 '+x+' '+y+')',class:'etudes-score-note'});
-      draw('line',{x1:x+9,y1:y,x2:x+9,y2:y-44,class:'etudes-score-stem'});
-      if([1,3,6,8,10].includes(note.m%12))draw('text',{x:x-22,y:y+4,class:'etudes-score-sharp'},'♯');
-      if(y>100)for(let yy=112;yy<=y+3;yy+=15)draw('line',{x1:x-13,x2:x+13,y1:yy,y2:yy,class:'etudes-score-line'});
-      if(y<37)for(let yy=22;yy>=y-3;yy-=15)draw('line',{x1:x-13,x2:x+13,y1:yy,y2:yy,class:'etudes-score-line'});
-    });
-  }
-
-  const hero=make(root,'section',undefined,'etudes-hero');
-  const copy=make(hero,'div',undefined,'etudes-hero-copy');
-  make(copy,'span',t('YOUR MUSIC LIBRARY','کتابخانه موسیقی تو'),'etudes-kicker');
-  make(copy,'h1',t('Etudes','اتودها'));
-  make(copy,'p',t('Create, browse and manage the etudes saved on your device.','اتودهای خودت را بساز، مرور کن و منظم نگه دار.'));
-  const heroActions=make(hero,'div',undefined,'etudes-hero-actions');
-  button(heroActions,t('Import etude','وارد کردن اتود'),'etudes-btn etudes-btn-outline',()=>$('#file').click());
-  button(heroActions,t('+ Create new etude','+ ساخت اتود جدید'),'etudes-btn etudes-btn-primary',create);
-  const floating=button(root,t('+ New etude','+ اتود جدید'),'etudes-create-mobile',create);
-  floating.setAttribute('aria-label',t('Create new etude','ساخت اتود جدید'));
-
-  const tools=make(root,'section',undefined,'etudes-tools');
-  const search=make(tools,'label',undefined,'etudes-search');
-  make(search,'span','⌕','etudes-search-icon');
-  const input=make(search,'input');
-  input.type='search';input.placeholder=t('Search your etudes','جستجو در اتودها');input.setAttribute('aria-label',t('Search etudes','جستجوی اتودها'));
-  input.oninput=()=>{state.query=input.value.trim().toLocaleLowerCase();update()};
-  const filters=make(tools,'div',undefined,'etudes-filters');
-  filters.setAttribute('role','group');filters.setAttribute('aria-label',t('Etude filters','فیلترهای اتود'));
-  const choices=[['all',t('All etudes','همه اتودها')],['mine',t('My etudes','اتودهای من')],['imported',t('Imported','واردشده')],['filled',t('With notes','دارای نت')]];
-  const tabButtons=choices.map(([key,label])=>[key,button(filters,label,'etudes-filter',()=>{state.filter=key;update()})]);
-  const ordering=make(tools,'label',undefined,'etudes-order');
-  make(ordering,'span',t('Sort','مرتب‌سازی'));
-  const select=make(ordering,'select');
-  for(const [value,text] of [['recent',t('Recently added','تازه‌ترین')],['title',t('Title','نام اتود')],['notes',t('Most notes','بیشترین نت')]]){
-    const option=make(select,'option',text);option.value=value;
-  }
-  select.onchange=()=>{state.sort=select.value;update()};
-
-  const library=make(root,'section',undefined,'etudes-library-section');
-  const heading=make(library,'div',undefined,'etudes-library-head');
-  const libraryName=make(heading,'h2');
-  const libraryCount=make(heading,'span',undefined,'etudes-result-count');
-  const cards=make(library,'div',undefined,'etudes-card-grid');
-
-  function preview(id,entry){
-    const d=document.createElement('dialog');d.className='etudes-preview-dialog';document.body.append(d);
-    const head=make(d,'div',undefined,'etudes-preview-head'),left=make(head,'div');
-    make(left,'span',t('ETUDE PREVIEW','پیش‌نمایش اتود'),'etudes-kicker');
-    make(left,'h2',title(entry.data));
-    const close=button(head,'×','etudes-preview-close',()=>d.close());
-    close.setAttribute('aria-label',t('Close','بستن'));
-    scoreArt(d,entry.data,true);
-    const facts=make(d,'div',undefined,'etudes-preview-facts');
-    for(const [key,value] of [[t('Source','منبع'),origin(entry)],[t('Notes','نت‌ها'),fmt(entry.data.notes.length)],[t('Tempo','تمپو'),fmt(entry.data.bpm)+' BPM'],[t('Duration','مدت'),duration(entry.data)]]){
-      const fact=make(facts,'div');make(fact,'strong',value);make(fact,'small',key);
-    }
-    make(d,'p',t('Open in Studio to edit or share this etude as a file.','برای ویرایش یا اشتراک‌گذاری فایل، اتود را در استودیو باز کن.'),'etudes-preview-footnote');
-    const actions=make(d,'div',undefined,'etudes-preview-actions');
-    button(actions,t('Close','بستن'),'etudes-btn etudes-btn-outline',()=>d.close());
-    button(actions,t('Open in Studio','باز کردن در استودیو'),'etudes-btn etudes-btn-primary',()=>{d.close();open(id)});
-    d.addEventListener('close',()=>d.remove(),{once:true});
-    d.showModal();
-  }
-
-  function update(){
-    for(const [key,btn] of tabButtons){const active=state.filter===key;btn.classList.toggle('is-active',active);btn.setAttribute('aria-pressed',String(active))}
-    let items=[...collection.entries()].reverse();
-    if(state.filter==='mine')items=items.filter(([,v])=>v.origin!=='imported');
-    if(state.filter==='imported')items=items.filter(([,v])=>v.origin==='imported');
-    if(state.filter==='filled')items=items.filter(([,v])=>v.data.notes.length>0);
-    if(state.query)items=items.filter(([,v])=>title(v.data).toLocaleLowerCase().includes(state.query));
-    if(state.sort==='title')items.sort((a,b)=>title(a[1].data).localeCompare(title(b[1].data),fa?'fa':'en'));
-    if(state.sort==='notes')items.sort((a,b)=>b[1].data.notes.length-a[1].data.notes.length);
-    libraryName.textContent=state.filter==='mine'?t('My etudes','اتودهای من'):state.filter==='imported'?t('Imported etudes','اتودهای واردشده'):t('Your collection','مجموعه اتودها');
-    libraryCount.textContent=fmt(items.length)+' '+t('etudes','اتود');
-    cards.replaceChildren();
-    if(!items.length){
-      const empty=make(cards,'div',undefined,'etudes-empty');
-      make(empty,'span','♫','etudes-empty-symbol');
-      make(empty,'h3',collection.size?t('No matching etudes','اتودی پیدا نشد'):t('Start with your first etude','اولین اتودت را بساز'));
-      make(empty,'p',collection.size?t('Try another search or filter.','جستجو یا فیلتر دیگری را امتحان کن.'):t('Create a new etude or import a file to begin.','یک اتود جدید بساز یا فایل وارد کن.'));
-      if(!collection.size)button(empty,t('Create etude','ساخت اتود'),'etudes-btn etudes-btn-primary',create);
-      return;
-    }
-    for(const [id,entry] of items){
-      const data=entry.data,card=make(cards,'article',undefined,'etudes-card');
-      const thumb=button(card,'','etudes-card-thumbnail',()=>preview(id,entry));
-      thumb.setAttribute('aria-label',t('Preview: ','پیش‌نمایش: ')+title(data));
-      scoreArt(thumb,data);
-      make(thumb,'span',origin(entry),'etudes-origin'+(entry.origin==='imported'?' is-imported':''));
-      const body=make(card,'div',undefined,'etudes-card-details');
-      make(body,'h3',title(data));
-      const meta=make(body,'div',undefined,'etudes-card-metadata');
-      make(meta,'span',fmt(data.notes.length)+' '+t('notes','نت'));
-      make(meta,'span',fmt(data.bpm)+' BPM');
-      const foot=make(card,'div',undefined,'etudes-card-footer');
-      make(foot,'span',duration(data));
-      button(foot,t('Open','باز کردن'),'etudes-card-open',()=>open(id)).setAttribute('aria-label',t('Open: ','باز کردن: ')+title(data));
-    }
-  }
-  update();
-}
-
 function etudeList(){
   const actions=row(app);
   if(page==='studio')btn(actions,t('New etude','ساخت اتود'),()=>{
@@ -910,7 +779,7 @@ function render() {
   document.body.classList.toggle('home-screen',page==='home');
   const name=routes.find(([key])=>key===page)[1];
   document.title=name+' · Goosh';
-  if(page!=='home' && !(page==='studio' && !activeId))el('h1',app,name);
+  if(page!=='home')el('h1',app,name);
   if(page==='home'){
     renderHome({
       el,app,t,collection,navigate,
@@ -918,8 +787,7 @@ function render() {
       importEtude:()=>$('#file').click()
     });
   }else if(!activeId){
-    if(page==='studio')renderEtudesGallery();
-    else etudeList();
+    etudeList();
   }else{
     btn(row(app),t('Back to list','بازگشت به فهرست'),()=>navigate(page));
     if(page==='studio')studio();else practice();
