@@ -97,10 +97,10 @@ function piano(parent, onStart) {
       b.style.left = (white / 14 * 100 - 2.2) + '%'
     } else white++;
     const pressed = new Set();
-    b.begin = (id, at) => {
+    b.begin = (id, at, audioTime = unlock().currentTime) => {
       pressed.add(id);
-      const recordDuration = onStart(m, unlock().currentTime);
-      const off = liveVoice(freq(e, m), recordDuration);
+      const recordDuration = onStart(m, audioTime);
+      const off = liveVoice(freq(e, m), recordDuration, audioTime);
       b.classList.add('down');
       held.set(id, () => {
         held.delete(id);
@@ -114,11 +114,11 @@ function piano(parent, onStart) {
   }
 
   const fingers = new Map();
-  function moveTo(id, position, key, time) {
+  function moveTo(id, position, key, time, audioTime) {
     if (position.key === key) return;
     held.get(id)?.();
     position.key = key;
-    key?.begin(id, time);
+    key?.begin(id, time, audioTime);
   }
   box.onpointerdown = ev => {
     const key = ev.target.closest('button');
@@ -131,6 +131,10 @@ function piano(parent, onStart) {
   box.onpointermove = ev => {
     const position = fingers.get(ev.pointerId);
     if (!position) return;
+    // Preserve the order of crossings delivered together in a single input event.
+    const batchStart = Math.max(position.time, ev.timeStamp - 24);
+    const audioStart = Math.max(unlock().currentTime, position.audioEnd || 0);
+    let lastCrossing;
     const samples = ev.getCoalescedEvents?.() || [];
     for (const point of [...samples, ev]) {
       const dx = point.clientX - position.x, dy = point.clientY - position.y;
@@ -141,8 +145,14 @@ function piano(parent, onStart) {
         const fraction = step / steps;
         const hit = document.elementFromPoint(position.x + dx * fraction, position.y + dy * fraction);
         const key = hit?.closest('button');
-        moveTo(ev.pointerId, position, key?.parentElement === box ? key : null,
-          position.time + (point.timeStamp - position.time) * fraction);
+        const next = key?.parentElement === box ? key : null;
+        if (next === position.key) continue;
+        const time = position.time + (point.timeStamp - position.time) * fraction;
+        const audioTime = Math.max(audioStart + Math.max(0, time - batchStart) / 1000,
+          lastCrossing === undefined ? audioStart : lastCrossing + .002);
+        moveTo(ev.pointerId, position, next, time, audioTime);
+        lastCrossing = audioTime;
+        position.audioEnd = audioTime;
       }
       Object.assign(position, {x: point.clientX, y: point.clientY, time: point.timeStamp});
     }
@@ -150,6 +160,18 @@ function piano(parent, onStart) {
   box.onlostpointercapture = box.onpointerup = box.onpointercancel = ev => {
     if (fingers.delete(ev.pointerId)) held.get(ev.pointerId)?.();
   };
+}
+
+function refreshTake(take) {
+  if (take.pending) return;
+  take.pending = true;
+  requestAnimationFrame(() => {
+    take.pending = false;
+    if (rec === take) {
+      save();
+      sheet();
+    }
+  });
 }
 
 function sheet() {
@@ -276,7 +298,7 @@ function studio() {
 
   function toggle() {
     stopKeys();
-    if (rec) rec = null;
+    if (rec) { save(); rec = null; }
     else {
       unlock();
       rec = {
@@ -354,12 +376,11 @@ function studio() {
     };
     const take = rec;
     e.notes.push(n);
-    requestAnimationFrame(sheet);
+    refreshTake(take);
     return d => {
       if (rec !== take) return;
       n.d = d;
-      save();
-      sheet()
+      refreshTake(take)
     }
   });
   tuning();
@@ -446,6 +467,7 @@ function cancel() {
     session = null
   }
   stopKeys();
+  if (rec) save();
   rec = null
 }
 

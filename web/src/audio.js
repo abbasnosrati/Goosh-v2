@@ -5,8 +5,17 @@ function context() {
     ctx = new AudioContext({
       latencyHint: 'interactive'
     });
-    bus = ctx.createDynamicsCompressor();
-    bus.connect(ctx.destination)
+    bus = ctx.createGain();
+    bus.gain.value = .7;
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -7;
+    limiter.knee.value = 4;
+    limiter.ratio.value = 16;
+    limiter.attack.value = .002;
+    limiter.release.value = .1;
+    const master = ctx.createGain();
+    master.gain.value = .75;
+    bus.connect(limiter).connect(master).connect(ctx.destination)
   }
   return ctx
 }
@@ -146,28 +155,27 @@ export function voice(hz, delay = 0, output = null, onEnded = null) {
 // Live taps ring after key-up. Damp a repeated string and bound the number of
 // overlapping tails without changing the timing captured by the recorder.
 const live = new Map()
-export function liveVoice(hz, onDuration) {
+export function liveVoice(hz, onDuration, start = unlock().currentTime) {
   const c = unlock()
   const previous = live.get(hz)
-  if (previous) previous.damp()
-  if (live.size >= 16) live.values().next().value.damp()
+  if (previous) previous.damp(start)
+  if (live.size >= 16) live.values().next().value.damp(start)
 
   const gate = c.createGain()
   gate.connect(bus)
-  const start = c.currentTime
   let durationLimit = 6
   let damped = false
   const entry = {
-    damp() {
+    damp(at) {
       live.delete(hz)
       damped = true
-      gate.gain.setTargetAtTime(0, c.currentTime, .012)
-      durationLimit = Math.min(durationLimit, c.currentTime - start)
+      gate.gain.setTargetAtTime(0, at, .012)
+      durationLimit = Math.max(0, Math.min(durationLimit, at - start))
       release(durationLimit)
       onDuration?.(Math.max(.001, durationLimit))
     }
   }
-  const release = voice(hz, 0, gate, () => {
+  const release = voice(hz, Math.max(0, start - c.currentTime), gate, () => {
     if (live.get(hz) === entry) live.delete(hz)
     gate.disconnect()
   })
