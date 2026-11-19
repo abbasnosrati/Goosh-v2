@@ -292,9 +292,14 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
 }
 
 
-/* Desktop homepage chrome — styling only; existing navigation and theme actions stay intact. */
+/* Shared desktop navigation and footer on every route; all actions remain unchanged. */
 @media (min-width: 1100px) {
-  .home-screen header {
+  body {
+    --g-hairline: color-mix(in srgb, var(--line) 60%, transparent);
+    --g-accent-wash: color-mix(in srgb, var(--accent) 9%, var(--panel));
+  }
+
+  body > header {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
@@ -302,18 +307,18 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     min-height: 94px;
     padding: 15px max(clamp(20px, 4vw, 64px), calc((100vw - 1360px) / 2 + 64px));
     border-bottom: 1px solid var(--g-hairline);
-    background: color-mix(in srgb, var(--panel) 92%, var(--bg));
-    box-shadow: 0 1px 0 color-mix(in srgb, var(--panel) 85%, transparent);
+    background: transparent;
+    box-shadow: none;
   }
 
-  .home-screen header > .wordmark {
+  body > header > .wordmark {
     justify-self: start;
     width: 116px;
     height: 48px;
     object-fit: contain;
   }
 
-  .home-screen header > nav {
+  body > header > nav {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
@@ -322,11 +327,11 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     padding: 5px;
     border: 1px solid var(--g-hairline);
     border-radius: 16px;
-    background: color-mix(in srgb, var(--soft) 64%, var(--panel));
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--panel) 85%, transparent);
+    background: transparent;
+    box-shadow: none;
   }
 
-  .home-screen header > nav button {
+  body > header > nav button {
     min-height: 42px;
     padding: 9px 19px;
     border: 1px solid transparent;
@@ -340,20 +345,25 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     transition: background .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
   }
 
-  .home-screen header > nav button.active {
-    background: var(--panel);
-    color: var(--ink);
-    border-color: var(--g-hairline);
-    box-shadow: 0 2px 11px color-mix(in srgb, var(--ink) 8%, transparent),
-                inset 0 -2px 0 var(--accent);
+  body > header > nav button.active,
+  .home-screen header nav button.active {
+    background: transparent;
+    color: var(--accent);
+    border-color: transparent;
+    box-shadow: inset 0 -2px 0 var(--accent);
   }
 
-  .home-screen header > nav button:not(.active):hover {
-    background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+  .home-screen header > nav button {
+    border-radius: 11px;
+    font-weight: 650;
+  }
+
+  body > header > nav button:not(.active):hover {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
     color: var(--ink);
   }
 
-  .home-screen header > aside {
+  body > header > aside {
     display: flex;
     justify-self: end;
     align-items: center;
@@ -361,7 +371,7 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     gap: 7px;
   }
 
-  .home-screen header > aside button {
+  body > header > aside button {
     display: inline-grid;
     place-items: center;
     min-height: 43px;
@@ -369,27 +379,27 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     padding: 7px 13px;
     border: 1px solid var(--g-hairline);
     border-radius: 12px;
-    background: var(--panel);
+    background: transparent;
     color: var(--muted);
     font-size: 12px;
     font-weight: 650;
-    box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 5%, transparent);
+    box-shadow: none;
     transition: border-color .18s ease, background .18s ease, color .18s ease;
   }
 
-  .home-screen header > aside #theme {
+  body > header > aside #theme {
     padding: 0;
     font-size: 21px;
     font-weight: 400;
   }
 
-  .home-screen header > aside button:hover {
+  body > header > aside button:hover {
     border-color: var(--accent);
     color: var(--accent);
-    background: var(--g-accent-wash);
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
   }
 
-  .home-screen footer {
+  body > footer {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -406,7 +416,7 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     box-shadow: inset 0 1px 0 color-mix(in srgb, var(--panel) 90%, transparent);
   }
 
-  .home-screen footer::before {
+  body > footer::before {
     content: "";
     position: absolute;
     inset-block-start: -1px;
@@ -417,7 +427,7 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     background: var(--accent);
   }
 
-  .home-screen footer .footer-brand {
+  body > footer .footer-brand {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -429,12 +439,12 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     border: 0;
   }
 
-  .home-screen footer .footer-brand .wordmark {
+  body > footer .footer-brand .wordmark {
     width: 120px;
     height: 47px;
   }
 
-  .home-screen footer .footer-brand::after {
+  body > footer .footer-brand::after {
     content: "";
     display: block;
     width: 45px;
@@ -443,7 +453,7 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     background: color-mix(in srgb, var(--accent) 72%, var(--line));
   }
 
-  .home-screen footer nav {
+  body > footer nav {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
@@ -455,7 +465,7 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     background: color-mix(in srgb, var(--panel) 80%, var(--soft));
   }
 
-  .home-screen footer nav button {
+  body > footer nav button {
     min-height: 42px;
     padding: 9px 16px;
     border: 0;
@@ -468,22 +478,22 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     transition: color .18s ease, background .18s ease;
   }
 
-  .home-screen footer nav button:hover {
+  body > footer nav button:hover {
     color: var(--accent);
     background: var(--g-accent-wash);
   }
 }
 
 @media (min-width: 1100px) and (max-width: 1180px) {
-  .home-screen header { gap: 14px; }
-  .home-screen header > nav button { padding-inline: 12px; }
-  .home-screen header > aside button { padding-inline: 10px; }
+  body > header { gap: 14px; }
+  body > header > nav button { padding-inline: 12px; }
+  body > header > aside button { padding-inline: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-screen header > nav button,
-  .home-screen header > aside button,
-  .home-screen footer nav button {
+  body > header > nav button,
+  body > header > aside button,
+  body > footer nav button {
     transition: none;
   }
 }
