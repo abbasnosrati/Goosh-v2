@@ -452,3 +452,25 @@ html[lang="fa"] #app[data-page="studio"]:has(> .shelves) .etude-item strong::aft
     z-index: 2;
   }
 }
+
+/* Match the Etudes desktop content edges to the shared header gutters. */
+@media (min-width: 1100px) {
+  body:has(#app[data-page="studio"] > .shelves) {
+    --etudes-desktop-gutter: max(
+      clamp(20px, 4vw, 64px),
+      calc((100vw - 1360px) / 2 + 64px)
+    );
+  }
+
+  body:has(#app[data-page="studio"] > .shelves) #etudes-design-controls,
+  #app[data-page="studio"]:has(> .shelves) {
+    width: calc(100% - 2 * var(--etudes-desktop-gutter));
+    max-width: 1232px;
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+
+  body:has(#app[data-page="studio"] > .shelves) #app[data-page="studio"] > .row.controls {
+    inset-inline-end: var(--etudes-desktop-gutter);
+  }
+}
