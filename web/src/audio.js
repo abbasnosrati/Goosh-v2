@@ -16,12 +16,13 @@ export function unlock() {
   return c
 }
 
-function synth(hz, delay = 0) {
+function synth(hz, delay, output, onEnded) {
   const c = unlock(),
     t = c.currentTime + delay,
     g = c.createGain();
-  g.connect(bus);
+  g.connect(output);
   g.gain.value = 1;
+  let remaining = 0;
   const waves = [1, .44, .21, .09, .045, .018].flatMap((a, i) => {
     const f = hz * (i + 1) * Math.sqrt(1 + .00009 * i * i);
     if (f >= c.sampleRate / 2) return [];
@@ -34,16 +35,15 @@ function synth(hz, delay = 0) {
     o.connect(v).connect(g);
     o.start(t);
     o.stop(t + 6.05);
+    remaining++;
     o.onended = () => {
       o.disconnect();
-      v.disconnect()
+      v.disconnect();
+      if (--remaining === 0) { g.disconnect(); onEnded?.() }
     };
     return [o]
   });
-  let ended = false;
   return (length) => {
-    if (ended) return;
-    ended = true;
     const end = length === undefined ? c.currentTime : t + length;
     g.gain.setTargetAtTime(.00001, Math.max(t, end), .025);
     for (const o of waves) o.stop(Math.max(t, Math.min(t + 6.05, end + .18)))
@@ -112,30 +112,64 @@ async function preload(m) {
 export const ready = Promise.allSettled(Array.from({
   length: 30
 }, (_, i) => preload(21 + i * 3)))
-export function voice(hz, delay = 0) {
+export function voice(hz, delay = 0, output = null, onEnded = null) {
   const midi = 69 + 12 * Math.log2(hz / 440)
   const root = Math.max(21, Math.min(108, 21 + 3 * Math.round((midi - 21) / 3)))
   const sample = bank.get(root)
-  if (!sample) return synth(hz, delay)
-  const c = unlock(),
-    start = c.currentTime + delay,
+  const c = unlock()
+  const destination = output ?? bus
+  if (!sample) return synth(hz, delay, destination, onEnded)
+  const start = c.currentTime + delay,
     source = c.createBufferSource(),
     amp = c.createGain()
   source.buffer = sample
   source.playbackRate.value = 2 ** ((midi - root) / 12)
   amp.gain.setValueAtTime(.0001, start)
   amp.gain.linearRampToValueAtTime(.65, start + .004)
-  source.connect(amp).connect(bus)
+  source.connect(amp).connect(destination)
   source.start(start)
   amp.gain.setTargetAtTime(.0001, start + 5.9, .025)
   source.stop(start + 6.12)
   source.onended = () => {
     source.disconnect();
     amp.disconnect()
+    onEnded?.()
   }
   return duration => {
     const end = Math.max(c.currentTime, start + Math.min(6, duration ?? 0))
     amp.gain.setTargetAtTime(.0001, end, .025)
     source.stop(end + .18)
+  }
+}
+
+
+// Live taps ring after key-up. Damp a repeated string and bound the number of
+// overlapping tails without changing the timing captured by the recorder.
+const live = new Map()
+export function liveVoice(hz) {
+  const c = unlock()
+  const previous = live.get(hz)
+  if (previous) previous.damp()
+  if (live.size >= 16) live.values().next().value.damp()
+
+  const gate = c.createGain()
+  gate.connect(bus)
+  const start = c.currentTime
+  let damped = false
+  const entry = {
+    damp() {
+      live.delete(hz)
+      damped = true
+      gate.gain.setTargetAtTime(0, c.currentTime, .012)
+      release(c.currentTime - start)
+    }
+  }
+  const release = voice(hz, 0, gate, () => {
+    if (live.get(hz) === entry) live.delete(hz)
+    gate.disconnect()
+  })
+  live.set(hz, entry)
+  return duration => {
+    if (!damped) release(duration)
   }
 }

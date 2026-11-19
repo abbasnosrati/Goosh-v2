@@ -8,6 +8,7 @@ import {
 import {
   unlock,
   voice,
+  liveVoice,
   microphone
 } from './audio.js'
 import {
@@ -96,7 +97,7 @@ function piano(parent, onStart) {
       b.style.left = (white / 14 * 100 - 2.2) + '%'
     } else white++;
     b.begin = (id, at) => {
-      const off = voice(freq(e, m));
+      const off = liveVoice(freq(e, m));
       const release = onStart(m, at);
       b.classList.add('down');
       held.set(id, () => {
