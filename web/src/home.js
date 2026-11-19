@@ -79,8 +79,7 @@ function renderDesktop({el,app,t,collection,navigate}) {
     ['pen','Create custom etudes','ساخت اتود دلخواه'],
     ['music','Piano & notation','پیانو و نت‌نویسی'],
     ['layers','Customize practice rules','تنظیم شیوه تمرین'],
-    ['share','Share etude files','اشتراک‌گذاری اتود'],
-    ['headphones','Note-by-note practice','تمرین نت‌به‌نت']
+    ['share','Share etude files','اشتراک‌گذاری اتود']
   ]){
     const chip=el('span',features,undefined,'g-feature-chip');
     icon(chip,glyph);
