@@ -133,19 +133,18 @@ function renderDesktop({el,app,t,collection,navigate}) {
   ));
   const cards=el('div',hub,undefined,'g-hub-grid');
   for(const item of [
-    {key:'studio',glyph:'pen',ordinal:'01',name:'Etudes',sub:t('Compose & share','ساخت و اشتراک‌گذاری'),desc:t('Write notes, shape your ideas and organize your personal etudes.','نت بنویس، به ایده‌هایت شکل بده و اتودهایت را مدیریت کن.'),cta:t('Open Etudes','ورود به اتودها')},
-    {key:'practice',glyph:'headphones',ordinal:'02',name:'Practice',sub:t('Listen & improve','بشنو و پیشرفت کن'),desc:t('Follow your etudes note by note and focus on your performance.','اتودها را نت‌به‌نت تمرین کن و روی اجرای خودت تمرکز داشته باش.'),cta:t('Open Practice','ورود به تمرین')}
+    {key:'studio',glyph:'pen',name:t('Etudes','اتودها'),sub:t('Compose & share','ساخت و اشتراک‌گذاری'),desc:'',cta:t('Open Etudes','ورود به اتودها')},
+    {key:'practice',glyph:'headphones',name:t('Practice','تمرین‌ها'),sub:t('Practice etudes','تمرین اتودها'),desc:t('Follow your etudes note by note and focus on your performance.','اتودها را نت‌به‌نت تمرین کن و روی اجرای خودت تمرکز داشته باش.'),cta:t('Open Practice','ورود به تمرین')}
   ]){
     const card=el('button',cards,undefined,'g-hub-card g-hub-'+item.key);
     card.type='button';
     card.onclick=()=>navigate(item.key);
     const cardTop=el('div',card,undefined,'g-hub-top');
     icon(cardTop,item.glyph);
-    el('span',cardTop,item.ordinal);
     const content=el('div',card,undefined,'g-hub-content');
     el('span',content,item.sub,'g-hub-kicker');
     el('h3',content,item.name);
-    el('p',content,item.desc);
+    if(item.desc)el('p',content,item.desc);
     const visual=el('div',card,undefined,'g-hub-visual');
     if(item.key==='studio')noteArt(el,visual,'card');
     else{
