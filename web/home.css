@@ -487,3 +487,57 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     transition: none;
   }
 }
+
+
+/* Desktop hero copy: concise feature-led presentation. Illustration stays unchanged. */
+@media (min-width: 1100px) {
+  .home-screen .g-desktop .g-hero-copy h1 {
+    max-width: 17ch;
+    margin: 17px 0 13px;
+    font-size: clamp(40px, 3.65vw, 54px);
+    line-height: 1.35;
+    letter-spacing: -.035em;
+  }
+
+  .home-screen .g-desktop .g-hero-copy .g-hero-lead {
+    max-width: 49ch;
+    font-size: 15px;
+    line-height: 1.95;
+  }
+
+  .home-screen .g-desktop .g-feature-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 23px;
+    max-width: 550px;
+  }
+
+  .home-screen .g-desktop .g-feature-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 35px;
+    padding: 7px 12px;
+    border: 1px solid var(--g-hairline);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--soft) 44%, var(--panel));
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  .home-screen .g-desktop .g-feature-chip .g-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--accent);
+  }
+
+  .home-screen .g-desktop .g-hero-buttons {
+    margin-top: 24px;
+    margin-bottom: 16px;
+  }
+}
