@@ -18,7 +18,7 @@ const $ = s => document.querySelector(s),
   app = $('#app');
 let fa = localStorage.lang !== 'en',
   dark = localStorage.theme === 'dark',
-  page = 'studio',
+  page = routeFromHash(),
   e = fresh(),
   rec = null,
   pen = false,
@@ -74,27 +74,46 @@ function stopKeys() {
 }
 
 function piano(parent, onStart) {
-  const p = el('div', parent);
-  const r = row(p);
-  field(r, t('Octave', 'اکتاو'), oct, v => {
-    stopKeys();
-    oct = v;
-    p.remove();
-    piano(parent, onStart)
-  }, [0, 1, 2, 3, 4, 5, 6, 7].map(v => [v, v]));
-  const box = el('div', el('div', p, undefined, 'keys'), undefined, 'board');
+  const p = el('div', parent, undefined, 'instrument');
+  const tools = row(p);
+  el('strong',tools,t('Piano','پیانو'));
+  const viewport = el('div',p,undefined,'keys');
+  const box = el('div',viewport,undefined,'board');
+  const first = page === 'practice' ? Math.min(48,...e.notes.map(n=>n.m)) : 48;
+  const last = page === 'practice' ? Math.max(95,...e.notes.map(n=>n.m)) : 95;
+  const low = Math.floor(first/12)*12, high=Math.floor(last/12)*12+11;
+  oct=Math.max(low/12-1,Math.min(high/12-1,oct));
+  const whiteCount=(high-low+1)*7/12;
+  box.style.setProperty('--whites',whiteCount);
   let white = 0;
-  for (let j = 0; j < 24; j++) {
-    const m = 12 * (oct + 1) + j,
-      black = names[m % 12].includes('♯'),
-      b = el('button', box, black ? '' : label(m));
-    const shortcut = ['A', 'W', 'S', 'E', 'D', 'F', 'T', 'G', 'Y', 'H', 'U', 'J', 'K', 'O', 'L', 'P'][j];
+  const shortcuts=['A','W','S','E','D','F','T','G','Y','H','U','J','K','O','L','P'];
+  const scroll = el('input',p,undefined,'piano-scroll');
+  scroll.type='range'; scroll.dir='ltr'; scroll.min=0;scroll.max=1000;scroll.value=0;
+  scroll.setAttribute('aria-label',t('Scroll piano','پیمایش پیانو'));
+  scroll.oninput=()=>viewport.scrollLeft=(viewport.scrollWidth-viewport.clientWidth)*scroll.value/1000;
+  viewport.onscroll=()=>{scroll.value=1000*viewport.scrollLeft/Math.max(1,viewport.scrollWidth-viewport.clientWidth)};
+  function jump(value){
+    oct=value;
+    for(const key of box.children){
+      const shortcut=shortcuts[Number(key.dataset.midi)-(oct+1)*12];
+      delete key.dataset.shortcut;
+      key.title=key.ariaLabel;
+      if(shortcut){key.dataset.shortcut='Key'+shortcut;key.title+=' ('+shortcut+')'}
+    }
+    viewport.scrollLeft=(12*(oct+1)-low)/12*7*box.clientWidth/whiteCount;
+    scroll.disabled=viewport.scrollWidth<=viewport.clientWidth;
+  }
+  field(tools,t('Octave','اکتاو'),oct,jump,Array.from({length:whiteCount/7},(_,i)=>{const v=low/12-1+i;return [v,v.toLocaleString(fa?'fa':'en')]}));
+  for(let m=low;m<=high;m++){
+    const black=names[m%12].includes('♯'), b=el('button',box,black?'':label(m));
+    b.dataset.midi=m;
+    const shortcut=shortcuts[m-(oct+1)*12];
     b.title = label(m) + (shortcut ? ' (' + shortcut + ')' : '');
     if (shortcut) b.dataset.shortcut = 'Key' + shortcut;
     b.ariaLabel = label(m);
     if (black) {
       b.className = 'black';
-      b.style.left = (white / 14 * 100 - 2.2) + '%'
+      b.style.left = ((white - .31) / whiteCount * 100) + '%'
     } else white++;
     const pressed = new Set();
     b.begin = (id, at, audioTime = unlock().currentTime) => {
@@ -113,6 +132,7 @@ function piano(parent, onStart) {
     };
   }
 
+  requestAnimationFrame(()=>jump(oct));
   const fingers = new Map();
   function moveTo(id, position, key, time, audioTime) {
     if (position.key === key) return;
@@ -228,7 +248,8 @@ function noteSettings(note) {
 
 function studio() {
   const heading = el('h2', app, e.title || t('Untitled etude', 'اتود بدون نام'), 'print-title');
-  const top = row(app);
+  const top = row(app);top.classList.add('project-actions');
+  btn(top,t('Open etude','باز کردن اتود'),()=>$('#file').click());
   btn(top, t('New etude', 'اتود جدید'), () => {
     if (e.notes.length && !confirm(t('Start a new etude? Export this one to keep a copy.', 'اتود جدید بسازید؟ برای نگهداری این اتود ابتدا خروجی بگیرید.'))) return;
     cancel();
@@ -294,7 +315,7 @@ function studio() {
   const panel = el('section', app),
     r = row(panel);
   const record = btn(r, rec ? t('■ Stop', '■ توقف') : t('● Record', '● ضبط'), toggle, t('Record / Stop', 'ضبط / توقف') + ' (R)');
-  record.dataset.record = '';
+  record.dataset.record = '';record.className=rec?'recording':'primary';
 
   function toggle() {
     stopKeys();
@@ -506,8 +527,14 @@ function matchesNote(value, midi) {
 }
 
 function practice() {
-  const p = el('section', app);
-  el('h2', p, e.title || t('Etude', 'اتود'));
+  const p = el('section', app, undefined, 'practice-panel');
+  el('h2', p, e.title || t('Your etude', 'اتود شما'));
+  if(!e.notes.length){
+    el('p',p,t('Open an etude from your teacher to start practicing.','برای شروع، فایل اتود استادت را باز کن.'));
+    btn(p,t('Open etude','باز کردن اتود'),()=>$('#file').click()).className='primary';
+  } else {
+    el('p',p,t('Notes','تعداد نت')+' · '+e.notes.length.toLocaleString(fa?'fa':'en'));
+  }
   const start = btn(p, t('Start practice', 'شروع تمرین'), async () => {
     start.disabled = true;
     unlock();
@@ -536,18 +563,19 @@ function practice() {
       cancel();
       render()
     });
-    const status = el('h2', p),
-      clock = el('span', p),
-      bar = el('progress', p),
+    const counter=el('div',p,undefined,'counter');
+    const clock=el('strong',counter),status=el('span',counter),
+      progressLabel=el('p',p),
       body = el('div', p);
+    status.setAttribute('role','status');
     const results = [];
     async function phase(seconds, name, tick) {
       status.textContent = name;
       const now = performance.now();
       while (!s.dead) {
         const left = Math.max(0, seconds - (performance.now() - now) / 1000);
-        clock.textContent = Math.ceil(left) + ' ';
-        bar.value = 1 - left / seconds;
+        clock.textContent = Math.ceil(left).toLocaleString(fa?'fa':'en');
+        counter.style.setProperty('--turn', (left/seconds*360)+'deg');
         if (left <= 0 || tick?.()) break;
         await new Promise(done => setTimeout(done, 35))
       }
@@ -556,6 +584,7 @@ function practice() {
     if (r.count) await phase(r.count, t('Get ready', 'آماده شو'));
     for (let i = 0; i < sorted.length && !s.dead; i++) {
       const n = sorted[i];
+      progressLabel.textContent=t('Note','نت')+' '+(i+1).toLocaleString(fa?'fa':'en')+' / '+sorted.length.toLocaleString(fa?'fa':'en');
       if (r.ref === 'each' || (r.ref === 'first' && !i))
         for (let j = 0; j < r.repeat && !s.dead; j++) {
           voice(freq(e, r.refMidi))(r.refTime);
@@ -649,7 +678,7 @@ function practice() {
     localStorage.results = JSON.stringify(log);
     btn(p, t('Try again', 'تمرین دوباره'), render)
   });
-  start.disabled = !e.notes.length;
+  start.className='primary';start.hidden=!e.notes.length;
   const logs = JSON.parse(localStorage.results || '[]');
   if (logs.length) {
     const h = detail(t('Results', 'نتایج'));
@@ -661,6 +690,16 @@ function practice() {
   }
 }
 
+function routeFromHash(){
+  const key=location.hash.slice(1);
+  return ['studio','practice'].includes(key)?key:'home';
+}
+window.addEventListener('hashchange',()=>{
+  const route=routeFromHash();
+  if(route===page)return;
+  cancel();page=route;render();window.scrollTo(0,0);
+});
+
 function render() {
   document.documentElement.lang = fa ? 'fa' : 'en';
   document.documentElement.dir = fa ? 'rtl' : 'ltr';
@@ -669,19 +708,46 @@ function render() {
   $('#lang').textContent = fa ? 'English' : 'فارسی';
   const nav = $('#nav');
   nav.replaceChildren();
-  for (const [key, s] of [
-      ['studio', t('Studio', 'استودیو')],
-      ['practice', t('Practice', 'تمرین')]
-    ]) btn(nav, s, () => {
-    cancel();
-    page = key;
-    render()
-  }).classList.toggle('active', page === key);
+  const routes = [['home',t('Home','خانه')],['studio',t('Etude studio','استودیوی اتود')],['practice',t('Practice','تمرین')]];
+  const navigate = key => { if(page!==key)location.hash=key };
+  const footer=$('#footer');
+  footer.replaceChildren();
+  el('strong',footer,'Goosh');
+  nav.setAttribute('aria-label',t('Main navigation','ناوبری اصلی'));
+  for(const [key,name] of routes){
+    const item=btn(nav,name,()=>navigate(key));
+    item.dataset.route=key;
+    if(key===page){item.className='active';item.setAttribute('aria-current','page')}
+    btn(footer,name,()=>navigate(key));
+  }
   app.replaceChildren();
-  el('h1', app, page === 'studio' ? t('Etude studio', 'استودیوی اتود') : t('Practice', 'تمرین'));
-  btn(row(app), t('Import etude', 'ورود اتود'), () => $('#file').click());
-  if (page === 'studio') studio();
-  else practice()
+  app.dataset.page=page;
+  const name=routes.find(([key])=>key===page)[1];
+  document.title=name+' · Goosh';
+  el('h1',app,page==='home'?t('Your music workspace','فضای موسیقی شما'):name);
+  if(page==='home'){
+    const cards=el('div',app,undefined,'destinations');
+    for(const [key,title,description,action] of [
+      ['studio',routes[1][1],t('Play a melody or write the notes for your students.','برای هنرجوهایت ملودی بنواز یا نت‌ها را بنویس.'),t('Open studio','ورود به استودیو')],
+      ['practice',routes[2][1],t('Open your teacher’s etude and follow it note by note.','اتود استادت را باز کن و نت‌به‌نت تمرین کن.'),t('Open practice','ورود به تمرین')]
+    ]){
+      const card=el('button',cards,undefined,'destination '+key);
+      const art=el('span',card,undefined,'card-art');
+      art.setAttribute('aria-hidden','true');
+      if(key==='studio'){
+        const keys=el('span',art,undefined,'mini-keys');
+        for(let i=0;i<12;i++)el('i',keys);
+      }else{
+        const wave=el('span',art,undefined,'wave');
+        for(const h of [12,24,37,22,52,74,46,32,62,86,56,34,18,40,26,12])el('i',wave).style.height=h+'%';
+      }
+      el('strong',card,title);el('span',card,description,'description');el('span',card,action,'card-action');
+      card.onclick=()=>navigate(key);
+    }
+  }else{
+    if(page==='practice'&&e.notes.length)btn(row(app),t('Open etude','باز کردن اتود'),()=>$('#file').click());
+    if(page==='studio')studio();else practice();
+  }
 }
 $('#lang').onclick = () => {
   cancel();
