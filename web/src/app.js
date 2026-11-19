@@ -28,12 +28,41 @@ let fa = localStorage.lang !== 'en',
   sel = new Set(),
   held = new Map(),
   session = null
-try {
-  const saved = JSON.parse(localStorage.etude);
-  if (valid(saved)) e = saved
-} catch {}
+const collection = new Map();
+const prefix = 'goosh.etude.';
+for(let i=0;i<localStorage.length;i++){
+  const key=localStorage.key(i);
+  if(!key.startsWith(prefix))continue;
+  try{
+    const entry=JSON.parse(localStorage.getItem(key));
+    if(valid(entry.data))collection.set(key.slice(prefix.length),entry);
+  }catch{}
+}
+function addEtude(data,origin,id=globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)){
+  const entry={data,origin};
+  localStorage.setItem(prefix+id,JSON.stringify(entry));
+  collection.set(id,entry);
+  return id;
+}
+if(!collection.size && localStorage.etude){
+  try{
+    const previous=JSON.parse(localStorage.etude);
+    if(valid(previous))addEtude(previous,'own','previous');
+  }catch{}
+}
+let activeId=null;
+function loadRoute(){
+  const id=location.hash.slice(1).split('/')[1];
+  activeId=page!=='home' && collection.has(id)?id:null;
+  e=activeId?collection.get(activeId).data:fresh();
+  sel.clear();
+  pen=false;
+}
+loadRoute();
 const t = (en, ir) => fa ? ir : en,
-  save = () => localStorage.etude = JSON.stringify(e),
+  save = () => {
+    if(activeId)localStorage.setItem(prefix+activeId,JSON.stringify(collection.get(activeId)));
+  },
   el = (tag, parent, txt, cls) => {
     const x = document.createElement(tag);
     if (txt !== undefined) x.textContent = txt;
@@ -87,26 +116,32 @@ function piano(parent, onStart) {
   box.style.setProperty('--whites',whiteCount);
   let white = 0;
   const shortcuts=['A','W','S','E','D','F','T','G','Y','H','U','J','K','O','L','P'];
-  const scroll = el('input',p,undefined,'piano-scroll');
-  scroll.type='range'; scroll.dir='ltr'; scroll.min=0;scroll.max=1000;scroll.value=0;
-  scroll.setAttribute('aria-label',t('Scroll piano','پیمایش پیانو'));
-  scroll.oninput=()=>viewport.scrollLeft=(viewport.scrollWidth-viewport.clientWidth)*scroll.value/1000;
-  viewport.onscroll=()=>{scroll.value=1000*viewport.scrollLeft/Math.max(1,viewport.scrollWidth-viewport.clientWidth)};
+  viewport.tabIndex=0;
+  viewport.setAttribute('aria-label',t('Piano keyboard','کلاویه‌های پیانو'));
+  viewport.onwheel=ev=>{
+    if(ev.deltaX || ev.ctrlKey || !ev.deltaY)return;
+    const before=viewport.scrollLeft;
+    viewport.scrollLeft+=ev.deltaY*(ev.deltaMode===1?16:1);
+    if(before!==viewport.scrollLeft)ev.preventDefault();
+  };
   function jump(value){
     oct=value;
     for(const key of box.children){
       const shortcut=shortcuts[Number(key.dataset.midi)-(oct+1)*12];
       delete key.dataset.shortcut;
-      key.title=key.ariaLabel;
+      key.title=key.ariaLabel+' · '+freq(e,Number(key.dataset.midi)).toFixed(1)+' Hz';
       if(shortcut){key.dataset.shortcut='Key'+shortcut;key.title+=' ('+shortcut+')'}
     }
     viewport.scrollLeft=(12*(oct+1)-low)/12*7*box.clientWidth/whiteCount;
-    scroll.disabled=viewport.scrollWidth<=viewport.clientWidth;
+
   }
   field(tools,t('Octave','اکتاو'),oct,jump,Array.from({length:whiteCount/7},(_,i)=>{const v=low/12-1+i;return [v,v.toLocaleString(fa?'fa':'en')]}));
   for(let m=low;m<=high;m++){
-    const black=names[m%12].includes('♯'), b=el('button',box,black?'':label(m));
+    const black=names[m%12].includes('♯'), b=el('button',box,label(m));
     b.dataset.midi=m;
+    const syllables=fa?['دو','دو♯','ر','ر♯','می','فا','فا♯','سل','سل♯','لا','لا♯','سی']:['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
+    el('small',b,syllables[m%12]);
+
     const shortcut=shortcuts[m-(oct+1)*12];
     b.title = label(m) + (shortcut ? ' (' + shortcut + ')' : '');
     if (shortcut) b.dataset.shortcut = 'Key' + shortcut;
@@ -132,6 +167,9 @@ function piano(parent, onStart) {
     };
   }
 
+  const octaveRail=el('div',viewport,undefined,'octave-rail');
+  octaveRail.style.setProperty('--whites',whiteCount);
+  for(let midi=low;midi<=high;midi+=12)el('span',octaveRail,'C'+(midi/12-1));
   requestAnimationFrame(()=>jump(oct));
   const fingers = new Map();
   function moveTo(id, position, key, time, audioTime) {
@@ -249,15 +287,6 @@ function noteSettings(note) {
 function studio() {
   const heading = el('h2', app, e.title || t('Untitled etude', 'اتود بدون نام'), 'print-title');
   const top = row(app);top.classList.add('project-actions');
-  btn(top,t('Open etude','باز کردن اتود'),()=>$('#file').click());
-  btn(top, t('New etude', 'اتود جدید'), () => {
-    if (e.notes.length && !confirm(t('Start a new etude? Export this one to keep a copy.', 'اتود جدید بسازید؟ برای نگهداری این اتود ابتدا خروجی بگیرید.'))) return;
-    cancel();
-    e = fresh();
-    sel.clear();
-    save();
-    render()
-  });
   const title = field(top, t('Etude', 'اتود'), e.title, v => {
     e.title = v;
     heading.textContent = v
@@ -349,6 +378,23 @@ function studio() {
     wrap = !wrap;
     render()
   }).classList.toggle('active', wrap);
+  piano(panel, (m, at) => {
+    if (!rec) return;
+    const n = {
+      m,
+      at: rec.base + Math.max(0, at - rec.start),
+      d: .001
+    };
+    const take = rec;
+    e.notes.push(n);
+    refreshTake(take);
+    return d => {
+      if (rec !== take) return;
+      n.d = d;
+      refreshTake(take)
+    }
+  });
+  el('h2',panel,t('Score','خط حامل'),'score-title');
   el('div', panel, undefined, 'score')
   const timing = el('details', panel, undefined, 'controls');
   el('summary', timing, t('Edit notes & timing', 'ویرایش نت و زمان'));
@@ -388,22 +434,6 @@ function studio() {
     save();
     sheet()
   })
-  piano(panel, (m, at) => {
-    if (!rec) return;
-    const n = {
-      m,
-      at: rec.base + Math.max(0, at - rec.start),
-      d: .001
-    };
-    const take = rec;
-    e.notes.push(n);
-    refreshTake(take);
-    return d => {
-      if (rec !== take) return;
-      n.d = d;
-      refreshTake(take)
-    }
-  });
   tuning();
   rules();
   sheet()
@@ -691,14 +721,34 @@ function practice() {
 }
 
 function routeFromHash(){
-  const key=location.hash.slice(1);
+  const key=location.hash.slice(1).split('/')[0];
   return ['studio','practice'].includes(key)?key:'home';
 }
 window.addEventListener('hashchange',()=>{
   const route=routeFromHash();
-  if(route===page)return;
-  cancel();page=route;render();window.scrollTo(0,0);
+  cancel();page=route;loadRoute();render();window.scrollTo(0,0);
 });
+
+function etudeList(){
+  const actions=row(app);
+  if(page==='studio')btn(actions,t('New etude','ساخت اتود'),()=>{
+    location.hash='studio/'+addEtude(fresh(),'own');
+  }).className='primary';
+  btn(actions,t('Import etude','وارد کردن اتود'),()=>$('#file').click());
+  const grid=el('div',app,undefined,'shelves');
+  for(const [origin,title] of [['own',t('My etudes','اتودهای من')],['imported',t('Imported etudes','اتودهای واردشده')]]){
+    const section=el('section',grid);
+    el('h2',section,title);
+    const entries=[...collection.entries()].filter(([,entry])=>entry.origin===origin);
+    if(!entries.length)el('p',section,origin==='own'?t('No etudes created yet.','هنوز اتودی نساخته‌اید.'):t('No files imported yet.','هنوز فایلی وارد نکرده‌اید.'));
+    for(const [id,entry] of entries.reverse()){
+      const item=el('button',section,undefined,'etude-item');
+      el('strong',item,entry.data.title||t('Untitled etude','اتود بدون نام'));
+      el('small',item,entry.data.notes.length.toLocaleString(fa?'fa':'en')+' '+t('notes','نت'));
+      item.onclick=()=>{location.hash=page+'/'+id};
+    }
+  }
+}
 
 function render() {
   document.documentElement.lang = fa ? 'fa' : 'en';
@@ -709,20 +759,23 @@ function render() {
   const nav = $('#nav');
   nav.replaceChildren();
   const routes = [['home',t('Home','خانه')],['studio',t('Etude studio','استودیوی اتود')],['practice',t('Practice','تمرین')]];
-  const navigate = key => { if(page!==key)location.hash=key };
+  const navigate = key => { if(location.hash!=='#'+key)location.hash=key };
   const footer=$('#footer') || el('footer',document.body);
   footer.id='footer';
   footer.replaceChildren();
-  el('strong',footer,'Goosh');
+  const brand=el('div',footer,undefined,'footer-brand');
+  for(const theme of ['light','dark']){const logo=el('img',brand);logo.className='wordmark '+theme+'-logo';logo.alt='Goosh';logo.src='brand/goosh-wordmark-'+theme+'.png'}
+  const footNav=el('nav',footer);footNav.setAttribute('aria-label',t('Footer navigation','پیوندهای پایین صفحه'));
   nav.setAttribute('aria-label',t('Main navigation','ناوبری اصلی'));
   for(const [key,name] of routes){
     const item=btn(nav,name,()=>navigate(key));
     item.dataset.route=key;
     if(key===page){item.className='active';item.setAttribute('aria-current','page')}
-    btn(footer,name,()=>navigate(key));
+    btn(footNav,name,()=>navigate(key));
   }
   app.replaceChildren();
   app.dataset.page=page;
+  document.body.classList.toggle('home-screen',page==='home');
   const name=routes.find(([key])=>key===page)[1];
   document.title=name+' · Goosh';
   el('h1',app,page==='home'?t('Your music workspace','فضای موسیقی شما'):name);
@@ -745,8 +798,10 @@ function render() {
       el('strong',card,title);el('span',card,description,'description');el('span',card,action,'card-action');
       card.onclick=()=>navigate(key);
     }
+  }else if(!activeId){
+    etudeList();
   }else{
-    if(page==='practice'&&e.notes.length)btn(row(app),t('Open etude','باز کردن اتود'),()=>$('#file').click());
+    btn(row(app),t('Back to list','بازگشت به فهرست'),()=>navigate(page));
     if(page==='studio')studio();else practice();
   }
 }
@@ -767,12 +822,8 @@ $('#file').onchange = async ev => {
     if (!f) return;
     const data = JSON.parse(await f.text());
     if (!valid(data)) throw Error();
-    if (e.notes.length && !confirm(t('Replace current etude?', 'اتود فعلی جایگزین شود؟'))) return;
-    cancel();
-    e = data;
-    sel.clear();
-    save();
-    render()
+    const id=addEtude(data,'imported');
+    location.hash=(page==='practice'?'practice':'studio')+'/'+id;
   } catch {
     alert(t('Invalid etude file', 'فایل اتود معتبر نیست'))
   } finally {
