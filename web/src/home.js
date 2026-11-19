@@ -162,22 +162,6 @@ function renderDesktop({el,app,t,collection,navigate}) {
     icon(link,'arrow');
   }
 
-  const community=el('section',page,undefined,'g-community');
-  sectionHeading(el,community,t('COMMUNITY','جامعه گوش'),t('Music is better shared','موسیقی با اشتراک‌گذاری زنده‌تر است'),t(
-    'A future home for outstanding etudes from the Goosh community.',
-    'خانه آینده اتودهای برگزیده هنرجویان و استادان.'
-  ));
-  const teaser=el('div',community,undefined,'g-community-teaser');
-  const poster=el('div',teaser,undefined,'g-community-poster');
-  noteArt(el,poster,'community');
-  const communityCopy=el('div',teaser,undefined,'g-community-copy');
-  const status=el('span',communityCopy,t('COMING SOON','به‌زودی'),'g-tag');
-  icon(status,'sparkles');
-  el('h3',communityCopy,t('A stage for every etude','جایی برای شنیده‌شدن هر اتود'));
-  el('p',communityCopy,t(
-    'Community publishing and public rankings are not enabled yet. This is a preview of the future showcase.',
-    'انتشار عمومی و نمایش اتودهای برتر هنوز فعال نیست. این بخش پیش‌نمایش ویترین آینده کاربران است.'
-  ));
   return page;
 }
 function renderDashboard({el,app,t,collection,createEtude,importEtude}) {
