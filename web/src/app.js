@@ -10,7 +10,7 @@ import {
   voice,
   liveVoice,
   microphone
-} from './audio.js'
+} from './audio.js?v=7237d72'
 import {
   score
 } from './score.js'
@@ -710,7 +710,8 @@ function render() {
   nav.replaceChildren();
   const routes = [['home',t('Home','خانه')],['studio',t('Etude studio','استودیوی اتود')],['practice',t('Practice','تمرین')]];
   const navigate = key => { if(page!==key)location.hash=key };
-  const footer=$('#footer');
+  const footer=$('#footer') || el('footer',document.body);
+  footer.id='footer';
   footer.replaceChildren();
   el('strong',footer,'Goosh');
   nav.setAttribute('aria-label',t('Main navigation','ناوبری اصلی'));

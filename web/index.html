@@ -3,13 +3,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Goosh</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=ea33573">
 <header><img class="wordmark light-logo" src="brand/goosh-wordmark-light.png" alt="Goosh" width="100" height="40">
   <img class="wordmark dark-logo" src="brand/goosh-wordmark-dark.png" alt="Goosh" width="100" height="40">
   <nav id="nav"></nav>
   <aside><button id="lang"></button><button id="theme">◐</button></aside>
 </header>
 <main id="app"></main><input hidden type="file" id="file" accept=".goosh,.json"><footer id="footer"></footer>
-<script type="module" src="src/app.js"></script>
+<script type="module">
+  import('./src/app.js?v=home-2').catch(error => {
+    console.error(error);
+    const app = document.querySelector('#app');
+    const message = document.createElement('p');
+    message.textContent = location.protocol === 'file:'
+      ? 'برای اجرای Goosh، صفحه را از آدرس سرور محلی باز کنید.'
+      : 'بارگذاری Goosh کامل نشد. صفحه را دوباره بارگذاری کنید.';
+    const detail = document.createElement('pre');
+    detail.dir = 'ltr';
+    detail.style.whiteSpace = 'pre-wrap';
+    detail.textContent = error.message;
+    app.replaceChildren(message, detail);
+  });
+</script>
 
 </html>
