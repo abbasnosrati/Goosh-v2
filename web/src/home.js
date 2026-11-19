@@ -77,7 +77,6 @@ function renderDesktop({el,app,t,collection,navigate}) {
   const features=el('div',copy,undefined,'g-feature-chips');
   for(const [glyph,en,ir] of [
     ['pen','Create custom etudes','ساخت اتود دلخواه'],
-    ['music','Piano & notation','پیانو و نت‌نویسی'],
     ['layers','Customize practice rules','تنظیم شیوه تمرین'],
     ['share','Share etude files','اشتراک‌گذاری اتود']
   ]){
