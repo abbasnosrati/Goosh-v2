@@ -262,3 +262,12 @@ summary {
 
 .dark-logo, html.dark .light-logo { display: none }
 html.dark .dark-logo { display: block }
+
+dialog {
+  max-width: min(28rem, 90vw);
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+dialog::backdrop { background: rgb(8 24 36 / 45%); }

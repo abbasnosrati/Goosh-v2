@@ -9,9 +9,11 @@ export function score(host, e, {
   insert
 } = {}) {
   host.replaceChildren();
-  const unit = 72 * zoom,
+  const onsets = [...new Set(e.notes.map(n=>n.at))].sort((a,b)=>a-b);
+  const slots = new Map(onsets.map((at,i)=>[at,i]));
+  const unit = 36 * zoom,
     beat = 60 / e.bpm,
-    end = Math.max(4, ...e.notes.map(n => (n.at + n.d) / beat + 1)),
+    end = Math.max(1,onsets.length + (insert ? 1 : 0)),
     width = Math.max(240, host.clientWidth || 700),
     margin = 64 + Object.keys(e.key).length * 17,
     per = Math.max(1, Math.floor((width - margin - 22) / unit)),
@@ -50,7 +52,7 @@ export function score(host, e, {
       fill: 'currentColor'
     }, mark));
     e.notes.forEach((n, i) => {
-      const at = n.at / beat;
+      const at = slots.get(n.at);
       if (wrap && Math.floor(at / per) !== row) return;
       const x = margin + (at - row * per) * unit,
         y = 104 - step(n.m) * 4.5;
@@ -84,7 +86,7 @@ export function score(host, e, {
         fill: 'transparent'
       }).onclick = ev => {
         ev.stopPropagation();
-        pick?.(i)
+        pick?.(i,ev.shiftKey || ev.ctrlKey || ev.metaKey)
       }
     });
     svg.onclick = ev => {
@@ -93,7 +95,9 @@ export function score(host, e, {
       let m = 60;
       while (m < 108 && step(m) < s) m++;
       while (m > 24 && step(m) > s) m--;
-      insert?.(m, Math.max(0, row * per + (ev.clientX - rect.left - margin) / unit) * beat)
+      const slot = Math.max(0,row * per + Math.round((ev.clientX - rect.left - margin) / unit));
+      const endTime = e.notes.reduce((end,n)=>Math.max(end,n.at+n.d),0);
+      insert?.(m,onsets[slot] ?? endTime)
     }
   }
 }

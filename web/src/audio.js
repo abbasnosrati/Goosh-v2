@@ -146,7 +146,7 @@ export function voice(hz, delay = 0, output = null, onEnded = null) {
 // Live taps ring after key-up. Damp a repeated string and bound the number of
 // overlapping tails without changing the timing captured by the recorder.
 const live = new Map()
-export function liveVoice(hz) {
+export function liveVoice(hz, onDuration) {
   const c = unlock()
   const previous = live.get(hz)
   if (previous) previous.damp()
@@ -155,13 +155,16 @@ export function liveVoice(hz) {
   const gate = c.createGain()
   gate.connect(bus)
   const start = c.currentTime
+  let durationLimit = 6
   let damped = false
   const entry = {
     damp() {
       live.delete(hz)
       damped = true
       gate.gain.setTargetAtTime(0, c.currentTime, .012)
-      release(c.currentTime - start)
+      durationLimit = Math.min(durationLimit, c.currentTime - start)
+      release(durationLimit)
+      onDuration?.(Math.max(.001, durationLimit))
     }
   }
   const release = voice(hz, 0, gate, () => {
@@ -170,6 +173,10 @@ export function liveVoice(hz) {
   })
   live.set(hz, entry)
   return duration => {
-    if (!damped) release(duration)
+    if (!damped) {
+      durationLimit = duration
+      release(duration)
+      onDuration?.(duration)
+    }
   }
 }

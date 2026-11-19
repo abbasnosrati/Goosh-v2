@@ -97,15 +97,15 @@ function piano(parent, onStart) {
       b.style.left = (white / 14 * 100 - 2.2) + '%'
     } else white++;
     b.begin = (id, at) => {
-      const off = liveVoice(freq(e, m));
-      const release = onStart(m, at);
+      const recordDuration = onStart(m, unlock().currentTime);
+      const off = liveVoice(freq(e, m), recordDuration);
       b.classList.add('down');
       held.set(id, () => {
         held.delete(id);
         b.classList.remove('down');
         const d = (performance.now() - at) / 1000;
         off(d < .18 ? 2 : Math.min(6, d));
-        release?.(Math.max(.001, d))
+
       })
     };
     b.onpointerdown = ev => {
@@ -123,7 +123,9 @@ function sheet() {
     zoom,
     wrap,
     selected: sel,
-    pick: i => {
+    pick: (i, multi) => {
+      if(rec)return;
+      if(!multi){sel.clear();sel.add(i);sheet();noteSettings(e.notes[i]);return}
       if (sel.has(i)) sel.delete(i);
       else sel.add(i);
       sheet()
@@ -140,6 +142,31 @@ function sheet() {
       }
     }
   })
+}
+
+function noteSettings(note) {
+  const earlier = e.notes.filter(n => n.at < note.at);
+  const precedingEnd = earlier.reduce((end,n) => Math.max(end,n.at+n.d),0);
+  const rest = Math.max(0,note.at-precedingEnd);
+  const dialog = el('dialog', document.body);
+  const heading = el('h2',dialog,t('Note settings','تنظیمات نت')+' · '+label(note.m));
+  dialog.setAttribute('aria-label',heading.textContent);
+  const duration = field(dialog,t('Duration (s)','کشش (ثانیه)'),+note.d.toFixed(3),()=>{},null,[.001,100000,'any']);
+  const silence = field(dialog,t('Rest before note (s)','سکوت پیش از نت (ثانیه)'),+rest.toFixed(3),()=>{},null,[0,100000,'any']);
+  const initialDuration = duration.value, initialRest = silence.value;
+  const actions = row(dialog);
+  btn(actions,t('Save','ذخیره'),()=>{
+    if(!duration.value || !silence.value || !duration.reportValidity() || !silence.reportValidity())return;
+    if(silence.value!==initialRest){
+      const onset=note.at, shift=precedingEnd+Number(silence.value)-onset;
+      for(const n of e.notes)if(n.at>=onset)n.at+=shift;
+    }
+    if(duration.value!==initialDuration)note.d=Number(duration.value);
+    save();sheet();dialog.close();
+  });
+  btn(actions,t('Cancel','انصراف'),()=>dialog.close());
+  dialog.onclose=()=>dialog.remove();
+  dialog.showModal();
 }
 
 function studio() {
@@ -218,7 +245,7 @@ function studio() {
     else {
       unlock();
       rec = {
-        start: performance.now(),
+        start: unlock().currentTime,
         base: Math.max(0, ...e.notes.map(n => n.at + n.d))
       }
     }
@@ -287,12 +314,14 @@ function studio() {
     if (!rec) return;
     const n = {
       m,
-      at: rec.base + (at - rec.start) / 1000,
+      at: rec.base + Math.max(0, at - rec.start),
       d: .001
     };
+    const take = rec;
     e.notes.push(n);
     requestAnimationFrame(sheet);
     return d => {
+      if (rec !== take) return;
       n.d = d;
       save();
       sheet()
@@ -631,6 +660,7 @@ window.addEventListener('resize', () => {
   if (page === 'studio') sheet()
 });
 document.onkeydown = ev => {
+  if(document.querySelector('dialog[open]'))return;
   if (ev.repeat || ev.ctrlKey || ev.altKey || ev.metaKey || /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)) return;
   const key = document.querySelector('[data-shortcut="' + ev.code + '"]');
   if (key) {
