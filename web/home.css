@@ -357,16 +357,6 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     box-shadow: none;
   }
 
-  body > header > nav button.active::before {
-    content: "";
-    display: block;
-    width: 6px;
-    height: 6px;
-    flex: 0 0 6px;
-    border-radius: 50%;
-    background: currentColor;
-  }
-
   .home-screen header > nav button {
     border-radius: 999px;
     font-weight: 650;
