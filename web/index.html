@@ -11,6 +11,37 @@
   <nav id="nav"></nav>
   <aside><button id="lang"></button><button id="theme">◐</button></aside>
 </header>
+<!-- Etudes design-only controls. Existing app logic remains untouched. -->
+<section id="etudes-design-controls" aria-label="Etudes library controls">
+  <div class="etudes-design-intro">
+    <div class="etudes-design-intro-text">
+      <span class="etudes-design-eyebrow" lang="en">YOUR MUSIC LIBRARY</span>
+      <span class="etudes-design-eyebrow" lang="fa">کتابخانه موسیقی تو</span>
+      <h1><span lang="en">Etudes</span><span lang="fa">اتودها</span></h1>
+      <p><span lang="en">Your music, all in one place.</span><span lang="fa">اتودهایت، همه در یک فضای منظم.</span></p>
+    </div>
+    <div class="etudes-design-art" aria-hidden="true"><span>𝄞</span><span>♫</span><span>♩</span></div>
+  </div>
+  <div class="etudes-design-toolbar">
+    <label class="etudes-design-search">
+      <span aria-hidden="true">⌕</span>
+      <input type="search" placeholder="جستجو در اتودها" disabled aria-label="Search etudes (design preview)" />
+    </label>
+    <div class="etudes-design-tabs" role="group" aria-label="Etude collection filter">
+      <input type="radio" name="etudes-display-filter" id="etudes-all" checked />
+      <label for="etudes-all"><span lang="en">All</span><span lang="fa">همه اتودها</span></label>
+      <input type="radio" name="etudes-display-filter" id="etudes-mine" />
+      <label for="etudes-mine"><span lang="en">My etudes</span><span lang="fa">اتودهای من</span></label>
+      <input type="radio" name="etudes-display-filter" id="etudes-imported" />
+      <label for="etudes-imported"><span lang="en">Imported</span><span lang="fa">واردشده</span></label>
+    </div>
+    <label class="etudes-design-sort"><span lang="en">Sort</span><span lang="fa">مرتب‌سازی</span>
+      <select disabled aria-label="Sort etudes (design preview)">
+        <option>جدیدترین‌ها</option>
+      </select>
+    </label>
+  </div>
+</section>
 <main id="app"></main><input hidden type="file" id="file" accept=".goosh,.json"><footer id="footer"></footer>
 <script type="module">
   import('./src/app.js?v=redesign-3').catch(error => {
