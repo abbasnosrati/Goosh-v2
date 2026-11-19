@@ -565,9 +565,18 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     border: 0;
     box-shadow: none;
   }
-  body > footer::before,
   body > footer .footer-brand::after {
     display: none;
+  }
+  body > footer::before {
+    display: block;
+    inset-block-start: 0;
+    inset-inline-start: max(clamp(20px, 4vw, 64px), calc((100vw - 1360px) / 2 + 64px));
+    inset-inline-end: max(clamp(20px, 4vw, 64px), calc((100vw - 1360px) / 2 + 64px));
+    width: auto;
+    height: 1px;
+    border-radius: 0;
+    background: var(--g-hairline);
   }
   body > footer nav {
     background: transparent;
