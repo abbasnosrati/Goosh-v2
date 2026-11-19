@@ -55,7 +55,7 @@
   margin-top: 16px;
 }
 #app[data-page="studio"]:has(> .shelves) .shelves::before {
-  content: 'YOUR COLLECTION';
+  content: 'Your Etudes';
   grid-column: 1 / -1;
   font-size: 12px;
   font-weight: 780;
