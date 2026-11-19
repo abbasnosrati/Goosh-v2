@@ -75,12 +75,14 @@ function renderDesktop({el,app,t,collection,navigate}) {
     'با پیانو بنواز یا روی خط حامل نت بنویس؛ اتودت را طراحی، ذخیره و به‌صورت فایل با دیگران به اشتراک بگذار.'
   ),'g-hero-lead');
   const features=el('div',copy,undefined,'g-feature-chips');
-  for(const [glyph,en,ir] of [
+  for(const [glyph,en,ir,featured] of [
+    ['sparkles','Etudes for Iranian music','اتودسازی برای موسیقی ایرانی',true],
+    ['waveform','Precise pitch tuning for chosen notes','تنظیم دقیق Pitch نت‌های دلخواه',true],
     ['pen','Create custom etudes','ساخت اتود دلخواه'],
     ['layers','Customize practice rules','تنظیم شیوه تمرین'],
     ['share','Share etude files','اشتراک‌گذاری اتود']
   ]){
-    const chip=el('span',features,undefined,'g-feature-chip');
+    const chip=el('span',features,undefined,'g-feature-chip'+(featured?' g-feature-chip-featured':''));
     icon(chip,glyph);
     el('span',chip,t(en,ir));
   }
