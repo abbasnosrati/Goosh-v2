@@ -381,20 +381,6 @@ body:has(#etudes-imported:checked) #app[data-page="studio"] .shelves section:nth
 }
 
 /* Planned category and publication-state controls: styled only, no application logic. */
-#etudes-design-controls .etudes-design-categories {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 15px 0 0;
-}
-#etudes-design-controls .etudes-design-categories > span {
-  margin-inline-end: 8px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 750;
-}
-#etudes-design-controls .etudes-design-categories > button,
 #etudes-design-controls .etudes-design-status > button {
   min-height: 35px;
   padding: 6px 13px;
@@ -414,16 +400,6 @@ body:has(#etudes-imported:checked) #app[data-page="studio"] .shelves section:nth
   margin: 12px 0 0;
 }
 body:has(#etudes-mine:checked) #etudes-design-controls .etudes-design-status {display:flex;}
-@media(max-width:719px) {
-  #etudes-design-controls .etudes-design-categories {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    margin-top: 14px;
-    padding-bottom: 5px;
-    scrollbar-width: none;
-  }
-  #etudes-design-controls .etudes-design-categories > * {flex:0 0 auto;}
-}
 
 /* Etudes visual refinements: only the requested page, no JS changes. */
 #app[data-page="studio"]:has(> .shelves) .shelves > section:nth-child(2) > p {
@@ -468,7 +444,7 @@ html[lang="fa"] #app[data-page="studio"]:has(> .shelves) .etude-item strong::aft
   body:has(#app[data-page="studio"] > .shelves) { position: relative; }
   body:has(#app[data-page="studio"] > .shelves) #app[data-page="studio"] > .row.controls {
     position: absolute;
-    inset-block-start: 143px;
+    inset-block-start: 181px;
     inset-inline-end: max(clamp(20px, 4.5vw, 64px), calc((100vw - 1424px) / 2 + 64px));
     margin: 0;
     padding: 0;
