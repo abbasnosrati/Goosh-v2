@@ -1,0 +1,99 @@
+const ns = 'http://www.w3.org/2000/svg',
+  steps = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6]
+const step = m => Math.floor(m / 12) * 7 + steps[m % 12] - 37
+export function score(host, e, {
+  zoom = 1,
+  wrap = true,
+  selected = new Set(),
+  pick,
+  insert
+} = {}) {
+  host.replaceChildren();
+  const unit = 72 * zoom,
+    beat = 60 / e.bpm,
+    end = Math.max(4, ...e.notes.map(n => (n.at + n.d) / beat + 1)),
+    width = Math.max(240, host.clientWidth || 700),
+    margin = 64 + Object.keys(e.key).length * 17,
+    per = Math.max(1, Math.floor((width - margin - 22) / unit)),
+    rows = wrap ? Math.ceil(end / per) : 1
+  for (let row = 0; row < rows; row++) {
+    const svg = document.createElementNS(ns, 'svg'),
+      w = wrap ? width : Math.max(width, margin + end * unit + 20);
+    const draw = (tag, attrs, txt) => {
+      const el = document.createElementNS(ns, tag);
+      for (const k in attrs) el.setAttribute(k, attrs[k]);
+      if (txt !== undefined) el.textContent = txt;
+      svg.append(el);
+      return el
+    };
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', 165);
+    host.append(svg);
+    const line = (x, y, x2, y2) => draw('line', {
+      x1: x,
+      y1: y,
+      x2,
+      y2,
+      stroke: 'currentColor'
+    });
+    for (let j = 0; j < 5; j++) line(4, 104 - j * 9, w - 4, 104 - j * 9);
+    draw('text', {
+      x: 7,
+      y: 103,
+      'font-size': 46,
+      fill: 'currentColor'
+    }, '𝄞');
+    Object.entries(e.key).forEach(([pc, mark], i) => draw('text', {
+      x: 40 + 17 * i,
+      y: 106 - step(60 + Number(pc)) * 4.5,
+      'font-size': 13,
+      fill: 'currentColor'
+    }, mark));
+    e.notes.forEach((n, i) => {
+      const at = n.at / beat;
+      if (wrap && Math.floor(at / per) !== row) return;
+      const x = margin + (at - row * per) * unit,
+        y = 104 - step(n.m) * 4.5;
+      for (let l = 113; l <= y; l += 9) line(x - 9, l, x + 9, l);
+      for (let l = 59; l >= y; l -= 9) line(x - 9, l, x + 9, l);
+      const dur = n.d / beat;
+      const el = draw('ellipse', {
+        cx: x,
+        cy: y,
+        rx: 6,
+        ry: 4,
+        fill: dur >= 1.8 ? 'var(--panel)' : 'currentColor',
+        stroke: 'currentColor'
+      });
+      if (dur < 3.8) line(x + 5, y, x + 5, y - 27);
+      if (dur < .75) draw('path', {
+        d: 'M' + (x + 5) + ' ' + (y - 27) + 'q12 5 6 16',
+        fill: 'none',
+        stroke: 'currentColor'
+      });
+      if ([1, 3, 6, 8, 10].includes(n.m % 12)) draw('text', {
+        x: x - 17,
+        y: y + 4,
+        fill: 'currentColor'
+      }, '♯');
+      if (selected.has(i)) el.setAttribute('stroke-width', 3);
+      draw('circle', {
+        cx: x,
+        cy: y,
+        r: 10,
+        fill: 'transparent'
+      }).onclick = ev => {
+        ev.stopPropagation();
+        pick?.(i)
+      }
+    });
+    svg.onclick = ev => {
+      const rect = svg.getBoundingClientRect(),
+        s = Math.round((104 - (ev.clientY - rect.top)) / 4.5);
+      let m = 60;
+      while (m < 108 && step(m) < s) m++;
+      while (m > 24 && step(m) > s) m--;
+      insert?.(m, Math.max(0, row * per + (ev.clientX - rect.left - margin) / unit) * beat)
+    }
+  }
+}
