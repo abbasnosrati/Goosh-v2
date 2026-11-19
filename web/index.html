@@ -5,7 +5,7 @@
 <title>Goosh</title>
 <link rel="stylesheet" href="style.css?v=etude-list-1">
 <link rel="stylesheet" href="home.css?v=redesign-12">
-<link rel="stylesheet" href="etudes.css?v=design-5">
+<link rel="stylesheet" href="etudes.css?v=design-6">
 <header><img class="wordmark light-logo" src="brand/goosh-wordmark-light.png" alt="Goosh" width="100" height="40">
   <img class="wordmark dark-logo" src="brand/goosh-wordmark-dark.png" alt="Goosh" width="100" height="40">
   <nav id="nav"></nav>
@@ -37,6 +37,28 @@
   <div class="etudes-design-status" aria-label="Personal etude status design placeholders">
     <button type="button" disabled><span lang="fa">پیش‌نویس‌ها</span><span lang="en">Drafts</span></button>
     <button type="button" disabled><span lang="fa">منتشرشده‌ها</span><span lang="en">Published</span></button>
+  </div>
+</section>
+<!-- Practice list design only; original list and practice handlers are unchanged. -->
+<section id="practice-design-controls" aria-label="Practice etudes">
+  <div class="practice-design-intro">
+    <h1><span lang="en">Practice</span><span lang="fa">تمرین‌ها</span></h1>
+    <div class="practice-design-art" aria-hidden="true"><span>𝄞</span><span>♫</span><span>♪</span></div>
+  </div>
+  <div class="practice-design-toolbar">
+    <label class="practice-design-search">
+      <span aria-hidden="true">⌕</span>
+      <input lang="fa" type="search" placeholder="جستجو در اتودهای تمرینی" disabled aria-label="جستجو در تمرین‌ها" />
+      <input lang="en" type="search" placeholder="Search practice etudes" disabled aria-label="Search practice etudes" />
+    </label>
+    <div class="practice-design-tabs" role="group" aria-label="Practice list filters">
+      <input type="radio" name="practice-display-filter" id="practice-all" checked />
+      <label for="practice-all"><span lang="en">All</span><span lang="fa">همه اتودها</span></label>
+      <input type="radio" name="practice-display-filter" id="practice-mine" />
+      <label for="practice-mine"><span lang="en">My etudes</span><span lang="fa">اتودهای من</span></label>
+      <input type="radio" name="practice-display-filter" id="practice-imported" />
+      <label for="practice-imported"><span lang="en">Imported</span><span lang="fa">واردشده</span></label>
+    </div>
   </div>
 </section>
 <main id="app"></main><input hidden type="file" id="file" accept=".goosh,.json"><footer id="footer"></footer>
