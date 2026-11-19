@@ -313,8 +313,8 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
 
   body > header > .wordmark {
     justify-self: start;
-    width: 154px;
-    height: 60px;
+    width: 192px;
+    height: 76px;
     object-fit: contain;
   }
 
@@ -324,11 +324,14 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     align-items: center;
     justify-content: center;
     gap: 7px;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
+    padding: 6px;
+    border: 1px solid color-mix(in srgb, var(--panel) 65%, var(--line));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--panel) 65%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: 0 8px 28px color-mix(in srgb, var(--ink) 7%, transparent),
+                inset 0 1px 0 color-mix(in srgb, var(--panel) 85%, transparent);
   }
 
   body > header > nav button {
