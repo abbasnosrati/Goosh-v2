@@ -565,3 +565,28 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     margin-bottom: 16px;
   }
 }
+
+
+/* Sparse musical watermarks on the desktop canvas only.
+   These are CSS backgrounds: they cannot intercept pointer or keyboard input. */
+@media (min-width: 1100px) {
+  body,
+  body.home-screen {
+    background-image:
+      url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20280%20280%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23006e7a%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20opacity%3D%22.085%22%3E%3Cpath%20d%3D%22M116%2057V204M192%2037V182M116%2057l76-20%22%2F%3E%3Cellipse%20cx%3D%2288%22%20cy%3D%22208%22%20rx%3D%2231%22%20ry%3D%2222%22%20transform%3D%22rotate(-20%2088%20208)%22%2F%3E%3Cellipse%20cx%3D%22164%22%20cy%3D%22186%22%20rx%3D%2231%22%20ry%3D%2222%22%20transform%3D%22rotate(-20%20164%20186)%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),
+      url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20280%20280%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23006e7a%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%20opacity%3D%22.085%22%3E%3Cpath%20d%3D%22M110%2030L83%20249M193%2030l-27%20219M49%20122l171-35M58%20193l171-35%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),
+      url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20420%20230%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23006e7a%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20opacity%3D%22.085%22%3E%3Cpath%20d%3D%22M20%2076h380M20%2094h380M20%20112h380M20%20130h380M20%20148h380%22%2F%3E%3Cellipse%20cx%3D%22113%22%20cy%3D%22141%22%20rx%3D%2219%22%20ry%3D%2213%22%20transform%3D%22rotate(-20%20113%20141)%22%2F%3E%3Cpath%20d%3D%22M130%20139V64%22%2F%3E%3Cellipse%20cx%3D%22246%22%20cy%3D%22114%22%20rx%3D%2219%22%20ry%3D%2213%22%20transform%3D%22rotate(-20%20246%20114)%22%2F%3E%3Cpath%20d%3D%22M263%20110V46%22%2F%3E%3Cellipse%20cx%3D%22337%22%20cy%3D%2291%22%20rx%3D%2219%22%20ry%3D%2213%22%20transform%3D%22rotate(-20%20337%2091)%22%2F%3E%3Cpath%20d%3D%22M354%2088V27%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: left 2% top 145px, right 3% center, left 9% bottom 45px;
+    background-size: 265px 265px, 290px 290px, 380px 210px;
+    background-attachment: fixed;
+  }
+
+  html.dark body,
+  html.dark body.home-screen {
+    background-image:
+      url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20280%20280%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%2340eded%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20opacity%3D%22.085%22%3E%3Cpath%20d%3D%22M116%2057V204M192%2037V182M116%2057l76-20%22%2F%3E%3Cellipse%20cx%3D%2288%22%20cy%3D%22208%22%20rx%3D%2231%22%20ry%3D%2222%22%20transform%3D%22rotate(-20%2088%20208)%22%2F%3E%3Cellipse%20cx%3D%22164%22%20cy%3D%22186%22%20rx%3D%2231%22%20ry%3D%2222%22%20transform%3D%22rotate(-20%20164%20186)%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),
+      url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20280%20280%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%2340eded%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%20opacity%3D%22.085%22%3E%3Cpath%20d%3D%22M110%2030L83%20249M193%2030l-27%20219M49%20122l171-35M58%20193l171-35%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),
+      url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20420%20230%22%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%2340eded%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20opacity%3D%22.085%22%3E%3Cpath%20d%3D%22M20%2076h380M20%2094h380M20%20112h380M20%20130h380M20%20148h380%22%2F%3E%3Cellipse%20cx%3D%22113%22%20cy%3D%22141%22%20rx%3D%2219%22%20ry%3D%2213%22%20transform%3D%22rotate(-20%20113%20141)%22%2F%3E%3Cpath%20d%3D%22M130%20139V64%22%2F%3E%3Cellipse%20cx%3D%22246%22%20cy%3D%22114%22%20rx%3D%2219%22%20ry%3D%2213%22%20transform%3D%22rotate(-20%20246%20114)%22%2F%3E%3Cpath%20d%3D%22M263%20110V46%22%2F%3E%3Cellipse%20cx%3D%22337%22%20cy%3D%2291%22%20rx%3D%2219%22%20ry%3D%2213%22%20transform%3D%22rotate(-20%20337%2091)%22%2F%3E%3Cpath%20d%3D%22M354%2088V27%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  }
+}
