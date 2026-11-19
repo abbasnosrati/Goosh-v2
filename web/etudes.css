@@ -14,32 +14,6 @@
   letter-spacing: -.035em;
   margin: 10px 0 12px;
 }
-#app[data-page="studio"]:has(> .shelves) > h1::before {
-  content: 'YOUR MUSIC LIBRARY';
-  display: block;
-  font-size: 11px;
-  font-weight: 760;
-  letter-spacing: .16em;
-  line-height: 2.2;
-  color: var(--accent);
-}
-html[lang="fa"] #app[data-page="studio"]:has(> .shelves) > h1::before {
-  content: 'کتابخانه موسیقی تو';
-  letter-spacing: 0;
-}
-#app[data-page="studio"]:has(> .shelves) > h1::after {
-  content: 'Create, browse and organize your etudes.';
-  display: block;
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 15px;
-  font-weight: 450;
-  line-height: 1.8;
-  letter-spacing: normal;
-}
-html[lang="fa"] #app[data-page="studio"]:has(> .shelves) > h1::after {
-  content: 'اتودهایت را بساز، مرور کن و در یک فضای منظم نگه دار.';
-}
 #app[data-page="studio"]:has(> .shelves) > .row.controls {
   display: flex;
   flex-wrap: wrap;
@@ -272,9 +246,9 @@ html[lang="fa"] #etudes-design-controls .etudes-design-eyebrow { letter-spacing:
   width: min(34%,310px);
   flex-shrink: 0;
   height: 124px;
-  border-radius: 26px;
-  border: 1px solid color-mix(in srgb, var(--accent) 10%, transparent);
-  background: radial-gradient(ellipse at 50% 110%, color-mix(in srgb,var(--accent) 12%,transparent),transparent 73%);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   font: 48px/1 Georgia,serif;
   color: color-mix(in srgb, var(--accent) 27%, transparent);
   user-select: none;
@@ -359,24 +333,6 @@ html[lang="fa"] #etudes-design-controls .etudes-design-eyebrow { letter-spacing:
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-#etudes-design-controls .etudes-design-sort {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-#etudes-design-controls .etudes-design-sort select {
-  height: 43px;
-  min-height: 43px;
-  padding: 0 10px;
-  background: var(--panel);
-  border: 1px solid color-mix(in srgb,var(--line) 70%,transparent);
-  border-radius: 11px;
-  font-size: 12px;
-  cursor: default;
-}
 body:has(#etudes-mine:checked) #app[data-page="studio"] .shelves section:nth-child(2) > .etude-item,
 body:has(#etudes-mine:checked) #app[data-page="studio"] .shelves section:nth-child(2) > p,
 body:has(#etudes-imported:checked) #app[data-page="studio"] .shelves section:nth-child(1) > .etude-item,
@@ -422,130 +378,6 @@ body:has(#etudes-imported:checked) #app[data-page="studio"] .shelves section:nth
     flex: 1;
     text-align: center;
   }
-  #etudes-design-controls .etudes-design-sort { display: none; }
-}
-
-/* Visual-only Quick View mockup. Native popover, no app functions or mock records. */
-#etudes-design-controls .etudes-design-preview-trigger {
-  flex: 0 0 auto;
-  min-height: 43px;
-  padding: 9px 13px;
-  border: 1px solid color-mix(in srgb,var(--accent) 26%,var(--line));
-  border-radius: 11px;
-  background: color-mix(in srgb,var(--accent) 7%,var(--panel));
-  color: var(--accent);
-  font-weight: 750;
-  font-size: 12px;
-}
-#etudes-design-quickview {
-  color: var(--ink);
-  width: min(680px,calc(100vw - 28px));
-  max-height: min(88vh,760px);
-  padding: clamp(18px,3vw,30px);
-  border: 1px solid color-mix(in srgb,var(--line) 58%,transparent);
-  border-radius: 25px;
-  background: var(--panel);
-  box-shadow: 0 24px 80px color-mix(in srgb,var(--ink) 18%,transparent);
-  overflow: auto;
-}
-#etudes-design-quickview::backdrop {
-  background: rgb(6 25 35 / .52);
-  backdrop-filter: blur(5px);
-}
-#etudes-design-quickview .etudes-quickview-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-#etudes-design-quickview .etudes-design-eyebrow {
-  font-size: 11px;
-  color: var(--accent);
-  letter-spacing: .08em;
-  font-weight: 800;
-}
-#etudes-design-quickview h2 {
-  margin: 5px 0 0;
-  font-size: clamp(21px,3vw,29px);
-  font-weight: 800;
-}
-#etudes-design-quickview .etudes-quickview-heading button {
-  flex: 0 0 38px;
-  min-height: 38px;
-  padding: 0;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: transparent;
-  font-size: 26px;
-  line-height: 1;
-  color: var(--muted);
-}
-#etudes-design-quickview .etudes-quickview-score {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-evenly;
-  min-height: 200px;
-  overflow: hidden;
-  direction: ltr;
-  border: 1px solid color-mix(in srgb,var(--line) 65%,transparent);
-  border-radius: 18px;
-  background: color-mix(in srgb,var(--accent) 4%,var(--panel));
-  color: var(--accent);
-  font: 46px/1 Georgia,serif;
-}
-#etudes-design-quickview .etudes-quickview-score::before {
-  content: '';
-  position: absolute;
-  inset: 56px 22px auto;
-  height: 85px;
-  opacity: .3;
-  background: repeating-linear-gradient(to bottom,var(--ink) 0 1px,transparent 1px 20px);
-}
-#etudes-design-quickview .etudes-quickview-score span {position:relative;}
-#etudes-design-quickview .etudes-quickview-score span:nth-child(2){transform:translateY(28px);}
-#etudes-design-quickview .etudes-quickview-score span:nth-child(3){transform:translateY(-13px);}
-#etudes-design-quickview .etudes-quickview-facts {
-  display: grid;
-  grid-template-columns: repeat(4,minmax(0,1fr));
-  gap: 11px;
-  margin: 18px 0 20px;
-}
-#etudes-design-quickview .etudes-quickview-facts>div {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-  padding: 13px;
-  border: 1px solid color-mix(in srgb,var(--line) 65%,transparent);
-  border-radius: 13px;
-}
-#etudes-design-quickview .etudes-quickview-facts small {
-  color: var(--muted);
-  font-size: 11px;
-}
-#etudes-design-quickview .etudes-quickview-facts strong {
-  color: var(--ink);
-  font-size: 17px;
-}
-#etudes-design-quickview .etudes-quickview-footer {
-  display: flex;
-  justify-content: flex-end;
-}
-#etudes-design-quickview .etudes-quickview-footer button {
-  min-height: 44px;
-  padding: 9px 19px;
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
-  border-radius: 12px;
-  opacity: .7;
-  font-weight: 750;
-}
-@media(max-width:719px){
-  #etudes-design-controls .etudes-design-preview-trigger { width: 100%; }
-  #etudes-design-quickview .etudes-quickview-facts {grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 
 /* Planned category and publication-state controls: styled only, no application logic. */
@@ -591,4 +423,56 @@ body:has(#etudes-mine:checked) #etudes-design-controls .etudes-design-status {di
     scrollbar-width: none;
   }
   #etudes-design-controls .etudes-design-categories > * {flex:0 0 auto;}
+}
+
+/* Etudes visual refinements: only the requested page, no JS changes. */
+#app[data-page="studio"]:has(> .shelves) .shelves > section:nth-child(2) > p {
+  display: none;
+}
+#app[data-page="studio"]:has(> .shelves) .etude-item strong::after {
+  content: ' · 20 Nov 2026';
+  display: inline-block;
+  margin-inline-start: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+html[lang="fa"] #app[data-page="studio"]:has(> .shelves) .etude-item strong::after {
+  content: ' · ۲۹ آبان ۱۴۰۵';
+}
+#app[data-page="studio"]:has(> .shelves) > .row.controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+#app[data-page="studio"]:has(> .shelves) > .row.controls button.primary::after {
+  content: '+';
+  font-size: 19px;
+  font-weight: 550;
+  line-height: 1;
+}
+#app[data-page="studio"]:has(> .shelves) > .row.controls button:not(.primary)::before {
+  content: '';
+  display: block;
+  flex: 0 0 19px;
+  width: 19px;
+  height: 19px;
+  background-color: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.75%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14%202H6a2%202%200%200%200-2%202v16a2%202%200%200%200%202%202h12a2%202%200%200%200%202-2V8z%22%2F%3E%3Cpath%20d%3D%22M14%202v6h6M12%2011v7m-3-3%203%203%203-3%22%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.75%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M14%202H6a2%202%200%200%200-2%202v16a2%202%200%200%200%202%202h12a2%202%200%200%200%202-2V8z%22%2F%3E%3Cpath%20d%3D%22M14%202v6h6M12%2011v7m-3-3%203%203%203-3%22%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+}
+@media (min-width: 1100px) {
+  body:has(#app[data-page="studio"] > .shelves) { position: relative; }
+  body:has(#app[data-page="studio"] > .shelves) #app[data-page="studio"] > .row.controls {
+    position: absolute;
+    inset-block-start: 143px;
+    inset-inline-end: max(clamp(20px, 4.5vw, 64px), calc((100vw - 1424px) / 2 + 64px));
+    margin: 0;
+    padding: 0;
+    gap: 12px;
+    z-index: 2;
+  }
 }
