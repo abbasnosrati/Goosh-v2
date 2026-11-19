@@ -68,12 +68,24 @@ function renderDesktop({el,app,t,collection,navigate}) {
   const copy=el('div',hero,undefined,'g-hero-copy');
   const eyebrow=el('div',copy,undefined,'g-overline');
   icon(eyebrow,'sparkles');
-  el('span',eyebrow,t('A better space for music','فضایی تازه برای موسیقی'));
-  el('h1',copy,t('Listen deeper. Create freely.','عمیق‌تر بشنو. آزادانه خلق کن.'));
+  el('span',eyebrow,t('ETUDE STUDIO & PRACTICE','استودیوی ساخت و تمرین اتود'));
+  el('h1',copy,t('Create etudes. Practice your way.','ساخت و تمرین اتود، به سبک خودت'));
   el('p',copy,t(
-    'Compose etudes, share your musical ideas and turn every practice session into meaningful progress.',
-    'اتودهایت را بساز، ایده‌های موسیقی‌ات را به اشتراک بگذار و هر جلسه تمرین را به یک قدم رو به جلو تبدیل کن.'
+    'Play on the piano or write on the staff. Design etudes, save them and share them as files.',
+    'با پیانو بنواز یا روی خط حامل نت بنویس؛ اتودت را طراحی، ذخیره و به‌صورت فایل با دیگران به اشتراک بگذار.'
   ),'g-hero-lead');
+  const features=el('div',copy,undefined,'g-feature-chips');
+  for(const [glyph,en,ir] of [
+    ['pen','Create custom etudes','ساخت اتود دلخواه'],
+    ['music','Piano & notation','پیانو و نت‌نویسی'],
+    ['layers','Customize practice rules','تنظیم شیوه تمرین'],
+    ['share','Share etude files','اشتراک‌گذاری اتود'],
+    ['headphones','Note-by-note practice','تمرین نت‌به‌نت']
+  ]){
+    const chip=el('span',features,undefined,'g-feature-chip');
+    icon(chip,glyph);
+    el('span',chip,t(en,ir));
+  }
   const buttons=el('div',copy,undefined,'g-hero-buttons');
   textAction(el,buttons,t('Enter workspace','ورود به فضای کار'),'arrow',()=>{
     document.querySelector('#goosh-hub')?.scrollIntoView({behavior:'smooth',block:'start'});
