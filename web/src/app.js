@@ -14,6 +14,7 @@ import {
 import {
   score
 } from './score.js'
+import { renderHome } from './home.js';
 const $ = s => document.querySelector(s),
   app = $('#app');
 let fa = localStorage.lang !== 'en',
@@ -778,26 +779,13 @@ function render() {
   document.body.classList.toggle('home-screen',page==='home');
   const name=routes.find(([key])=>key===page)[1];
   document.title=name+' · Goosh';
-  el('h1',app,page==='home'?t('Your music workspace','فضای موسیقی شما'):name);
+  if(page!=='home')el('h1',app,name);
   if(page==='home'){
-    const cards=el('div',app,undefined,'destinations');
-    for(const [key,title,description,action] of [
-      ['studio',routes[1][1],t('Play a melody or write the notes for your students.','برای هنرجوهایت ملودی بنواز یا نت‌ها را بنویس.'),t('Open studio','ورود به استودیو')],
-      ['practice',routes[2][1],t('Open your teacher’s etude and follow it note by note.','اتود استادت را باز کن و نت‌به‌نت تمرین کن.'),t('Open practice','ورود به تمرین')]
-    ]){
-      const card=el('button',cards,undefined,'destination '+key);
-      const art=el('span',card,undefined,'card-art');
-      art.setAttribute('aria-hidden','true');
-      if(key==='studio'){
-        const keys=el('span',art,undefined,'mini-keys');
-        for(let i=0;i<12;i++)el('i',keys);
-      }else{
-        const wave=el('span',art,undefined,'wave');
-        for(const h of [12,24,37,22,52,74,46,32,62,86,56,34,18,40,26,12])el('i',wave).style.height=h+'%';
-      }
-      el('strong',card,title);el('span',card,description,'description');el('span',card,action,'card-action');
-      card.onclick=()=>navigate(key);
-    }
+    renderHome({
+      el,app,t,collection,navigate,
+      createEtude:()=>{location.hash='studio/'+addEtude(fresh(),'own')},
+      importEtude:()=>$('#file').click()
+    });
   }else if(!activeId){
     etudeList();
   }else{
