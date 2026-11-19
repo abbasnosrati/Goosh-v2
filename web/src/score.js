@@ -12,7 +12,6 @@ export function score(host, e, {
   const onsets = [...new Set(e.notes.map(n=>n.at))].sort((a,b)=>a-b);
   const slots = new Map(onsets.map((at,i)=>[at,i]));
   const unit = 36 * zoom,
-    beat = 60 / e.bpm,
     end = Math.max(1,onsets.length + (insert ? 1 : 0)),
     width = Math.max(240, host.clientWidth || 700),
     margin = 64 + Object.keys(e.key).length * 17,
@@ -58,19 +57,11 @@ export function score(host, e, {
         y = 104 - step(n.m) * 4.5;
       for (let l = 113; l <= y; l += 9) line(x - 9, l, x + 9, l);
       for (let l = 59; l >= y; l -= 9) line(x - 9, l, x + 9, l);
-      const dur = n.d / beat;
-      const el = draw('ellipse', {
+      const el = draw('circle', {
         cx: x,
         cy: y,
-        rx: 6,
-        ry: 4,
-        fill: dur >= 1.8 ? 'var(--panel)' : 'currentColor',
-        stroke: 'currentColor'
-      });
-      if (dur < 3.8) line(x + 5, y, x + 5, y - 27);
-      if (dur < .75) draw('path', {
-        d: 'M' + (x + 5) + ' ' + (y - 27) + 'q12 5 6 16',
-        fill: 'none',
+        r: 4.5,
+        fill: 'currentColor',
         stroke: 'currentColor'
       });
       if ([1, 3, 6, 8, 10].includes(n.m % 12)) draw('text', {

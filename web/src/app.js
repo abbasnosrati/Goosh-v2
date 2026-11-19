@@ -96,25 +96,60 @@ function piano(parent, onStart) {
       b.className = 'black';
       b.style.left = (white / 14 * 100 - 2.2) + '%'
     } else white++;
+    const pressed = new Set();
     b.begin = (id, at) => {
+      pressed.add(id);
       const recordDuration = onStart(m, unlock().currentTime);
       const off = liveVoice(freq(e, m), recordDuration);
       b.classList.add('down');
       held.set(id, () => {
         held.delete(id);
-        b.classList.remove('down');
+        pressed.delete(id);
+        if (!pressed.size) b.classList.remove('down');
         const d = (performance.now() - at) / 1000;
         off(d < .18 ? 2 : Math.min(6, d));
 
       })
     };
-    b.onpointerdown = ev => {
-      ev.preventDefault();
-      b.setPointerCapture(ev.pointerId);
-      b.begin(ev.pointerId, ev.timeStamp)
-    };
-    b.onlostpointercapture = b.onpointerup = b.onpointercancel = ev => held.get(ev.pointerId)?.()
   }
+
+  const fingers = new Map();
+  function moveTo(id, position, key, time) {
+    if (position.key === key) return;
+    held.get(id)?.();
+    position.key = key;
+    key?.begin(id, time);
+  }
+  box.onpointerdown = ev => {
+    const key = ev.target.closest('button');
+    if (!key || ev.button !== 0) return;
+    ev.preventDefault();
+    box.setPointerCapture(ev.pointerId);
+    fingers.set(ev.pointerId, {key, x: ev.clientX, y: ev.clientY, time: ev.timeStamp});
+    key.begin(ev.pointerId, ev.timeStamp);
+  };
+  box.onpointermove = ev => {
+    const position = fingers.get(ev.pointerId);
+    if (!position) return;
+    const samples = ev.getCoalescedEvents?.() || [];
+    for (const point of [...samples, ev]) {
+      const dx = point.clientX - position.x, dy = point.clientY - position.y;
+      if (!dx && !dy) continue;
+      // Hit-test between samples so a fast swipe still crosses narrow black keys.
+      const steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / 8));
+      for (let step = 1; step <= steps; step++) {
+        const fraction = step / steps;
+        const hit = document.elementFromPoint(position.x + dx * fraction, position.y + dy * fraction);
+        const key = hit?.closest('button');
+        moveTo(ev.pointerId, position, key?.parentElement === box ? key : null,
+          position.time + (point.timeStamp - position.time) * fraction);
+      }
+      Object.assign(position, {x: point.clientX, y: point.clientY, time: point.timeStamp});
+    }
+  };
+  box.onlostpointercapture = box.onpointerup = box.onpointercancel = ev => {
+    if (fingers.delete(ev.pointerId)) held.get(ev.pointerId)?.();
+  };
 }
 
 function sheet() {
