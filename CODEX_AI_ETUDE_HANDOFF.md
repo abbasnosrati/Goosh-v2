@@ -1145,3 +1145,17 @@ No changes to `web/src/key-signature.js`, `web/src/model.js`, `web/src/audio.js`
 5. `web/index.html`: updated the app.js and stylesheet version query strings to `studio-title-pencil-1` for cache invalidation. Other Studio title/Share/PDF/Generate controls are unchanged.
 
 **Manual checks still needed:** ensure the pencil is adjacent to short/long titles, clicking it focuses and selects title text, rename persists, the title remains unboxed, and icon alignment is correct across English/Persian and narrow/desktop layouts. Check keyboard navigation and focus ring. No live browser test was run.
+
+## Restore return-to-score icon without modifying the key-editor entry icon (2026-11-20)
+
+**Branch:** `redesign`. **Exact user instruction:** The user independently updated the **entry** icon for the Key Signature Editor and confirmed that new icon is correct. Preserve it **exactly**, and only change the same toggle button's icon **while the Key Signature Editor is open** back to the earlier musical-staff-with-notes design.
+
+### Implementation
+
+1. **`web/src/app.js`:** Kept the current `scoreSignatureIcon()` function unchanged. It draws the user's preferred treble-clef (`𝄞`) entry icon with the existing 32×34 SVG viewBox and music-font fallback; do not revert it to the older sharp/key-signature drawing.
+2. Added a separate, self-contained `scoreReturnStaffIcon()` function that restores the previously implemented return icon: a 32×24 inline SVG featuring five horizontal staff lines, two filled elliptical noteheads (at x=11/y=15.75 and x=23/y=12), and their stems. The SVG uses `currentColor`, does not require any external image or font and is hidden from screen readers because the enclosing button is labeled.
+3. Only changed the existing Key Signature Editor toggle's icon append from unconditional `scoreSignatureIcon()` to `signatureMode ? scoreReturnStaffIcon() : scoreSignatureIcon()`. Thus, **normal Score mode** still shows the user's current treble clef, while **editing Key Signature** shows the restored five-line note-staff icon for returning to Score.
+4. Preserved the toggle's actual handler, `signatureMode` behavior, `data-signature-toggle` selector, active class, localized "Edit key signature" / "Return to score" tooltip and aria-label, and all editor, audio, tuning and score logic.
+5. **`web/index.html`:** Updated only the `app.js` query-string cache version to `signature-return-staff-1` to ensure browsers load the new conditional icon. No CSS change was necessary; existing `.signature-toggle svg` sizing handles both icons.
+
+**Manual QA still required:** In normal Studio Score view, the entry button must remain the user's treble-clef icon. Click to enter the key editor and confirm it switches to the five-line staff with two notes; clicking again must return to the user-approved treble clef. Check both themes and directions. Only JavaScript syntax/source checks were performed, no browser/device visual test.
