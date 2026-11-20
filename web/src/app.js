@@ -983,7 +983,10 @@ function scheduleScoreTransport(transport) {
   transport.anchor = transport.clock.currentTime;
   const repeatGates = new Map();
   let audibleEnd = transport.end;
-  for (const n of transport.notes) {
+  // Pencil insertion can append notes to e.notes out of chronological
+  // order. Sort ONLY the scheduling view so same-key restrikes damp in
+  // actual playback order without changing the saved score or note IDs.
+  for (const n of [...transport.notes].sort((a,b) => a.at-b.at || a.index-b.index)) {
     const remaining = n.at + n.d - transport.offset;
     if (remaining <= 0) continue;
     const delay = Math.max(0, n.at - transport.offset);
