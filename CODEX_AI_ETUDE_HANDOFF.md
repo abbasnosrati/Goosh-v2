@@ -1,6 +1,10 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
-## 2026-11-20 — Studio tempo control and note-duration propagation
+## 2026-11-20 — Key signature view and global per-pitch tuning
+
+**User request:** Add one toggle button immediately after the Mouse/Select score tool. In that view, replace the normal note-staff surface with an editable key signature staff where the user can place accidentals and tune each pitch. The effect must be global to the etude and piano.
+
+### 2026-11-20 — Studio tempo control and note-duration propagation
 
 **User-reported bug and requirements:** The user changed the duration of an AI-generated note from 1 second to 4 seconds. The audible note tail extended but the next note still began at its old timestamp. They also requested a prominently visible overall piece-speed control that genuinely slows the composition. **Important musical direction:** preserve the natural acoustic envelope and decay of piano samples; do NOT invent artificial sustain, a held pedal, or change piano timbre to force long notes to remain audible.
 

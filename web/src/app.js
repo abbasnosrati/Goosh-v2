@@ -14,7 +14,9 @@ import {
 } from './audio.js?v=score-transport-1'
 import {
   score
-} from './score.js?v=hide-duration-labels-1'
+} from './score.js?v=key-sig-view-1'
+import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
+  from './key-signature.js?v=key-sig-view-1'
 import { generateStudioEtude } from './ai-etude.js?v=khara-free-phrases-3'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),
@@ -25,6 +27,8 @@ let fa = localStorage.lang !== 'en',
   e = fresh(),
   rec = null,
   scoreTool = 'select',
+  signatureMode = false,
+  signaturePitch = 0,
   zoom = 1,
   wrap = true,
   oct = 4,
@@ -63,6 +67,8 @@ function loadRoute(){
   e=activeId?collection.get(activeId).data:fresh();
   sel.clear();
   scoreTool='select';
+  signatureMode=false;
+  signaturePitch=0;
   scoreUndoStack.length=0;
 }
 loadRoute();
@@ -306,9 +312,81 @@ function undoScoreEdit() {
   return true;
 }
 
+// This editor writes into the existing global key/offset model used by freq().
+function renderSignatureControls(){
+  const box=$('.signature-editor-controls')
+  if(!box)return
+  box.hidden=!signatureMode
+  box.replaceChildren()
+  if(!signatureMode)return
+  const selected=SIGNATURE_PITCHES.find(p=>p.pc===signaturePitch)
+  if(!selected)return
+  const pc=selected.pc,mark=e.key[pc]||''
+  el('strong',box,selected.name+' · '+t('Key signature','سرکلید'),
+    'signature-editor-selected')
+  const marks=el('div',box,undefined,'signature-editor-marks')
+  for(const {mark:option,glyph,en,fa:ir} of SIGNATURE_MARKS){
+    const button=btn(marks,glyph,()=>{
+      if((e.key[pc]||'')===option&&!e.offset[pc])return
+      stopScorePlayback()
+      if(option)e.key[pc]=option
+      else delete e.key[pc]
+      delete e.offset[pc]
+      save()
+      sheet()
+    },t(en,ir))
+    button.className='signature-editor-mark'
+    if(option===mark)button.classList.add('active')
+    button.setAttribute('aria-label',t(en,ir))
+    button.setAttribute('aria-pressed',String(option===mark))
+    if(option==='کرن'||option==='سری')button.classList.add('signature-microtonal')
+  }
+  const tune=el('label',box,undefined,'signature-editor-tuning')
+  el('span',tune,t('Tuning','کوک'))
+  const input=el('input',tune)
+  input.type='number'
+  input.min='-1200'
+  input.max='1200'
+  input.step='1'
+  input.value=String((e.marks[mark]||0)+(e.offset[pc]||0))
+  input.setAttribute('aria-label',t('Pitch tuning in cents','کوک نت برحسب سنت'))
+  el('span',tune,'¢','signature-cent-unit')
+  input.onchange=()=>{
+    if(!input.reportValidity())return
+    const value=Number(input.value),base=e.marks[e.key[pc]]||0
+    const delta=value-base
+    if(!Number.isFinite(delta)||delta < -1200||delta > 1200){
+      input.setCustomValidity(t('Tuning is out of range.','کوک خارج از محدوده است.'))
+      input.reportValidity()
+      input.setCustomValidity('')
+      input.value=String(base+(e.offset[pc]||0))
+      return
+    }
+    stopScorePlayback()
+    if(delta)e.offset[pc]=delta
+    else delete e.offset[pc]
+    save()
+    sheet()
+  }
+  const listen=btn(box,'♪',()=>voice(freq(e,selected.midi))(1),
+    t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
+  listen.className='signature-editor-listen'
+  listen.setAttribute('aria-label',t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
+}
+
 function sheet() {
   const h = $('.score');
   if (!h) return;
+  if(signatureMode){
+    h.dataset.view='signature';
+    h.dataset.tool='select';
+    h.style.removeProperty('--score-tool-cursor');
+    drawKeySignatureEditor(h,e,{selectedPc:signaturePitch,
+      onSelect:pc=>{signaturePitch=pc;sheet()}});
+    renderSignatureControls();
+    return;
+  }
+  h.dataset.view='notes';
   h.dataset.tool = scoreTool;
   if (scoreTool === 'pen' || scoreTool === 'eraser')
     h.style.setProperty('--score-tool-cursor', scoreEditingCursor(scoreTool));
@@ -346,6 +424,7 @@ function sheet() {
     }
   });
   paintPlaybackMarker(true);
+  renderSignatureControls();
 }
 
 // Retiming a note must move subsequent note ONSETS, not only its audio release.
@@ -430,6 +509,21 @@ function noteSettings(note) {
   dialog.showModal();
 }
 
+
+function scoreSignatureIcon(){
+  const ns='http://www.w3.org/2000/svg'
+  const svg=document.createElementNS(ns,'svg')
+  svg.setAttribute('viewBox','0 0 24 24')
+  svg.setAttribute('aria-hidden','true')
+  svg.setAttribute('focusable','false')
+  svg.setAttribute('fill','none')
+  svg.setAttribute('stroke','currentColor')
+  svg.setAttribute('stroke-width','1.7')
+  const path=document.createElementNS(ns,'path')
+  path.setAttribute('d','M3 6h18M3 10h18M3 14h18M3 18h18M8 2v20M15 4v16M12 8l6 8M18 8l-6 8')
+  svg.append(path)
+  return svg
+}
 
 function scoreToolIcon(mode) {
   const ns = 'http://www.w3.org/2000/svg';
@@ -779,16 +873,34 @@ function studio() {
     ['eraser', 'Eraser', 'پاک‌کن']
   ]) {
     const tool = btn(scoreActions, '', () => {
-      if (scoreTool === mode) return;
+      if (scoreTool === mode && !signatureMode) return;
+      signatureMode=false;
       scoreTool = mode;
       render();
     }, t(en, ir));
     tool.className = 'score-tool-button';
     tool.dataset.scoreTool = mode;
     tool.setAttribute('aria-label', t(en, ir));
-    tool.setAttribute('aria-pressed', String(scoreTool === mode));
-    if (scoreTool === mode) tool.classList.add('active');
+    tool.setAttribute('aria-pressed', String(!signatureMode && scoreTool === mode));
+    if (!signatureMode && scoreTool === mode) tool.classList.add('active');
     tool.append(scoreToolIcon(mode));
+    if(mode==='select'){
+      const keyButton=btn(scoreActions,'',()=>{
+        if(!signatureMode){
+          stopScorePlayback();
+          signaturePitch=SIGNATURE_PITCHES.find(p=>e.key[p.pc])?.pc ?? 0;
+          scoreTool='select';
+        }
+        signatureMode=!signatureMode;
+        render();
+      },t('Edit key signature','ویرایش سرکلید'));
+      keyButton.className='score-tool-button signature-toggle';
+      keyButton.dataset.signatureToggle='';
+      keyButton.setAttribute('aria-label',t('Edit key signature','ویرایش سرکلید'));
+      keyButton.setAttribute('aria-pressed',String(signatureMode));
+      if(signatureMode)keyButton.classList.add('active');
+      keyButton.append(scoreSignatureIcon());
+    }
   }
   const wrapButton = btn(scoreActions, '', () => {
     wrap = !wrap;
@@ -830,6 +942,8 @@ function studio() {
   record.append(scoreTransportIcon(rec ? 'stop' : 'record'));
   el('span', record, rec ? t('Stop', 'توقف') : t('Record', 'ضبط'));
   el('div', panel, undefined, 'score');
+  const signatureControls=el('div',panel,undefined,'signature-editor-controls');
+  signatureControls.hidden=true;
   const scoreBelowActions = row(panel);
   scoreBelowActions.classList.add('score-below-actions');
 

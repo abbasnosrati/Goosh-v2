@@ -510,3 +510,56 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     padding-inline: 0;
   }
 }
+
+
+/* Key signature editor replaces the Studio note-staff surface in place. */
+#app[data-page="studio"] .signature-editor-controls[hidden] {display:none!important}
+#app[data-page="studio"] .signature-editor-controls {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:12px;
+  padding:12px 4px;
+}
+#app[data-page="studio"] .signature-editor-selected {
+  font-size:.92rem;
+  min-width:95px;
+}
+#app[data-page="studio"] .signature-editor-marks {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+}
+#app[data-page="studio"] .signature-editor-mark {
+  min-width:41px;
+  min-height:42px;
+  padding:5px 8px;
+  font-size:25px;
+  line-height:1;
+}
+#app[data-page="studio"] .signature-editor-mark.signature-microtonal {
+  font-family:"Noto Music","Bravura","Segoe UI Symbol",serif;
+}
+#app[data-page="studio"] .signature-editor-tuning {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin:0;
+  white-space:nowrap;
+}
+#app[data-page="studio"] .signature-editor-tuning input {
+  width:76px;
+  padding:7px;
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+#app[data-page="studio"] .signature-editor-listen {
+  min-width:42px;
+  min-height:42px;
+  font-size:23px;
+  line-height:1;
+}
+#app[data-page="studio"] .score[data-view="signature"] svg {
+  cursor:default;
+}

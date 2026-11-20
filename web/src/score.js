@@ -60,10 +60,16 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
     })
     for(let i=0;i<5;i++)line(4,104-9*i,w-4,104-9*i)
     draw('text',{x:7,y:103,'font-size':46,fill:'currentColor'},'𝄞')
+    const sigMidi={0:72,2:74,4:76,5:77,7:79,9:69,11:71}
+    const glyphs={'کرن':'𝇪','سری':'𝇫','♭':'♭','♯':'♯'}
     Object.entries(e.key).forEach(([pc,mark],i)=>draw('text',{
-      x:40+17*i,y:106-step(60+Number(pc))*4.5,'font-size':13,
+      x:40+17*i,
+      y:106-step(sigMidi[Number(pc)]??(60+Number(pc)))*4.5,
+      'font-size':mark==='کرن'||mark==='سری'?19:17,
+      'font-family':mark==='کرن'||mark==='سری'
+        ? '"Noto Music","Bravura","Segoe UI Symbol",serif':'inherit',
       fill:'currentColor'
-    },mark))
+    },glyphs[mark]||mark))
     const dots=(x,y,n)=>{
       for(let i=0;i<n;i++)draw('circle',{
         cx:x+14+6*i,cy:y,r:1.55,fill:'currentColor'
