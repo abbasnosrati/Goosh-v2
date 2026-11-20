@@ -1104,3 +1104,30 @@ No changes to `web/src/key-signature.js`, `web/src/model.js`, `web/src/audio.js`
 - On mobile/tablet, controls should wrap without clipping in English and Persian, light and dark themes.
 - Move slider and confirm numeric value/Hz update, audio is auditioned, and final cents are saved. Check ± steps, Reset to accidental baseline, input validation and both original/tuned sounds.
 - No manual browser/device/audio QA was performed in this change; static source checks alone must not be reported as an end-to-end test pass.
+
+
+## Studio tuning layout — slider aligned with preview actions, centered frequency (2026-11-20)
+
+**Branch:** `redesign`. **User request:** Keep the compact, borderless Key Signature Editor tuner. Move the pitch slider to the same lower horizontal row as Reset, Play original and Play tuned; place the live Hz frequency centered immediately above the slider.
+
+**Changes:**
+1. `web/src/app.js` → `renderSignatureControls()`: moved the existing `span.signature-tuner-frequency` from `.signature-tuner-readout` into the beginning of `.signature-tuner-scale` immediately before the range input. The numeric frequency still comes from `freq(e, selected.midi).toFixed(2)`; no sound-model changes.
+2. `web/style.css`: reorganized `.signature-tuner-inline` as a two-row/two-column CSS grid with named areas `"readout adjust"` and `"scale actions"`. The signed cents readout and ±/number controls stay on the upper row; the Hz-over-slider block and Reset/Original/Tuned actions share the lower row. Frequency is centered with `text-align:center` and a small bottom margin. Under 700px and 490px, the existing controls stack responsively to avoid clipping.
+3. `web/index.html`: updated JS/CSS cache query strings so the moved Hz element and grid layout load.
+4. No changes to tuning values, actual frequencies, slider handling, persistence, original/tuned previews, pitch selection or unrelated Studio features.
+
+**Manual checks still needed:** desktop alignment of slider and action row; Hz centered over the slider; responsive layouts (both RTL/LTR, light/dark); drag slider and verify Hz/readout/preview/save still work. No actual browser/device/audio test was run.
+
+
+## Studio title edit affordance — pencil icon (2026-11-20)
+
+**Branch:** `redesign`. **User request:** Make it visually obvious that the Etude Studio title is editable by placing a pencil icon immediately next to the name.
+
+**Changes:**
+1. `web/src/app.js` → `studio()`: wrapped the existing `input.etude-title-input` in a `div.etude-title-edit`, then appended a **small pencil icon button** (`button.etude-title-edit-button`) immediately after the input. The SVG reuses the already existing `scoreToolIcon('pen')` generator; no icon dependency or new asset was added.
+2. The pencil is a functional accessibility-friendly button: its localized `title` and `aria-label` say Edit etude title / ویرایش عنوان اتود. Clicking it focuses the same existing title field and selects its text. The field is still a normal text input; changing its value still updates `e.title`, the printable `h2.print-title`, and saves using the original `save()` handler.
+3. Added a bounded `input.size` calculation (12–48 characters) updated on input, so the icon stays beside a variable-length title rather than at the far end of a stretched input; this only affects visual input width, not validation or stored data.
+4. `web/style.css`: styled `.etude-title-edit` as a responsive inline-flex area within `.project-actions`. The input remains **borderless** and transparent until keyboard focus, preserving the previously requested unboxed title presentation. The pencil button is subtle (34px square, transparent background, muted currentColor); hover uses existing theme variables, keyboard focus gets a clear accent outline. The SVG is 19px and inherits the current theme.
+5. `web/index.html`: updated the app.js and stylesheet version query strings to `studio-title-pencil-1` for cache invalidation. Other Studio title/Share/PDF/Generate controls are unchanged.
+
+**Manual checks still needed:** ensure the pencil is adjacent to short/long titles, clicking it focuses and selects title text, rename persists, the title remains unboxed, and icon alignment is correct across English/Persian and narrow/desktop layouts. Check keyboard navigation and focus ring. No live browser test was run.
