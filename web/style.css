@@ -364,3 +364,35 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 @media(max-width:560px){.home-screen .card-art{height:clamp(48px,11dvh,104px)}.home-screen .destination>strong{margin-top:8px}.home-screen .destination{padding-bottom:10px}}
 @media(max-height:580px){.home-screen h1{font-size:22px;margin:0}.home-screen .destinations{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.home-screen .card-art{height:clamp(30px,10dvh,70px)}.home-screen .destination{padding-bottom:8px}.home-screen .destination>strong,.home-screen .description,.home-screen .card-action{margin-inline:10px}.home-screen .destination>strong{font-size:18px;margin-top:4px}.home-screen .description{font-size:13px;margin-block:2px}.home-screen .card-action{font-size:14px}}
 @media print{.score-title{display:none}}
+
+
+/* Studio score transport — icon buttons with Record anchored to the physical right. */
+#app[data-page="studio"] .score-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  direction: ltr;
+}
+#app[data-page="studio"] .score-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+#app[data-page="studio"] .score-actions .score-transport-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 9px;
+}
+#app[data-page="studio"] .score-actions svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: currentColor;
+  flex: none;
+}
+#app[data-page="studio"] .score-actions .score-record {
+  margin-left: auto;
+  white-space: nowrap;
+}
