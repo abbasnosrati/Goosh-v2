@@ -1176,3 +1176,26 @@ No changes to `web/src/key-signature.js`, `web/src/model.js`, `web/src/audio.js`
 3. The `web/src/app.js` DOM structure and all frequency/cents calculations, slider handlers, save logic, original/tuned audio and other controls were deliberately untouched.
 
 **Manual checks pending:** At desktop widths, the signed cents readout should be horizontally centered above the slider, visually aligned with the already-centered Hz label. Verify responsive layouts in both languages and themes. This was a source-level CSS alignment change; no live browser/device visual verification was performed.
+
+## Remove redundant Studio Tuning & key signature section (2026-11-20)
+
+**Branch:** `redesign`. **User request:** Completely remove the legacy expandable `Tuning & key signature` section located beneath the Studio score area. The newer in-place **Key Signature Editor** now owns key-signature selection and per-note tuning, so the older accordion is redundant.
+
+### Changes
+
+1. **`web/src/app.js` / `studio()`:** Removed the single `tuning()` invocation that inserted the old collapsible `Tuning & key signature` panel into the Studio page. The next `rules()` call and `sheet()` rendering remain in the same order.
+2. **`web/src/app.js` / obsolete helper:** Removed the unreferenced `function tuning()` in its entirety. This removed only the old legacy editing UI: global accidental cent fields, pitch selector, signature selector, numeric per-pitch offset field, and its listen-note button. No shared tuning data, model fields, or musical pitch calculations were modified.
+3. **`web/index.html`:** Updated the JavaScript cache-busting query string to `remove-legacy-tuning-1` so the accordion disappears reliably after refresh. CSS assets were not changed.
+
+### Preserved
+
+- The newer **Key Signature Editor** inside the Studio Score area, including the accidentals, selected pitch, compact cent and frequency readouts, draggable slider, reset and preview controls, all associated save/preview/tuning behavior and the view-switching toggle icon.
+- The separate `Practice settings` accordion, which continues to be rendered by `rules()`, including its own `Allow tuner` option. The user requested removal of the old *Tuning & key signature* section only, not unrelated practice configuration.
+- Studio's title/pencil icon, piano, transport, Share/PDF, AI Generate, zoom and other UI and functionality.
+
+### Validation needed
+
+- In an open Etude Studio, verify there is **no longer a collapsible `Tuning & key signature` section** below the score.
+- Enter the Key Signature Editor and verify accidentals, cents slider, numeric steps, tuning persistence and playback previews work unchanged.
+- Verify the `Practice settings` section is still present, with unaffected controls, and the normal Studio Score loads properly.
+- Static JavaScript syntax/source checks have been performed; browser/device QA was not performed.
