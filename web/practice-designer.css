@@ -35,3 +35,61 @@
 @media(max-width:560px){#app[data-page="studio"] .practice-add-row button{width:100%}#app[data-page="studio"] .practice-fields{grid-template-columns:1fr}#app[data-page="studio"] .practice-step{padding:11px}#app[data-page="studio"] .practice-step-actions button{min-height:40px}}
 
 @media print{#app[data-page="studio"] .studio-practice-host{display:none!important}}
+
+/* Goal-first Etude Studio composer: reuses Goosh theme tokens and native controls. */
+#app[data-page="studio"] .studio-compose {
+  margin-block: 14px 18px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+#app[data-page="studio"] .studio-compose-tabs {
+  display: flex;
+  width: fit-content;
+  gap: 6px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+}
+#app[data-page="studio"] .studio-compose-tab {
+  min-width: 102px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+}
+#app[data-page="studio"] .studio-compose-tab.active {
+  border-color: var(--accent);
+  background: var(--panel);
+  color: var(--accent);
+  box-shadow: var(--shadow);
+}
+#app[data-page="studio"] .studio-compose-ai[hidden]{ display: none; }
+#app[data-page="studio"] .studio-compose-description {
+  margin: 13px 0 10px;
+  color: var(--muted);
+  font-size: .9rem;
+}
+#app[data-page="studio"] .studio-compose-fields {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+}
+#app[data-page="studio"] .studio-compose-actions { display: flex;gap: 10px;flex-wrap: wrap;margin-top: 14px; }
+#app[data-page="studio"] .studio-compose-generate { min-width: 180px; }
+#app[data-page="studio"] .studio-compose-status { margin: 8px 0 0;font-size: .88rem;color: var(--muted); }
+#app[data-page="studio"] .studio-compose-status:empty { display: none; }
+#app[data-page="studio"] [data-tone="error"] { color: var(--ink);font-weight: 600; }
+#app[data-page="studio"] .studio-compose-footnote { margin: 9px 0 0;color: var(--muted);font-size: .8rem; }
+#app[data-page="studio"] .practice-step-index { min-width: 72px;font-size: .84rem; }
+@media (max-width: 560px){
+  #app[data-page="studio"] .studio-compose-fields { grid-template-columns: 1fr; }
+  #app[data-page="studio"] .studio-compose-tabs { width: 100%; }
+  #app[data-page="studio"] .studio-compose-tab { flex: 1;min-width: 0; }
+  #app[data-page="studio"] .studio-compose-generate { width: 100%; }
+}
+@media print {
+  #app[data-page="studio"] .studio-compose-host { display:none!important; }
+}
