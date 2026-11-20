@@ -525,6 +525,39 @@ function scoreSignatureIcon(){
   return svg
 }
 
+function studioFileIcon(type) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.8');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  const path = document.createElementNS(ns, 'path');
+  if (type === 'share') {
+    path.setAttribute('d', 'M12 16V3m0 0L7.5 7.5M12 3l4.5 4.5M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5');
+  } else {
+    path.setAttribute('d', 'M6 2h8l5 5v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm8 0v5h5');
+  }
+  svg.append(path);
+  if (type === 'pdf') {
+    const text = document.createElementNS(ns, 'text');
+    text.setAttribute('x', '12');
+    text.setAttribute('y', '17');
+    text.setAttribute('font-size', '7');
+    text.setAttribute('font-weight', '700');
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('stroke', 'none');
+    text.setAttribute('fill', 'currentColor');
+    text.textContent = 'PDF';
+    svg.append(text);
+  }
+  return svg;
+}
+
 function scoreToolIcon(mode) {
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
@@ -716,12 +749,17 @@ function resumeScorePlayback() {
 function studio() {
   const heading = el('h2', app, e.title || t('Untitled etude', 'اتود بدون نام'), 'print-title');
   const top = row(app);top.classList.add('project-actions');
-  const title = field(top, t('Etude', 'اتود'), e.title, v => {
-    e.title = v;
-    heading.textContent = v
-  });
-  title.placeholder = t('Untitled', 'بدون نام');
-  btn(top, t('Share file', 'اشتراک فایل'), async () => {
+  const title = el('input', top, undefined, 'etude-title-input');
+  title.type = 'text';
+  title.value = e.title;
+  title.placeholder = t('Untitled etude', 'اتود بدون نام');
+  title.setAttribute('aria-label', t('Etude title', 'عنوان اتود'));
+  title.onchange = () => {
+    e.title = title.value;
+    heading.textContent = title.value;
+    save();
+  };
+  const shareButton = btn(top, '', async () => {
     if (window.Capacitor?.getPlatform() === 'android') {
       try {
         await window.Capacitor.Plugins.EtudeFiles.share({
@@ -751,8 +789,11 @@ function studio() {
     a.download = f.name;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1500)
-  });
-  btn(top, 'PDF', async () => {
+  }, t('Share file', 'اشتراک فایل'));
+  shareButton.className = 'studio-file-action';
+  shareButton.setAttribute('aria-label', t('Share file', 'اشتراک فایل'));
+  shareButton.append(studioFileIcon('share'));
+  const pdfButton = btn(top, '', async () => {
     const prev = wrap;
     wrap = true;
     sheet();
@@ -769,7 +810,10 @@ function studio() {
     print();
     wrap = prev;
     sheet()
-  })
+  }, t('Export PDF', 'خروجی PDF'));
+  pdfButton.className = 'studio-file-action';
+  pdfButton.setAttribute('aria-label', t('Export PDF', 'خروجی PDF'));
+  pdfButton.append(studioFileIcon('pdf'));
   const panel = el('section', app);
 
   function toggle() {
@@ -1373,8 +1417,11 @@ function render() {
   }else if(!activeId){
     etudeList();
   }else{
-    btn(row(app),t('Back to list','بازگشت به فهرست'),()=>navigate(page));
-    if(page==='studio')studio();else practice();
+    if (page === 'studio') studio();
+    else {
+      btn(row(app), t('Back to list', 'بازگشت به فهرست'), () => navigate(page));
+      practice();
+    }
   }
 }
 $('#lang').onclick = () => {
