@@ -7,6 +7,7 @@ export const fresh = () => ({
   bpm: 90,
   notes: [],
   practiceSequence: [],
+  musicContext: null,
   marks: {
     '♭': -100,
     '♯': 100,
@@ -35,5 +36,12 @@ export function freq(e, m) {
 }
 export function valid(e) {
   const finite = (n, min, max) => Number.isFinite(n) && n >= min && n <= max;
-  return e?.version === 1 && typeof e.title === 'string' && finite(e.bpm, 20, 300) && Array.isArray(e.notes) && e.notes.every(n => Number.isInteger(n.m) && finite(n.m, 0, 127) && finite(n.at, 0, 1e7) && finite(n.d, .001, 1e5)) && [e.marks, e.key, e.offset].every(x => x && typeof x === 'object' && !Array.isArray(x)) && Object.values(e.marks).every(x => finite(x, -1200, 1200)) && Object.values(e.offset).every(x => finite(x, -1200, 1200)) && Object.values(e.key).every(x => Object.hasOwn(e.marks, x)) && validatePracticeSequence(e.practiceSequence) && e.rule && ['mic', 'text', 'piano'].includes(e.rule.mode) && ['listen', 'answer'].includes(e.rule.order) && ['off', 'first', 'each'].includes(e.rule.ref) && ['listen', 'answer', 'refTime'].every(k => finite(e.rule[k], .1, 120)) && finite(e.rule.count, 0, 30) && Number.isInteger(e.rule.repeat) && finite(e.rule.repeat, 1, 12) && Number.isInteger(e.rule.refMidi) && finite(e.rule.refMidi, 0, 127)
+  return e?.version === 1 && typeof e.title === 'string' && finite(e.bpm, 20, 300) && Array.isArray(e.notes) && e.notes.every(n => Number.isInteger(n.m) && finite(n.m, 0, 127) && finite(n.at, 0, 1e7) && finite(n.d, .001, 1e5)) && [e.marks, e.key, e.offset].every(x => x && typeof x === 'object' && !Array.isArray(x)) && Object.values(e.marks).every(x => finite(x, -1200, 1200)) && Object.values(e.offset).every(x => finite(x, -1200, 1200)) && Object.values(e.key).every(x => Object.hasOwn(e.marks, x)) && validatePracticeSequence(e.practiceSequence) &&
+    (e.musicContext == null ||
+      (e.musicContext && typeof e.musicContext === 'object' && !Array.isArray(e.musicContext) &&
+       ['iranian','western'].includes(e.musicContext.musicSystem) &&
+       (e.musicContext.musicSystem === 'iranian'
+         ? typeof e.musicContext.dastgah === 'string' && e.musicContext.dastgah.length <= 32
+         : typeof e.musicContext.scale === 'string' && e.musicContext.scale.length <= 32 &&
+           typeof e.musicContext.tonic === 'string' && e.musicContext.tonic.length <= 3))) && e.rule && ['mic', 'text', 'piano'].includes(e.rule.mode) && ['listen', 'answer'].includes(e.rule.order) && ['off', 'first', 'each'].includes(e.rule.ref) && ['listen', 'answer', 'refTime'].every(k => finite(e.rule[k], .1, 120)) && finite(e.rule.count, 0, 30) && Number.isInteger(e.rule.repeat) && finite(e.rule.repeat, 1, 12) && Number.isInteger(e.rule.refMidi) && finite(e.rule.refMidi, 0, 127)
 }
