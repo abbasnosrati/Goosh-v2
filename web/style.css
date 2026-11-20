@@ -428,6 +428,7 @@ details[open]>summary{margin-bottom:12px}
 #app[data-page="studio"] .score-heading {
   display: flex;
   align-items: center;
+  direction: ltr;
   gap: 14px;
   flex-wrap: wrap;
   margin: 20px 0 9px;
@@ -435,14 +436,20 @@ details[open]>summary{margin-bottom:12px}
 #app[data-page="studio"] .score-heading .score-title {
   margin: 0;
 }
+html[dir="rtl"] #app[data-page="studio"] .score-heading .score-title {
+  direction: rtl;
+}
 #app[data-page="studio"] .score-heading .signature-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  direction: ltr;
+  gap: 3px;
   flex: 0 0 auto;
-  width: 44px;
+  min-width: 60px;
   min-height: 44px;
-  padding: 8px;
+  padding: 7px 8px;
+  border-radius: 11px;
 }
 #app[data-page="studio"] .score-heading .signature-toggle.active {
   border-color: var(--accent);
@@ -552,10 +559,18 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score-actions .score-tool-button.active {
   border-color: var(--accent);
 }
-#app[data-page="studio"] .score-heading .signature-toggle svg {
+#app[data-page="studio"] .score-heading .signature-toggle .score-switch-symbol {
   width: 30px;
-  height: 23px;
+  height: 24px;
   flex-shrink: 0;
+}
+#app[data-page="studio"] .score-heading .signature-toggle .score-switch-arrows {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  opacity: .9;
 }
 #app[data-page="studio"] .score[data-tool="pen"],
 #app[data-page="studio"] .score[data-tool="pen"] svg,
