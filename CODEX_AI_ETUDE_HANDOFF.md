@@ -1359,3 +1359,114 @@ Normal Score view must show exactly one button with treble clef at the start and
 
 ### Manual checks still needed
 Open an etude in Studio, confirm the section title appears **between** the switch and the toolbar in both view modes and translations, with appropriate spacing and no duplicate title text in the button. Confirm score-only transport is hidden while editing key signature and returns in normal Score view. Validate mobile layout and printed PDF output. Static source syntax/structure were checked; no live browser or device QA was performed.
+
+
+---
+
+# Practice Sequence authoring in Etude Studio — feature branch (2026-11-20)
+
+**Branch:** `feature/practice-sequence-studio`, created from the exact `redesign` head `5734d4402329bd0a04a7cf56858c6d655a64accf`.
+
+## User-approved boundary and conceptual model
+
+The existing Goosh architecture has two primary sections. **Etude Studio** is where a teacher or AI composes an etude **and** designs one or more associated learning exercises. **Practice** is exclusively the learner-facing player. Do **not** move exercise authoring into Practice, split authoring into a separate standalone application, or assume the Practice player has already been upgraded to run the new multi-step format.
+
+The user requested: ten standard solfege/ear-training exercise goals, several independently configurable exercises per etude, sequential order, manual authoring plus OpenRouter assistance, reuse of the existing Goosh visual theme and stack, strict scope control, reusable components, a single source of truth, and preservation of unrelated code. This branch implements the **Studio authoring and persistence foundation**. It does not implement the future learner runtime.
+
+## Files added
+
+1. **`web/practice-goals.json`** — the sole canonical exercise-goal catalog, authored once and consumed in the frontend **and** Python server. It defines exactly ten IDs, bilingual labels/descriptions, category grouping, permitted response methods, defaults, content scopes, reference/feedback choices and concise music-generation guidance:
+   - `note-identification` — Note Identification.
+   - `pitch-matching` — Pitch Matching.
+   - `interval-training` — Interval Training.
+   - `melodic-imitation` — Melodic Imitation.
+   - `melodic-dictation` — Melodic Dictation.
+   - `sight-singing` — Sight-Singing.
+   - `rhythm-imitation` — Rhythm Imitation.
+   - `rhythmic-dictation` — Rhythmic Dictation.
+   - `scale-mode-recognition` — Scale & Mode Recognition.
+   - `chord-recognition` — Chord Recognition.
+   The four catalog categories are Pitch & Intervals, Melody & Sight-Singing, Rhythm, and Scales & Harmony. Do not clone this list into additional JS or Python dictionaries. Python loads the exact same JSON file from `WEB_ROOT`.
+
+2. **`web/src/practice-model.js`** — shared, UI-independent helpers:
+   - `practicePlan(etude)`: ensure `etude.practiceSequence` is an ordered array.
+   - `newPracticeStep(goal,catalog)`: create a fresh step with a unique ID and catalog-derived response/scope defaults.
+   - `validatePracticeStep(step,catalog?)`, `validatePracticeSequence(sequence,catalog?)`: check data shape, bounds and uniqueness; with catalog supplied, also enforce legal goal IDs and goal-specific response methods.
+   - `assessPracticeContent(etude,step)`: lightweight, non-destructive warnings on missing/insufficient content, invalid selected note indices and current polyphony limitation.
+   - `localized(item,fa)`: shared bilingual label helper.
+   Both `model.js` and the editor use these helpers rather than maintaining duplicate validation rules. In `model.js`, catalog-less structural validation is deliberately used because legacy etude loading is synchronous whereas the JSON catalog is loaded asynchronously in the Studio editor.
+
+3. **`web/src/studio-practice.js`** — reusable vanilla-JS Studio authoring UI: dynamically loads the catalog; shows the ten goals grouped in a select; adds/reorders/duplicates/deletes/enables steps; edits step title, goal, scope, selected 1-based note indices, group size, response, reference, feedback, answer time, attempts, tuner, pitch tolerance and wrong-answer policy. The editor uses existing native HTML form controls, `details` disclosure, existing app callbacks for saving, and retains expanded step/advanced/AI panels during rerenders. It never imports or calls the learner `practice()` function.
+   - AI subsection sends the chosen goal, short free-text teacher preference, and a bounded etude summary to `POST /api/design-practice`.
+   - It maps returned strict, validated settings into `newPracticeStep` and saves the resulting step to the **same** `practiceSequence` used by manual editing.
+   - It does not modify notes, piano, score, tuning, or navigation.
+   - Loading errors surface visibly rather than substituting a second catalog.
+
+4. **`web/practice-designer.css`** — scoped styles using existing `--accent`, `--panel`, `--bg`, `--ink`, `--line` variables, preserving the current project's light/dark identity and responsive behavior. The authoring UI is excluded from score printing. No CSS framework, UI kit or new package was added.
+
+## Existing files changed and exactly why
+
+5. **`web/src/model.js`** — imports `validatePracticeSequence`, initializes new etudes with `practiceSequence: []`, and validates the optional sequence. `version: 1`, old `rule` defaults, score-note representation, legacy `valid()` requirements, frequency behavior and the old Practice player remain unchanged. Legacy `.goosh` files with no `practiceSequence` still validate and can be opened. Files with a sequence serialize it automatically because existing import/export/localStorage already serialize the whole etude object.
+
+6. **`web/src/app.js`** — imports `renderStudioPractice` and mounts one `studio-practice-host` inside `studio()` just before the existing legacy `rules()` UI. The editor uses the existing `e`, `save()` and bilingual `fa` state. The old `rules()` and `practice()` code paths were not refactored or modified. The legacy rule UI remains intentionally present so there is no accidental regression in the existing player.
+
+7. **`web/index.html`** — adds a single stylesheet link for `practice-designer.css`. No other page layout or theme controls were changed.
+
+8. **`web/src/ai-etude.js`** — the existing `generateStudioEtude` request now includes the unique list of enabled `current.practiceSequence[].goal` IDs in `practiceGoals`, alongside the already existing `dastgah`. This means **teachers should choose practice goals first and then use Generate** if they want AI-composed musical material that targets those educational goals. Disabling a step removes it from the submitted educational objectives.
+
+9. **`scripts/goosh_server.py`** — reads the canonical catalog once at module load and uses it for both AI paths:
+   - Existing `POST /api/generate-etude` accepts optional `practiceGoals`, validates IDs/length, and appends catalog-derived educational constraints to the existing music-generation prompt, including the special Shur ABC path. It preserves the existing response contract and legacy call with no goals.
+   - New `POST /api/design-practice` accepts `{goal,instruction,etude:{title,bpm,noteCount,notes}}` and requests one goal-specific structured settings object from OpenRouter using `json_schema` with `strict: true`. The schema and enums derive from the same catalog. The server validates every returned field and legal numeric range before responding with `{settings}`, and prevents tuner=true on non-microphone response types. It does **not** alter the etude.
+   - `call_openrouter(payload)` is shared by both endpoints, preserving server-side API-key handling, timeout and error paths; no separate HTTP client was introduced.
+   - JSON request max was increased from 2048 to 32768 bytes to accommodate bounded note summaries. The new endpoint remains a local POC endpoint; before any public deployment add user authentication, request throttling, spend controls, service validation and abuse protection.
+
+## Current serialized example (illustrative, abbreviated)
+
+```json
+{
+  "version": 1,
+  "title": "Example",
+  "notes": [{"m": 69, "at": 0, "d": 1}],
+  "practiceSequence": [
+    {
+      "id": "a-unique-id",
+      "goal": "pitch-matching",
+      "enabled": true,
+      "title": "",
+      "content": {"scope": "each", "selectedIndices": [], "groupSize": 1},
+      "response": {"method": "mic"},
+      "reference": {"timing": "before", "repeat": 1},
+      "feedback": {"timing": "after", "revealCorrect": true},
+      "assessment": {"toleranceCents": 35, "responseSeconds": 8, "attempts": 1, "tuner": false},
+      "flow": {"onIncorrect": "next"}
+    }
+  ]
+}
+```
+
+The array order is the intended future learner sequence; exercises do **not** need duplicated score contents. `content.selectedIndices` is zero-based internally and displayed as one-based user input. The sequence may contain zero, one or many distinct steps, including multiple instances of the same goal with different settings.
+
+## What is NOT implemented (important)
+
+- **No new Practice player.** The existing learner-facing Practice route still reads the legacy `e.rule`, iterates individual notes and does **not** run `practiceSequence`. Implement a dedicated runtime in a *subsequent, explicitly authorized* task. Do not claim all ten exercise types are currently playable.
+- **No polyphonic harmony support.** Chord Recognition is a valid authoring goal in the catalog, but the current monophonic score/audio/AI parser cannot produce true chords. The Studio presents a warning. Future music-model work is required.
+- **No finished phrase model.** The new `phrases` scope is an intention; the current note data does not have stable phrase IDs or boundaries. Teachers and AI cannot yet author reliable phrase-granularity playback/evaluation.
+- **No full pedagogical correctness validator.** Structural JSON validation and simple content warnings are in place; verifying that a melody genuinely contains the requested characteristic intervals, modes, microtones, etc. requires future goal-specific validators.
+- **No general per-note microtonal redesign.** The existing `m/at/d`, `key`, `offset`, ABC parser and legacy pitch-class tuning limitations remain unchanged.
+- **No full AI dual-generation wizard.** AI can generate an etude guided by existing enabled goals and suggest *one new practice step* at a time, but there is not yet a single atomic AI transaction returning an etude plus multiple steps.
+- **AI calls need connectivity and a server configured with `OPENROUTER_API_KEY`.** An Android APK running as a local static Capacitor bundle has no guaranteed `/api/design-practice` backend. The manual Practice Designer works when its local JSON asset loads, but AI endpoints require a deployed/reachable backend. Do not suggest the APK has working AI calls merely because web Studio does.
+
+## Implementation details and follow-up for Codex
+
+- Keep this branch's scope limited to Studio practice authoring. Do not move or replace the current Etude Studio score, recording controls, key-signature editor, score transport, existing UI/color tokens, or Practice player unless explicitly requested.
+- To extend an exercise goal, update `web/practice-goals.json` **first**; the UI and server consume it. Update `practice-model.js` for any new schema property, then UI and eventual runner.
+- Preserve stable step IDs and step array order. Never use array position as identity; moving a step must not change its settings.
+- AI suggestions and manual edits must write exactly the same schema. All AI data must be validated server-side and client-side before saving.
+- Future Practice runtime must read `practiceSequence`, with explicit backward compatibility for existing `e.rule`. It should distinguish content selection, response capture, assessment, feedback and conditional flow; do not confuse the ten pedagogical goals with low-level events.
+- Before relying on deployed AI generate behavior, test the chosen OpenRouter model/provider's support for strict `json_schema`. The existing Shur fixed-composition prompt may conflict with some goals, especially chords; validation and explicit unsupported-goal handling will be necessary.
+- Existing local score music notation/ABC limitations remain as documented in prior handoff sections. Do not remove historical notes from this document.
+
+## Verification status / exact scope
+
+Implementation changes are committed to the feature branch, not `redesign` or `main`. Repository contents and changed files were inspected through the connected GitHub integration. The container runtime has no network access to GitHub and no live browser/app session was attached; therefore **no claim of successful end-to-end browser, Android, or OpenRouter execution is made**. Follow up with `node --check` on the changed ES modules, `python3 -m py_compile scripts/goosh_server.py`, local Studio manual save/reload/export/import validation, both themes and languages, and real OpenRouter responses. Confirm the original Practice page behavior remains unchanged.
+
