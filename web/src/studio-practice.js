@@ -1,5 +1,6 @@
 import { practicePlan, newPracticeStep, validatePracticeSequence,
   assessPracticeContent, localized } from './practice-model.js';
+import { confirmStudioAction, showStudioMessage } from './studio-dialog.js';
 
 let catalogPromise;
 export function loadPracticeCatalog() {
@@ -151,7 +152,7 @@ export async function renderStudioPractice(host, etude, options) {
     card.dataset.stepId=step.id;
     card.open=Boolean(options.expanded?.includes(step.id));
     const summary=create('summary',card);
-    create('span',summary,String(index+1).padStart(2,'0'),'practice-step-index');
+    create('span',summary,tr('Practice ','تمرین ')+(index+1).toLocaleString(fa?'fa':'en'),'practice-step-index');
     const identity=create('span',summary,undefined,'practice-step-identity');
     create('strong',identity,step.title||localized(def.label,fa));
     create('small',identity,localized(def.description,fa));
@@ -165,8 +166,22 @@ export async function renderStudioPractice(host, etude, options) {
     down.title=tr('Move down','انتقال به پایین');
     button(actions,tr('Duplicate','کپی'),()=>{const copy=JSON.parse(JSON.stringify(step));
       copy.id=newPracticeStep(step.goal,catalog).id;items.splice(index+1,0,copy);change();});
-    button(actions,tr('Delete','حذف'),()=>{if(!confirm(tr('Delete this exercise?','این تمرین حذف شود؟')))return;
-      items.splice(index,1);change();},'practice-delete');
+    button(actions,tr('Delete','حذف'),async()=>{
+      const approved=await confirmStudioAction({
+        title:tr('Delete this practice?','این تمرین حذف شود؟'),
+        description:tr('Only this practice and its settings will be removed. The etude notes will not change.',
+          'فقط همین تمرین و تنظیماتش حذف می‌شود. نت‌های اتود تغییر نمی‌کنند.'),
+        cancelLabel:tr('Cancel','انصراف'),
+        confirmLabel:tr('Delete practice','حذف تمرین'),
+        destructive:true
+      });
+      if(!approved || !section.isConnected)return;
+      const currentIndex=items.findIndex(item=>item.id===step.id);
+      if(currentIndex<0)return;
+      items.splice(currentIndex,1);change();
+    },'practice-delete');
+    const selectionMessage=create('p',card,undefined,'practice-warning');
+    selectionMessage.hidden=true;
     const form=create('div',card,undefined,'practice-fields');
     const update=(callback)=>{callback();change();};
     const titleLabel=create('label',form,undefined,'practice-field');
@@ -190,7 +205,10 @@ export async function renderStudioPractice(host, etude, options) {
       input.onchange=()=>{
         const nums=input.value.split(/[,،\s]+/).filter(Boolean).map(Number);
         if(nums.some(n=>!Number.isInteger(n)||n<1||n>etude.notes.length)){
-          alert(tr('Use note numbers within the etude.','شماره نت‌ها باید در محدوده اتود باشد.'));return;
+          selectionMessage.hidden=false;
+          showStudioMessage(selectionMessage,
+            tr('Use note numbers within the etude.','شماره نت‌ها باید در محدوده اتود باشد.'),'error');
+          return;
         }
         update(()=>{step.content.selectedIndices=[...new Set(nums.map(n=>n-1))];});
       };
