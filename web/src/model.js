@@ -160,6 +160,10 @@ export function meterTimeline(etude) {
       if(!segments)issues.push({kind:'unnotatable-rest',bar:bar.index});
       else for(const duration of segments){bar.rests.push({at:cursor,duration});cursor+=duration;}
     }
+    // A completely silent bar is conventionally notated by ONE full-bar
+    // rest, regardless of the numerator/denominator (e.g. 6/8 or 9/8).
+    if (!bar.notes.length)
+      bar.rests=[{at:bar.start,duration:meter.barTicks,wholeMeasure:true}];
     const byOnset=new Map();
     for(const note of bar.notes){
       if(!byOnset.has(note.at))byOnset.set(note.at,[]);
@@ -181,6 +185,7 @@ export function meterTimeline(etude) {
       ...bar.rests.map(piece=>({
         type:'rest',at:piece.at*meter.quarterSeconds/RHYTHM_TICKS_PER_QUARTER,
         duration:piece.duration*meter.quarterSeconds/RHYTHM_TICKS_PER_QUARTER,
+        wholeMeasure:Boolean(piece.wholeMeasure),
         barIndex:bar.index
       }))
     ].sort((a,b)=>a.at-b.at||(a.type==='notes'?-1:1));
