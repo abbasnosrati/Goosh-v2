@@ -19,8 +19,8 @@ import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=koron-align-a4-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { mountEtudeComposer } from './studio-etude-generation.js?v=goal-first-1'
-import { renderStudioPractice } from './studio-practice.js?v=goal-first-1'
+import { mountEtudeComposer } from './studio-etude-generation.js?v=practice-flow-2'
+import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=practice-flow-2'
 import { renderHome } from './home.js?v=clean-routes-1';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
 import {installAndroidBackNavigation} from './native-navigation.js';
@@ -1038,10 +1038,14 @@ function studio() {
   // canonical on this etude; generated exercises only store practice settings.
   const composeHost = el('div', panel, undefined, 'studio-compose-host');
   const composerTarget = e, composerId = activeId;
-  mountEtudeComposer(composeHost, {
+  let practiceHost = null;
+  const composer = mountEtudeComposer(composeHost, {
     etude: composerTarget, fa,
     isRecording: () => Boolean(rec),
     isCurrent: () => page === 'studio' && activeId === composerId && e === composerTarget,
+    onModeChange: locked => {
+      if (practiceHost) setStudioPracticeLocked(practiceHost, locked, fa);
+    },
     onGenerated: next => {
       stopScorePlayback();
       Object.assign(composerTarget, next);
@@ -1173,10 +1177,11 @@ function studio() {
 
   // Practice Sequence is authored here in Studio, not in the learner player.
   // The editor reads/writes the same e.practiceSequence used by AI and export.
-  const practiceHost=el('div',app,undefined,'studio-practice-host');
+  practiceHost=el('div',app,undefined,'studio-practice-host');
   const expanded = practiceToExpand ? [practiceToExpand] : [];
   practiceToExpand = null;
-  renderStudioPractice(practiceHost,e,{fa,save,expanded});
+  renderStudioPractice(practiceHost,e,{fa,save,expanded,
+    locked:composer.isPracticeLocked()});
   rules();
   sheet()
 }
