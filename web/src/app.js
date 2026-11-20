@@ -368,14 +368,9 @@ function renderSignatureControls(){
       appendPersianAccidental(button,option,{width:24,height:30})
     }
   }
-  // Focused in-place tuning panel inspired by a hardware tuner.
-  // Display absolute cents relative to the natural note, not a fabricated
-  // "recorded note" or cents offset relative to a different accidental.
-  const card=el('div',box,undefined,'signature-tuner-card')
-  const header=el('div',card,undefined,'signature-tuner-heading')
-  const headingCopy=el('div',header,undefined,'signature-tuner-heading-copy')
-  el('span',headingCopy,t('KEY SIGNATURE TUNING','تنظیم کوک سرکلید'),'signature-tuner-eyebrow')
-  el('h3',headingCopy,t('Tune ','کوک نت ')+label(selected.midi),'signature-tuner-title')
+  // Compact, unboxed tuning controls; selected pitch is already identified
+  // in the key-signature editor, so no duplicate headings are needed.
+  const card=el('div',box,undefined,'signature-tuner-inline')
 
   const readout=el('div',card,undefined,'signature-tuner-readout')
   const centsValue=el('strong',readout,undefined,'signature-tuner-value')
