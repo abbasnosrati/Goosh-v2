@@ -78,7 +78,8 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
     const nextGroup=rows.slice(rowIndex+1).flatMap(r=>r.items)
       .find(ev=>ev.type==='notes')
     if(nextGroup)return {
-      kind:'between',at:nextGroup.at,
+      kind:nextGroup===allGroups[0]?'before':'between',
+      at:nextGroup.at,
       x:rowGroups.length?Math.min(row.extent-8,rowGroups[rowGroups.length-1].x+22):row.extent-12
     }
     if(!rowGroups.length){
