@@ -618,3 +618,98 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score[data-view="signature"] svg {
   cursor:default;
 }
+
+/* Key-signature editing: no unrelated score-edit tools or tempo controls. */
+#app[data-page="studio"] .score-actions .score-tool-button[hidden],
+#app[data-page="studio"] .score-actions .score-wrap-button[hidden],
+#app[data-page="studio"] .score-actions .score-zoom-button[hidden],
+#app[data-page="studio"] .score-below-actions[hidden] {
+  display: none !important;
+}
+
+/* Reorganize only the existing key-signature controls, retaining theme tokens. */
+#app[data-page="studio"] .signature-editor-controls:not([hidden]) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px 20px;
+  padding: 18px;
+  margin-block: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--soft);
+}
+#app[data-page="studio"] .signature-editor-selected {
+  grid-column: 1 / -1;
+  font-size: 1rem;
+  font-weight: 700;
+}
+#app[data-page="studio"] .signature-editor-marks {
+  grid-column: 1 / -1;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+#app[data-page="studio"] .signature-editor-tuning {
+  display: grid;
+  grid-template-columns: auto minmax(90px, 1fr) 76px auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+}
+#app[data-page="studio"] .signature-tuning-slider {
+  width: 100%;
+  min-width: 90px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--accent);
+  cursor: ew-resize;
+  touch-action: pan-x;
+}
+#app[data-page="studio"] .signature-tuning-number {
+  width: 76px;
+  min-height: 40px;
+  padding: 7px 5px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+#app[data-page="studio"] .signature-editor-previews {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+#app[data-page="studio"] .signature-editor-previews .signature-editor-listen {
+  min-height: 42px;
+  padding: 8px 12px;
+  font-size: .86rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+#app[data-page="studio"] .signature-editor-tuned {
+  border-color: var(--accent);
+}
+@media (max-width: 760px) {
+  #app[data-page="studio"] .signature-editor-controls:not([hidden]) {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px;
+    gap: 12px;
+  }
+  #app[data-page="studio"] .signature-editor-selected,
+  #app[data-page="studio"] .signature-editor-marks,
+  #app[data-page="studio"] .signature-editor-tuning,
+  #app[data-page="studio"] .signature-editor-previews {
+    grid-column: 1;
+  }
+  #app[data-page="studio"] .signature-editor-tuning {
+    grid-template-columns: auto minmax(70px, 1fr) 70px auto;
+    gap: 6px;
+  }
+  #app[data-page="studio"] .signature-tuning-number {
+    width: 70px;
+  }
+}

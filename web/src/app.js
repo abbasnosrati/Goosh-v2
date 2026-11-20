@@ -16,7 +16,7 @@ import {
   score
 } from './score.js?v=key-sig-view-1'
 import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
-  from './key-signature.js?v=key-sig-view-1'
+  from './key-signature.js?v=key-sig-tuner-2'
 import { generateStudioEtude } from './ai-etude.js?v=khara-free-phrases-3'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),
@@ -29,6 +29,8 @@ let fa = localStorage.lang !== 'en',
   scoreTool = 'select',
   signatureMode = false,
   signaturePitch = 0,
+  signaturePreviewRelease = null,
+  signaturePreviewTime = -Infinity,
   zoom = 1,
   wrap = true,
   oct = 4,
@@ -313,6 +315,23 @@ function undoScoreEdit() {
 }
 
 // This editor writes into the existing global key/offset model used by freq().
+function stopSignaturePreview(){
+  if(signaturePreviewRelease){
+    try{signaturePreviewRelease(0)}catch{}
+    signaturePreviewRelease=null
+  }
+  signaturePreviewTime=-Infinity
+}
+
+function auditionSignature(hz,force=false){
+  const now=performance.now()
+  if(!force&&now-signaturePreviewTime<140)return
+  stopSignaturePreview()
+  signaturePreviewTime=now
+  signaturePreviewRelease=voice(hz)
+  signaturePreviewRelease(.55)
+}
+
 function renderSignatureControls(){
   const box=$('.signature-editor-controls')
   if(!box)return
@@ -322,12 +341,15 @@ function renderSignatureControls(){
   const selected=SIGNATURE_PITCHES.find(p=>p.pc===signaturePitch)
   if(!selected)return
   const pc=selected.pc,mark=e.key[pc]||''
+  const base=e.marks[mark]||0
+  const effective=base+(e.offset[pc]||0)
   el('strong',box,selected.name+' · '+t('Key signature','سرکلید'),
     'signature-editor-selected')
   const marks=el('div',box,undefined,'signature-editor-marks')
   for(const {mark:option,glyph,en,fa:ir} of SIGNATURE_MARKS){
     const button=btn(marks,glyph,()=>{
       if((e.key[pc]||'')===option&&!e.offset[pc])return
+      stopSignaturePreview()
       stopScorePlayback()
       if(option)e.key[pc]=option
       else delete e.key[pc]
@@ -341,37 +363,70 @@ function renderSignatureControls(){
     button.setAttribute('aria-pressed',String(option===mark))
     if(option==='کرن'||option==='سری')button.classList.add('signature-microtonal')
   }
-  const tune=el('label',box,undefined,'signature-editor-tuning')
-  el('span',tune,t('Tuning','کوک'))
-  const input=el('input',tune)
+  const tune=el('div',box,undefined,'signature-editor-tuning')
+  el('span',tune,t('Tuning','کوک'),'signature-tuning-label')
+  const slider=el('input',tune,undefined,'signature-tuning-slider')
+  slider.type='range'
+  slider.min=String(Math.max(-1200,Math.min(base-200,effective)))
+  slider.max=String(Math.min(1200,Math.max(base+200,effective)))
+  slider.step='1'
+  slider.value=String(effective)
+  slider.setAttribute('aria-label',t('Tune pitch in cents','تنظیم کوک نت با کشیدن'))
+  const input=el('input',tune,undefined,'signature-tuning-number')
   input.type='number'
+  input.required=true
   input.min='-1200'
   input.max='1200'
   input.step='1'
-  input.value=String((e.marks[mark]||0)+(e.offset[pc]||0))
+  input.value=String(effective)
   input.setAttribute('aria-label',t('Pitch tuning in cents','کوک نت برحسب سنت'))
   el('span',tune,'¢','signature-cent-unit')
-  input.onchange=()=>{
-    if(!input.reportValidity())return
-    const value=Number(input.value),base=e.marks[e.key[pc]]||0
-    const delta=value-base
-    if(!Number.isFinite(delta)||delta < -1200||delta > 1200){
-      input.setCustomValidity(t('Tuning is out of range.','کوک خارج از محدوده است.'))
-      input.reportValidity()
-      input.setCustomValidity('')
-      input.value=String(base+(e.offset[pc]||0))
-      return
-    }
+  const applyCents=value=>{
+    const delta=value-(e.marks[e.key[pc]]||0)
+    if(!Number.isFinite(value)||value < -1200||value > 1200||
+        delta < -1200||delta > 1200)return false
     stopScorePlayback()
     if(delta)e.offset[pc]=delta
     else delete e.offset[pc]
-    save()
-    sheet()
+    return true
   }
-  const listen=btn(box,'♪',()=>voice(freq(e,selected.midi))(1),
+  const hearTuned=()=>auditionSignature(freq(e,selected.midi),true)
+  slider.oninput=()=>{
+    const value=Number(slider.value)
+    if(!applyCents(value))return
+    input.value=String(value)
+    // Audition live at a bounded rate; each note is naturally short.
+    auditionSignature(freq(e,selected.midi))
+  }
+  slider.onchange=()=>{
+    if(!applyCents(Number(slider.value)))return
+    input.value=slider.value
+    save()
+    hearTuned()
+  }
+  input.onchange=()=>{
+    if(!input.value||!input.reportValidity()||!applyCents(Number(input.value))){
+      input.value=String((e.marks[e.key[pc]]||0)+(e.offset[pc]||0))
+      return
+    }
+    const value=Number(input.value)
+    slider.min=String(Math.max(-1200,Math.min(base-200,value)))
+    slider.max=String(Math.min(1200,Math.max(base+200,value)))
+    slider.value=String(value)
+    save()
+    hearTuned()
+  }
+  const previews=el('div',box,undefined,'signature-editor-previews')
+  const original=btn(previews,'♪ '+t('Original','صدای اصلی'),()=>{
+    // Natural reference: always unaltered equal-tempered selected note.
+    auditionSignature(440*2**((selected.midi-69)/12),true)
+  },t('Play original natural note','شنیدن صدای طبیعی نت'))
+  original.className='signature-editor-listen signature-editor-original'
+  original.setAttribute('aria-label',t('Play original natural note','شنیدن صدای طبیعی نت'))
+  const tuned=btn(previews,'♪ '+t('Tuned','صدای تنظیم‌شده'),hearTuned,
     t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
-  listen.className='signature-editor-listen'
-  listen.setAttribute('aria-label',t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
+  tuned.className='signature-editor-listen signature-editor-tuned'
+  tuned.setAttribute('aria-label',t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
 }
 
 function sheet() {
@@ -382,7 +437,7 @@ function sheet() {
     h.dataset.tool='select';
     h.style.removeProperty('--score-tool-cursor');
     drawKeySignatureEditor(h,e,{selectedPc:signaturePitch,
-      onSelect:pc=>{signaturePitch=pc;sheet()}});
+      onSelect:pc=>{stopSignaturePreview();signaturePitch=pc;sheet()}});
     renderSignatureControls();
     return;
   }
@@ -875,7 +930,9 @@ function studio() {
       refreshTake(take)
     }
   });
-  el('h2',panel,t('Score','خط حامل'),'score-title');
+  el('h2',panel,signatureMode
+    ? t('Key Signature Editor','تنظیم سرکلید')
+    : t('Score','خط حامل'),'score-title');
   const scoreActions = row(panel);
   scoreActions.classList.add('score-actions');
   for (const [mode, en, ir] of [
@@ -885,11 +942,13 @@ function studio() {
   ]) {
     const tool = btn(scoreActions, '', () => {
       if (scoreTool === mode && !signatureMode) return;
+      stopSignaturePreview();
       signatureMode=false;
       scoreTool = mode;
       render();
     }, t(en, ir));
     tool.className = 'score-tool-button';
+    tool.hidden = signatureMode;
     tool.dataset.scoreTool = mode;
     tool.setAttribute('aria-label', t(en, ir));
     tool.setAttribute('aria-pressed', String(!signatureMode && scoreTool === mode));
@@ -900,6 +959,7 @@ function studio() {
         ? t('Return to score', 'بازگشت به خط حامل')
         : t('Edit key signature', 'ویرایش سرکلید');
       const keyButton=btn(scoreActions,'',()=>{
+        stopSignaturePreview();
         if(!signatureMode){
           stopScorePlayback();
           signaturePitch=SIGNATURE_PITCHES.find(p=>e.key[p.pc])?.pc ?? 0;
@@ -921,6 +981,7 @@ function studio() {
     render();
   }, t('Wrap staff', 'چندخطی'));
   wrapButton.className = 'score-wrap-button';
+  wrapButton.hidden=signatureMode;
   wrapButton.classList.toggle('active', wrap);
   wrapButton.setAttribute('aria-label', t('Wrap staff', 'چندخطی'));
   wrapButton.setAttribute('aria-pressed', String(wrap));
@@ -934,6 +995,8 @@ function studio() {
     zoom = Math.min(3, zoom + .2);
     sheet();
   }, t('Zoom in', 'بزرگ‌نمایی')).classList.add('score-zoom-button');
+  if(signatureMode)
+    scoreActions.querySelectorAll('.score-zoom-button').forEach(button=>button.hidden=true);
 
   const transportActions = el('div', scoreActions, undefined, 'score-transport-actions');
   const playButton = btn(transportActions, '', () => {
@@ -1031,6 +1094,7 @@ function studio() {
   signatureControls.hidden=true;
   const scoreBelowActions = row(panel);
   scoreBelowActions.classList.add('score-below-actions');
+  scoreBelowActions.hidden=signatureMode;
 
   // Tempo remains a global time-scale edit; only numeric input is shown.
   const tempoControl = el('div', scoreBelowActions, undefined, 'score-tempo');
@@ -1127,6 +1191,7 @@ function rules() {
 }
 
 function cancel() {
+  stopSignaturePreview();
   stopScorePlayback();
   clearPlaybackMarker();
   if (session) {

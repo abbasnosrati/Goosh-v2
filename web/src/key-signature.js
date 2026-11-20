@@ -52,16 +52,17 @@ export function drawKeySignatureEditor(host,e,{selectedPc=0,onSelect}={}){
   SIGNATURE_PITCHES.forEach((pitch,i)=>{
     const x=pos(i),y=yFor(pitch.midi)
     const mark=e.key[pitch.pc]||''
-    const customNatural=!mark&&!!e.offset[pitch.pc]
-    const glyph=mark?signatureGlyph(mark):customNatural?'♮':'+'
-    draw('text',{
-      x,y:y+7,'font-size':mark||customNatural?27:18,
-      'text-anchor':'middle',fill:'currentColor',
-      opacity:mark||customNatural?1:.33,
-      'font-family':mark==='کرن'||mark==='سری'
-        ? '"Noto Music","Bravura","Segoe UI Symbol",serif':'inherit',
-      'pointer-events':'none'
-    },glyph)
+    // Unmarked staff positions must remain entirely blank; the existing
+    // transparent click targets still allow selecting an empty pitch.
+    if(mark||e.offset[pitch.pc]){
+      draw('text',{
+        x,y:y+7,'font-size':27,
+        'text-anchor':'middle',fill:'currentColor',
+        'font-family':mark==='کرن'||mark==='سری'
+          ? '"Noto Music","Bravura","Segoe UI Symbol",serif':'inherit',
+        'pointer-events':'none'
+      },mark?signatureGlyph(mark):'♮')
+    }
     draw('text',{
       x,y:143,'font-size':12,
       'font-weight':pitch.pc===selectedPc?700:400,

@@ -1,5 +1,37 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
+## 2026-11-20 — Focused key-signature UI improvements (requested revision)
+
+**User changed their mind about redesigning the key-signature staff:** The existing horizontal key-signature staff and seven C–B pitch positions must stay visually the same size and placement. Do not replace the staff with a centered/shortened version or add any unrequested features. The changes below apply **only while key-signature mode is active**.
+
+### Exact changes
+
+1. **Explicit mode heading:** Existing Studio score heading reads `Key Signature Editor / تنظیم سرکلید` while the key-signature toggle is active, and reverts to the original `Score / خط حامل` in ordinary note view. No extra/duplicate heading.
+2. **No phantom accidentals:** `web/src/key-signature.js` removes the faint plus placeholder from every unmarked natural pitch. Empty positions have no symbol at all; existing pitch-letter labels, staff, treble clef, selection highlight and transparent mouse/keyboard hit targets are unchanged. A custom-tuned natural continues to show a natural sign (♮) so its alteration is not silently hidden.
+3. **Real draggable tuning:** `web/src/app.js` adds a horizontal range slider beside the existing numeric cents field. The range focuses on fine adjustments around the currently selected sign (normally ±200 cents relative to that sign's default), and expands if a stored adjustment lies outside that span. The precise number field still supports the existing valid range. Sliding updates `e.offset[selectedPc]` **immediately**, keeping the same single source of truth for piano, score playback and all octaves. The numeric field stays synchronized; the final value saves to the same etude with `save()`. The selected sign's `e.marks` value is never globally modified.
+4. **Audible slider preview:** During slider movement, the app auditions the newly calculated `freq(e,selected.midi)` through the EXISTING piano `voice()`. Preview triggering is bounded to one retrigger about every 140ms; an older preview is released before the next to limit overlap/noise. A final preview plays on release. This is a series of short natural piano samples, NOT a synthesized continuous oscillator, altered sample envelope or sustain-pedal simulation. On pitch change, toggle exit and route cancellation the preview is released. Existing score playback is stopped on tuning changes to prevent stale scheduled notes.
+5. **Two comparison buttons:** The existing tuned-note preview remains but is visually labeled `Tuned / صدای تنظیم‌شده`. An adjacent `Original / صدای اصلی` button plays the same selected NATURAL note in 12-tone equal temperament, unaltered by e.key/e.offset, using `440 * 2 ** ((midi - 69) / 12)`. Thus A versus A-koron can be compared immediately. Both use the pre-existing piano engine and do not write data.
+6. **Contextual toolbar:** While in key-signature mode, hide Mouse/Select, Pen, Eraser, Wrap/multiline, Zoom +/− and the lower numeric Tempo container. Leave the key-signature toggle itself visible so the user can return to normal view. The other transport controls remain as they were because the user did not request changing them. When leaving the mode, the original toolbar and Tempo return with their existing values and behaviors. The UI uses `hidden` on those controls plus narrowly scoped CSS to override their pre-existing flex display.
+7. **Tidier panel:** CSS reorganizes just `.signature-editor-controls` into a compact bordered thematic panel using existing `--soft`, `--line`, `--accent` and existing light/dark colors. Mark buttons, slider, numeric cents and two preview buttons are arranged for desktop and wrap on mobile. The SVG staff layout is not resized or redesigned.
+
+### Files and non-goals
+
+- `web/src/app.js`: mode heading, visibility flags, slider and audition controls; changes limited to key-signature functionality.
+- `web/src/key-signature.js`: removes empty-position plus glyphs only.
+- `web/style.css`: narrowly scoped signature-only styles and hidden-control rules.
+- `web/index.html`: refreshes app and CSS cache query versions, as well as the signature module import in `web/src/app.js`.
+- `CODEX_AI_ETUDE_HANDOFF.md`: this required same-commit handoff. No edits to `audio.js`, `model.js`, `score.js`, AI generation, note timing, note glyphs, pencil/eraser logic, or other pages.
+
+### Test scope and cautions
+
+- Verify empty pitch has no + sign yet remains selectable; existing accidentals and glyph labels stay visible.
+- Verify dragging from A-koron -50¢ to -70¢ updates only `e.offset[9]`, updates the numeric display, and yields audible pitched previews; compare the unmodified A button and tuned A button at multiple slider settings.
+- Verify returning to normal mode restores every hidden tool and Tempo, without changing BPM.
+- Preview events are bounded to reduce overlapping piano attacks. It does not continuously pitch-bend a held sampled piano note; it replays updated short piano voices as the slider moves.
+- Source-level and mocked event tests, not actual on-device listening or visual QA, must be reported accurately.
+
+---
+
 ## 2026-11-20 — Key signature view and global per-pitch tuning
 
 **User request:** Add one toggle button immediately after the Mouse/Select score tool. In that view, replace the normal note-staff surface with an editable key signature staff where the user can place accidentals and tune each pitch. The effect must be global to the etude and piano.
