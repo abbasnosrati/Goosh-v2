@@ -117,7 +117,14 @@ export function mountEtudeComposer(host, {
     ? {musicSystem:'iranian',dastgah:state.styles.iranian}
     : {musicSystem:'western',scale:state.styles.western,tonic:state.tonic};
   function applySelectedSignature() {
-    if (!musicCatalog || !state.styles[state.musicSystem]) return;
+    if (!musicCatalog) return;
+    // Switching to a system without a chosen Dastgah/Scale/Mode must not
+    // leave the previous system's accidentals or cent offsets active.
+    // Preserve the unselected system in musicContext so it survives reloads.
+    if (!state.styles[state.musicSystem]) {
+      onSignatureChange?.({key:{}}, selectedContext());
+      return;
+    }
     // A preset selection updates the canonical score and playback immediately.
     // Initial data load does NOT overwrite previously custom-edited signatures.
     const signature = signatureForMusic(musicCatalog, selectedContext());
@@ -167,7 +174,7 @@ export function mountEtudeComposer(host, {
     content.hidden = state.mode !== 'ai';
     for (const [id, entry] of radios) {
       entry.radio.checked = state.musicSystem === id;
-      entry.radio.disabled = busy;
+      entry.radio.disabled = busy || !musicCatalog;
     }
     styleInput.disabled = busy || !musicCatalog;
     tonicInput.disabled = busy || !musicCatalog;
