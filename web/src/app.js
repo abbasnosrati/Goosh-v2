@@ -128,6 +128,54 @@ function stopKeys() {
   for (const f of [...held.values()]) f()
 }
 
+// The keyboard displays the same per-letter alterations already used for
+// sound by freq(e,m). Only natural-letter keys are altered by e.key; the
+// separate black-key MIDI pitches retain their existing spelling and sound.
+const pianoSyllables = {
+  en: ['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'],
+  fa: ['دو','دو♯','ر','ر♯','می','فا','فا♯','سل','سل♯','لا','لا♯','سی']
+};
+const pianoMarkNames = {'♭':'Flat','♯':'Sharp','کرن':'Koron','سری':'Sori'};
+function updatePianoKey(key, shortcut) {
+  const midi = Number(key.dataset.midi);
+  const pc = midi % 12;
+  const black = names[pc].includes('♯');
+  const mark = black ? '' : (e.key[pc] || '');
+  const hasTuning = !black && Boolean(mark || e.offset[pc]);
+  const hz = freq(e,midi).toFixed(2);
+  const octave = String(Math.floor(midi / 12) - 1);
+  key.replaceChildren();
+  if (mark) {
+    const note = el('span',key,undefined,'piano-key-note piano-key-altered');
+    el('span',note,names[pc],'piano-key-letter');
+    if (isPersianAccidental(mark)) {
+      const glyph = appendPersianAccidental(note,mark,{width:11,height:17});
+      glyph?.classList.add('piano-key-accidental');
+    } else {
+      el('span',note,mark,'piano-key-accidental');
+    }
+    el('span',note,octave,'piano-key-octave');
+  } else {
+    el('span',key,label(midi),'piano-key-note');
+  }
+  el('small',key,(fa?pianoSyllables.fa:pianoSyllables.en)[pc],'piano-key-syllable');
+  if (hasTuning) el('small',key,hz+' Hz','piano-key-frequency');
+  key.classList.toggle('piano-key-tuned',hasTuning);
+  const spoken = mark
+    ? names[pc]+' '+(fa ? mark : pianoMarkNames[mark] || mark)+' '+octave
+    : label(midi);
+  key.ariaLabel = spoken+' · '+hz+' Hz';
+  key.title = key.ariaLabel+(shortcut?' ('+shortcut+')':'');
+  delete key.dataset.shortcut;
+  if(shortcut)key.dataset.shortcut='Key'+shortcut;
+}
+function refreshPianoKeyLabels() {
+  for(const key of document.querySelectorAll('.board button[data-midi]')) {
+    const shortcut=key.dataset.shortcut?.replace(/^Key/,'');
+    updatePianoKey(key,shortcut);
+  }
+}
+
 function piano(parent, onStart) {
   const p = el('div', parent, undefined, 'instrument');
   const tools = row(p);
@@ -154,24 +202,17 @@ function piano(parent, onStart) {
     oct=value;
     for(const key of box.children){
       const shortcut=shortcuts[Number(key.dataset.midi)-(oct+1)*12];
-      delete key.dataset.shortcut;
-      key.title=key.ariaLabel+' · '+freq(e,Number(key.dataset.midi)).toFixed(1)+' Hz';
-      if(shortcut){key.dataset.shortcut='Key'+shortcut;key.title+=' ('+shortcut+')'}
+      updatePianoKey(key,shortcut);
     }
     viewport.scrollLeft=(12*(oct+1)-low)/12*7*box.clientWidth/whiteCount;
 
   }
   field(tools,t('Octave','اکتاو'),oct,jump,Array.from({length:whiteCount/7},(_,i)=>{const v=low/12-1+i;return [v,v.toLocaleString(fa?'fa':'en')]}));
   for(let m=low;m<=high;m++){
-    const black=names[m%12].includes('♯'), b=el('button',box,label(m));
+    const black=names[m%12].includes('♯'), b=el('button',box);
     b.dataset.midi=m;
-    const syllables=fa?['دو','دو♯','ر','ر♯','می','فا','فا♯','سل','سل♯','لا','لا♯','سی']:['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
-    el('small',b,syllables[m%12]);
-
     const shortcut=shortcuts[m-(oct+1)*12];
-    b.title = label(m) + (shortcut ? ' (' + shortcut + ')' : '');
-    if (shortcut) b.dataset.shortcut = 'Key' + shortcut;
-    b.ariaLabel = label(m);
+    updatePianoKey(b,shortcut);
     if (black) {
       b.className = 'black';
       b.style.left = ((white - .31) / whiteCount * 100) + '%'
@@ -438,6 +479,7 @@ function renderSignatureControls(){
   const updateReadout=value=>{
     centsValue.textContent=formatSigned(value)+' ¢'
     const hz=freq(e,selected.midi).toFixed(2)
+    refreshPianoKeyLabels();
     frequency.textContent=hz+' Hz'
     tunedLabel.textContent=selected.name+' · '+hz+' Hz'
     tuned.setAttribute('aria-label',t('Play tuned note','پخش نت کوک‌شده')+' '+selected.name+' · '+hz+' Hz')
@@ -509,6 +551,7 @@ function renderSignatureControls(){
 function sheet() {
   const h = $('.score');
   if (!h) return;
+  refreshPianoKeyLabels();
   if(signatureMode){
     h.dataset.view='signature';
     h.dataset.tool='select';
@@ -1075,15 +1118,7 @@ function studio() {
       applyMusicSignature(composerTarget, signature);
       composerTarget.musicContext = {...musicContext};
       save();
-      sheet(); // Repaint the staff and key-signature editor from e.key.
-      // Key down uses freq(e,m) live; refresh the tooltip's cached frequency too.
-      for (const pianoKey of document.querySelectorAll('.board button[data-midi]')) {
-        const midi = Number(pianoKey.dataset.midi);
-        const shortcut = pianoKey.dataset.shortcut?.replace(/^Key/,'');
-        pianoKey.title = (pianoKey.ariaLabel || label(midi)) + ' · ' +
-          freq(composerTarget,midi).toFixed(1) + ' Hz' +
-          (shortcut ? ' ('+shortcut+')' : '');
-      }
+      sheet(); // Repaint staff, signature editor and piano key symbols/Hz from e.key.
     },
     onGenerated: next => {
       stopScorePlayback();
