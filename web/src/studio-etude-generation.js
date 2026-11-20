@@ -16,6 +16,22 @@ const create = (tag, parent, text, className) => {
   return element;
 };
 
+// Western mode names are musical terms and stay in English in both UI
+// languages. Only the tonic NOTE NAMES are localized for Persian readers;
+// catalog IDs/spellings remain unchanged for tuning and generation.
+const persianTonicNames = Object.freeze({
+  C:'دو', D:'ر', E:'می', F:'فا', G:'سل', A:'لا', B:'سی'
+});
+export function tonicDisplayName(tonic, fa) {
+  if (!fa) return tonic.label;
+  return (tonic.spellings || [tonic.id]).map(spelling => {
+    const match = /^([A-G])([#b]?)$/.exec(spelling);
+    if (!match) return spelling;
+    return persianTonicNames[match[1]] +
+      (match[2]==='#' ? '♯' : match[2]==='b' ? '♭' : '');
+  }).join(' / ');
+}
+
 export function mountEtudeComposer(host, {
   etude, fa, isRecording, isCurrent, onGenerated, onModeChange, onSignatureChange,
   onToggleKeySignature, signatureIcon, returnSignatureIcon, signatureEditing = false
@@ -159,7 +175,8 @@ export function mountEtudeComposer(host, {
         : t('Select a scale or mode…','انتخاب گام یا مد…'));
     empty.value = '';
     for (const entry of system.styles) {
-      const option = create('option', styleInput, localized(entry.label, fa));
+      const option = create('option', styleInput,
+        state.musicSystem === 'western' ? entry.label.en : localized(entry.label, fa));
       option.value = entry.id;
     }
     if (!system.styles.some(entry => entry.id === state.styles[state.musicSystem]))
@@ -241,7 +258,7 @@ export function mountEtudeComposer(host, {
     }
     tonicInput.replaceChildren();
     for (const tonic of data.tonics) {
-      const option = create('option', tonicInput, tonic.label);
+      const option = create('option', tonicInput, tonicDisplayName(tonic, fa));
       option.value = tonic.id;
     }
     if (!data.tonics.some(tonic => tonic.id === state.tonic)) {
