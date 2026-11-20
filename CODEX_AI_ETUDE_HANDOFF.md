@@ -2059,3 +2059,8 @@ Isolated source-backed JavaScript checks performed:
 8. Check free mode, imported older files, key signatures/Koron/Sori, piano playback, score transport, editing and Undo on desktop/light/dark/mobile-sized viewports.
 
 **Do not** add a second e.notes collection, second meter renderer, per-mode audio engine, automatic silent retiming of existing music, or a disconnected AI/Practice rhythmic grid.
+
+
+### Late safety addition: prevent stale AI output across meter changes
+
+The AI composer now captures `{...selectedContext(),meter:etude.meter||'none'}` at the instant Generate is pressed. `generateStudioEtude` sends that immutable selected meter in the Python request; when a response arrives it verifies that the current Etude still has the same meter **before** calling the existing converter or overwriting any notes. If the teacher changed 4/4 to 3/4 while OpenRouter was still generating, the earlier answer is rejected with an explicit message instead of being silently applied to an incompatible measure grid. This is a guard within the **same** existing AI generation pipeline, not another engine.
