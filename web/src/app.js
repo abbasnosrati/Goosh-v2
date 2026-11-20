@@ -17,13 +17,13 @@ import {
 } from './audio.js?v=score-transport-1'
 import {
   score
-} from './score.js?v=score-pencil-placement-1'
+} from './score.js?v=meter-one-timeline-1'
 import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=koron-align-a4-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { mountEtudeComposer } from './studio-etude-generation.js?v=key-editor-navigation-1'
-import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=practice-flow-2'
+import { mountEtudeComposer } from './studio-etude-generation.js?v=meter-one-timeline-1'
+import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=meter-one-timeline-1'
 import { renderHome } from './home.js?v=clean-routes-1';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
 import {installAndroidBackNavigation} from './native-navigation.js';
