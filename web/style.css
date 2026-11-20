@@ -892,9 +892,9 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   fill: currentColor;
 }
 #app[data-page="studio"] .signature-tuner-actions .signature-editor-tuned {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--panel);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+  color: var(--ink);
 }
 @media (max-width: 700px) {
   #app[data-page="studio"] .signature-tuner-inline {

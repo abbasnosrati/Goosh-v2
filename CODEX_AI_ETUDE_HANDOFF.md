@@ -1,5 +1,19 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
+## 2026-11-20 — Soften only the tuned-preview button fill in Studio
+
+**User scope override:** The previous instruction to redesign all buttons across the entire project (except Enter Workspace and New Etude) was explicitly withdrawn. The latest request applies **only to the bright filled Tuned-preview button** shown in the key-signature tuning panel screenshot. Do not modify other buttons, global styling, landing/home, New Etude or Enter Workspace.
+
+**Before:** `web/style.css` scoped selector `#app[data-page="studio"] .signature-tuner-actions .signature-editor-tuned` used `background:var(--accent)`, `border-color:var(--accent)`, `color:var(--panel)`. This creates a fully saturated cyan/teal fill that the user dislikes in both light and dark themes.
+
+**After (CSS only):** In that EXACT existing selector, replace the three declarations with a subdued tinted fill `background:color-mix(in srgb,var(--accent) 12%,var(--panel))`, a restrained visible outline `border-color:color-mix(in srgb,var(--accent) 42%,var(--line))`, and readable theme text `color:var(--ink)`. The preview keeps its existing icon, note/frequency label, spacing, dimensions, click action, hover/active semantics, and layout. These theme tokens automatically adapt to both light (`--accent:#006e7a`) and dark (`--accent:#40eded`) without inventing separate app themes or changing any other design tokens.
+
+**Other changes:** `web/index.html` updates **only** the cache-busting `style.css?v=...` reference so the browser requests the revised CSS. This Codex note is included in the SAME commit. Do not change `web/src/app.js`, other styles/selectors, text, global button rules, component logic, tuning model, sample engine, or other pages.
+
+**Verification:** Confirm the selector still targets only `.signature-editor-tuned` within Studio, original preview still uses the unchanged style, and Home buttons remain unchanged. Static source checks verify the exact selector and the two theme tokens; final light/dark browser visual confirmation remains unperformed.
+
+---
+
 ## 2026-11-20 — Center the natural sign and try pitch-based preview-button labels
 
 **User scope:** Two *visual/wording* changes in the existing Studio Key Signature Editor only. First, the natural (bekar, ♮) symbol is not optically centered in its square selection button. Second, trial replacement of "Play original" with the selected natural note name + existing Play icon, and "Play tuned" with the selected note name, its **current** frequency in Hz, and the existing Play icon. The user explicitly reserves the option to revert if the experiment looks worse. No note staff, key tuning, audio or actual preview behavior was requested to change.
