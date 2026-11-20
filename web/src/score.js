@@ -66,11 +66,20 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
     const sigMidi={0:72,2:74,4:76,5:77,7:79,9:69,11:71}
     Object.entries(e.key).forEach(([pc,mark],i)=>{
       const x=40+17*i
-      const y=106-step(sigMidi[Number(pc)]??(60+Number(pc)))*4.5
+      const pitchStep=step(sigMidi[Number(pc)]??(60+Number(pc)))
       if(isPersianAccidental(mark)){
-        appendPersianAccidental(svg,mark,{x:x-10,y:y-19,width:20,height:27})
+        // Anchor the meaningful corner of each vector symbol to the
+        // actual staff pitch: Koron's triangle tip (y=46 in artwork),
+        // Sori's right-side vertex (y=98). The text baseline offset is
+        // for the original flat/sharp glyphs only.
+        const pitchY=104-pitchStep*4.5
+        const glyphTop=mark==='کرن'?6.5:13.4
+        appendPersianAccidental(svg,mark,{
+          x:x-9,y:pitchY-glyphTop,width:16,height:22
+        })
       } else {
-        // Flat/sharp/natural remain untouched as standard text glyphs.
+        // Keep the existing flat/sharp rendering and baseline untouched.
+        const y=106-pitchStep*4.5
         draw('text',{x,y,'font-size':17,fill:'currentColor'},mark)
       }
     })
@@ -130,7 +139,11 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
       const accidental=n.staffAccidental||
         ([1,3,6,8,10].includes(n.m%12)?'♯':'')
       if(isPersianAccidental(accidental)){
-        appendPersianAccidental(svg,accidental,{x:x-27,y:y-16,width:19,height:27})
+        // Explicit note accidentals must target this note's Y as well.
+        const glyphTop=accidental==='کرن'?6.5:13.4
+        appendPersianAccidental(svg,accidental,{
+          x:x-24,y:y-glyphTop,width:16,height:22
+        })
       }else if(accidental){
         draw('text',{x:x-17,y:y+4,'font-size':16,fill:'currentColor'},accidental)
       }

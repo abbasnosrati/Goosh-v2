@@ -1,6 +1,10 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
-## 2026-11-20 — Studio editor-switch button first, with actual G-clef icon
+## 2026-11-20 — Correct Persian accidental sizes in mark buttons and actual pitch position in regular score
+
+**User's screenshots and scope:** The Koron rendered in the dedicated key-signature editor was already approved: **do not touch it**. In the row of mark-choice buttons, Koron and Sori were disproportionately large compared with the existing ♭/♯ buttons; in the **regular etude score staff** the Koron was oversized and its triangle pointed near **C5** when the configured mark was actually **A4**. Correct only visual SVG sizing and positioning, keeping the existing meaning, data, piano, frequency, staff interaction and approved editor layout unchanged.
+
+### 2026-11-20 — Studio editor-switch button first, with actual G-clef icon
 
 **Request:** Two narrowly scoped UI changes to the Studio Score toolbar: (1) place the existing toggle that switches between the normal note score and the key-signature editor at the very beginning, ahead of Mouse/Select; (2) replace the toggle's former multi-line staff/sharp/note illustration with the actual treble-clef symbol (𝄞). No new toggle or mode, and no transport or tuning changes.
 

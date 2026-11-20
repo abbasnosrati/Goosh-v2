@@ -14,7 +14,7 @@ import {
 } from './audio.js?v=score-transport-1'
 import {
   score
-} from './score.js?v=persian-marks-1'
+} from './score.js?v=staff-persian-align-1'
 import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=koron-align-a4-1'
 import {isPersianAccidental, appendPersianAccidental}
@@ -365,7 +365,8 @@ function renderSignatureControls(){
     button.setAttribute('aria-pressed',String(option===mark))
     if(isPersianAccidental(option)){
       button.classList.add('signature-microtonal')
-      appendPersianAccidental(button,option,{width:24,height:30})
+      // Match the optical height of the unchanged flat/sharp symbols.
+      appendPersianAccidental(button,option,{width:18,height:22})
     }
   }
   // Compact, unboxed tuning controls; selected pitch is already identified
