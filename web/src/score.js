@@ -145,36 +145,27 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
     if([1,3,6,8,10].includes(midi%12))midi--
     return midi
   }
-  // The SELECT tool can move the existing note object, not produce a second
-  // notation/audio timeline. Other notes keep their original start times.
-  // In measured mode the same 1/32-note grid as piano recording is used.
+  // SELECT dragging uses discrete notation slots, never continuous time.
+  // Hovering in the original slot remains a no-op; crossing the midpoint
+  // to a different note/rest slot makes a deliberate horizontal move.
+  // The shared model decides whether that slot means a swap, Free reorder
+  // or an inter-measure transfer, before ANY change is saved.
   const dragMarkers = []
-  const dragStep=measured?second/8:null
-  function dragOnset(rowIndex,x,source){
+  function dragSlot(rowIndex,x,sourceIndex){
     const row=rows[rowIndex]
-    const notes=row.items.filter(ev=>ev.type==='notes')
-    const near=notes.reduce((best,ev)=>
-      !best||Math.abs(ev.x-x)<Math.abs(best.x-x)?ev:best,null)
-    if(near&&Math.abs(near.x-x)<=CHORD_ZONE)
-      return {at:near.at,x:near.x}
-    const anchors=row.items.filter(ev=>Number.isFinite(ev.at))
-    const left=[...anchors].reverse().find(ev=>ev.x<=x)
-    const right=anchors.find(ev=>ev.x>x)
-    let at
-    if(left&&right){
-      const fraction=(x-left.x)/(right.x-left.x)
-      at=left.at+fraction*(right.at-left.at)
-    }else if(left){
-      at=left.at+(x-left.x)*second/Math.max(28,left.span)
-    }else if(right){
-      at=right.at-(right.x-x)*second/Math.max(28,right.span)
-    }else at=source.at
-    if(dragStep)at=Math.round(at/dragStep)*dragStep
-    else at=Math.round(at*1000)/1000
-    // Never silently relocate an overhanging note to the last valid slot:
-    // measuredEditAllowed() will reject out-of-range drops explicitly.
-    // The existing note model still bounds all absolute times to 1e7.
-    return {at:Math.min(1e7,Math.max(0,at)),x}
+    const slots=row.items.filter(item=>
+      item.type==='notes'||(measured&&item.type==='rest'))
+    if(!slots.length)return null
+    const nearest=slots.reduce((best,item)=>
+      !best||Math.abs(item.x-x)<Math.abs(best.x-x)?item:best,null)
+    const same=nearest.type==='notes'&&nearest.entries.some(
+      entry=>entry.index===sourceIndex)
+    return {
+      type:nearest.type==='notes'?'note':'rest',
+      at:same?e.notes[sourceIndex].at:nearest.at,
+      barIndex:measured?nearest.barIndex:null,
+      x:nearest.x
+    }
   }
   function dragDestination(ev,source){
     let nearest=null
@@ -193,9 +184,12 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
     const {index,rect,x}=nearest
     const y=(ev.clientY-rect.top)*(165/rect.height)
     const m=pitchFromY(y)
-    const timing=dragOnset(index,x,source)
-    return {rowIndex:index,m,at:timing.at,
-      x:Math.max(12,Math.min(nearest.row.width-12,timing.x)),
+    const slot=dragSlot(index,x,e.notes.indexOf(source))
+    if(!slot)return null
+    return {rowIndex:index,m,slot:{
+        type:slot.type,at:slot.at,barIndex:slot.barIndex
+      },
+      x:Math.max(12,Math.min(nearest.row.width-12,slot.x)),
       y:104-step(m)*4.5}
   }
   function showDragPreview(destination){
@@ -397,7 +391,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
           if(dragged){
             const target=dragDestination(ev,e.notes[index])
             showDragPreview(null)
-            if(target)move(index,{m:target.m,at:target.at})
+            if(target)move(index,{m:target.m,slot:target.slot})
           }else pick?.(index,ev.shiftKey||ev.ctrlKey||ev.metaKey)
           ev.stopPropagation()
         }
