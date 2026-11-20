@@ -1,10 +1,5 @@
 // Versioned practice plan helpers. Never import app.js: these run independently in
 // the Studio UI, local persistence, and import/export validation.
-const METHODS = new Set(['choice','text','staff','mic','piano','tap']);
-const SCOPES = new Set(['each','pairs','phrases','whole','selected']);
-const REFS = new Set(['none','start','before','after']);
-const FEEDBACK = new Set(['after','end','none']);
-const RETRIES = new Set(['next','once','until']);
 const uid = () => globalThis.crypto?.randomUUID?.() ??
   'step-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
 const numeric = (value, min, max) => Number.isFinite(value) && value >= min && value <= max;
@@ -33,22 +28,32 @@ export function validatePracticeStep(step, catalog = null) {
     typeof step.enabled !== 'boolean') return false;
   const goal = catalog?.goals.find(item => item.id === step.goal);
   if (catalog && !goal) return false;
-  if (!step.content || !SCOPES.has(step.content.scope) ||
+  if (!step.content || typeof step.content.scope !== 'string' ||
+    step.content.scope.length > 40 ||
+    (catalog && !Object.hasOwn(catalog.scopes, step.content.scope)) ||
     !Array.isArray(step.content.selectedIndices) ||
     step.content.selectedIndices.length > 4096 ||
     !step.content.selectedIndices.every(x => Number.isInteger(x) && x >= 0 && x < 100000) ||
     !Number.isInteger(step.content.groupSize) || !numeric(step.content.groupSize, 1, 64)) return false;
-  if (!step.response || !METHODS.has(step.response.method) ||
+  if (!step.response || typeof step.response.method !== 'string' ||
+    step.response.method.length > 40 ||
+    (catalog && !Object.hasOwn(catalog.responses, step.response.method)) ||
     (goal && !goal.responses.includes(step.response.method))) return false;
-  if (!step.reference || !REFS.has(step.reference.timing) ||
+  if (!step.reference || typeof step.reference.timing !== 'string' ||
+    step.reference.timing.length > 40 ||
+    (catalog && !Object.hasOwn(catalog.referenceTimings, step.reference.timing)) ||
     !Number.isInteger(step.reference.repeat) || !numeric(step.reference.repeat, 1, 12)) return false;
-  if (!step.feedback || !FEEDBACK.has(step.feedback.timing) ||
+  if (!step.feedback || typeof step.feedback.timing !== 'string' ||
+    step.feedback.timing.length > 40 ||
+    (catalog && !Object.hasOwn(catalog.feedbackTimings, step.feedback.timing)) ||
     typeof step.feedback.revealCorrect !== 'boolean') return false;
   if (!step.assessment || !numeric(step.assessment.toleranceCents, 1, 200) ||
     !numeric(step.assessment.responseSeconds, 1, 120) ||
     !Number.isInteger(step.assessment.attempts) || !numeric(step.assessment.attempts, 1, 12) ||
     typeof step.assessment.tuner !== 'boolean') return false;
-  if (!step.flow || !RETRIES.has(step.flow.onIncorrect)) return false;
+  if (!step.flow || typeof step.flow.onIncorrect !== 'string' ||
+    step.flow.onIncorrect.length > 40 ||
+    (catalog && !Object.hasOwn(catalog.retryPolicies, step.flow.onIncorrect))) return false;
   return true;
 }
 export function validatePracticeSequence(value, catalog = null) {
