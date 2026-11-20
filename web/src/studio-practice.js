@@ -1,6 +1,7 @@
 import { practicePlan, newPracticeStep, validatePracticeSequence,
   assessPracticeContent, localized } from './practice-model.js';
 import { confirmStudioAction, showStudioMessage } from './studio-dialog.js';
+import {meterTimeline} from './model.js';
 
 let catalogPromise;
 export function loadPracticeCatalog() {
@@ -200,7 +201,9 @@ export async function renderStudioPractice(host, etude, options) {
           signal:controller.signal,
           body:JSON.stringify({
             goal,instruction:prompt.value,
-            etude:{title:etude.title,bpm:etude.bpm,noteCount:etude.notes.length,
+            etude:{title:etude.title,bpm:etude.bpm,meter:etude.meter||'none',
+              measureCount:meterTimeline(etude).bars.length,
+              noteCount:etude.notes.length,
               notes:etude.notes.slice(0,128).map(n=>({m:n.m,at:n.at,d:n.d}))}
           })
         });
