@@ -31,25 +31,21 @@ STRICT RULES:
 2. Output ONLY valid ABC notation inside a code block.
    Do not include explanations or additional text.
 
-3. Use microtonal ABC syntax where needed:
-   <BT>_<BT> for flat,
-   <BT>^<BT> for sharp,
-   <BT>_/<BT> for Koron (quarter-flat),
-   <BT>^/<BT> for Sori (quarter-sharp).
+3. Use microtonal ABC syntax directly before the note letter (no extra symbols):
+   - `_` for flat (e.g., `_B`)
+   - `^` for sharp (e.g., `^F`)
+   - `_/` for Koron (quarter-flat, e.g., `_/E`)
+   - `^/` for Sori (quarter-sharp, e.g., `^/F`)
 
 4. The target key signature is K:C _B _E _/A.
-
    Therefore:
    - Plain A represents A Koron (Ak4).
    - Plain B represents B Flat (Bb4).
    - Plain E represents E Flat (Eb4).
    - Explicit _/E represents E Koron (Ek4).
+   Use the key signature consistently and alternate Eb4 and Ek4 where musically appropriate.
 
-   Use the key signature consistently.
-   Alternate Eb4 and Ek4 where musically appropriate.
-
-5. Your original output MUST include these ABC headers:
-
+5. Your original output MUST include these exact ABC headers:
    X:1
    T:<original etude title>
    M:none
@@ -57,24 +53,14 @@ STRICT RULES:
    Q:1/4=60
    K:C _B _E _/A
 
-   Write between 4 and 20 expressive phrases separated by barlines.
-   The phrases may have different durations.
-
-   Under M:none, barlines represent expressive phrase divisions,
-   not fixed-length measures.
-
-   Use rests, sustained notes, and varied note durations naturally.
-
-6. Study the reference sample only for its melodic contour,
-   phrasing, pauses, and rhythmic expression.
-
-   Compose an ORIGINAL etude, not a transcription.
-
-   Interpret unaltered A, B, and E notes according to
-   the target key signature.
+6. HARD LENGTH LIMIT — EXACTLY 8 PHRASES (CRITICAL):
+   - Write EXACTLY 8 expressive phrases in the music body, placing EACH phrase on its own separate line (`\n`).
+   - Number each line at the end using ABC comments (`% Phrase 1` through `% Phrase 8`).
+   - STOP composing immediately after `% Phrase 8` and close with `|]`.
+   - Do NOT use internal barlines (`|`); only use `|]` at the very end of Phrase 8.
+   - Under M:none, each line represents an expressive vocal phrase of varying length (typically 4 to 9 notes).
 
 7. Keep every played pitch between C4 and C5 inclusive.
-
    In ABC notation:
    - Uppercase C through B represent octave 4.
    - Lowercase c represents C5.
@@ -82,8 +68,7 @@ STRICT RULES:
    - G4 means pitch G4 lasting four units of L:1/16.
    - Use lowercase c for pitch C5.
 
-8. Respect the melodic identity of Daramad-e Khara.
-
+8. Respect the melodic identity of Daramad-e Khara:
    - Begin around G4 as the melodic anchor.
    - Use F4-G4 lower-neighbor movements.
    - Explore the lower tetrachord down to C4.
@@ -92,33 +77,38 @@ STRICT RULES:
    - Treat Ak4 as a secondary resting point.
    - Resolve naturally and clearly to G4.
 
-9. Difficulty must remain intermediate.
+9. Difficulty must remain intermediate:
+   - Use expressive rhythmic variation, melodic development, and tasteful ornamentation without excessive complexity.
 
-   Use expressive rhythmic variation, melodic development,
-   and tasteful ornamentation without excessive complexity.
-
-10. Preserve the musical character of a free-meter Persian avaz.
-
-    Do not impose uniform 4/4 phrasing.
-    Do not make every phrase the same length.
-    Do not mechanically repeat the reference motif.
+10. Preserve the musical character of a free-meter Persian avaz:
+    - Do not impose uniform 4/4 phrasing.
+    - Do not make every phrase the same length.
+    - Do not mechanically repeat the reference motif.
 
 11. Make shahed and ist audible through sustained note values and breath:
-    - Introduce G4 as the principal shahed with a meaningful held
-      duration after a short F4-G4 pickup, then revisit it with variation.
-    - Let A Koron be a genuine secondary resting point with a pause;
-      do not force every internal phrase to finish on G4.
-    - Contrast light ornaments (short 1 or 2-unit notes) with selected
-      4, 6, 8 or 12-unit notes on musically structural pitches.
-      Include pauses such as z2 and z4 between ideas.
-    - Avoid chains of equal-length notes, formulaic repeated contours
-      and merely ascending/descending scales.
+    - Introduce G4 as the principal shahed with a meaningful held duration after a short F4-G4 pickup, then revisit it with variation.
+    - Let A Koron be a genuine secondary resting point with a pause; do not force every internal phrase to finish on G4.
+    - Contrast light ornaments (short 1 or 2-unit notes) with selected 4, 6, 8 or 12-unit notes on musically structural pitches. Include pauses such as z2 and z4 between ideas.
+    - Avoid chains of equal-length notes, formulaic repeated contours and merely ascending/descending scales.
     - Shape an opening, development, high point and natural answer.
-    - Let the final G4 ist be a sustained resolution (G8 or G12
-      when suitable), not a fleeting passing tone.
-    - These values are examples, not a fixed beat grid or mandated
-      sequence. Preserve irregular free-meter phrasing.
+    - Let the final G4 ist be a sustained resolution (G8 or G12 when suitable), not a fleeting passing tone.
+    - These values are examples, not a fixed beat grid or mandated sequence. Preserve irregular free-meter phrasing.
 
+REFERENCE SAMPLE (EXACTLY 8 PHRASES — FOLLOW THIS LINE FORMAT):
+X:1
+T:Daramad-e Khara - Reference
+M:none
+L:1/16
+Q:1/4=60
+K:C _B _E _/A
+G4 F G4 % Phrase 1
+F G _/E F D2 % Phrase 2
+z _/E D E F D _/E C2 z4 % Phrase 3
+C D _/E F G4 % Phrase 4
+F G A B4 A2 G8 % Phrase 5
+A4 % Phrase 6
+F G4 % Phrase 7
+F G4 G8 |] % Phrase 8
 
 GUSHEH CONSTRAINTS & SETTINGS (JSON):
 
