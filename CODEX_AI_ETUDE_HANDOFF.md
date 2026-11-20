@@ -1,0 +1,381 @@
+# Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
+
+**Repository:** abbasnosrati/Goosh-v2  
+**Target branch:** redesign  
+**Document date:** 2026-11-20  
+**Implementation commits on redesign:** ee1a13ed562339376f3bbdd84be7eca39f7d9069 and bd6db51986d42f6738dc1086176333105db86103  
+**Original isolated proof-of-concept branch:** feat/ai-persian-etude-poc  
+**Status:** Implemented and committed on GitHub; end-to-end generation using the user's actual OpenRouter key has **not** been verified.
+
+> **Read this before modifying the feature.** This document describes what was actually implemented, why the integration works the way it does, what remains unverified, and the strict scope of the user's request. It is a technical handoff, not permission to refactor unrelated code.
+
+## 1. User requirement and non-negotiable scope
+
+The user wanted an AI-assisted generator for simple Persian-dastgah-inspired etudes, specifically:
+
+1. A **Generate** button in the **existing Etude Studio editor**, not a separate test screen.
+2. Generate a short example of 4 bars (16 notes in this POC), with a choice of Shur, Segah, Mahur, or Homayun.
+3. Send a request to **OpenRouter** using a secret API key stored server-side in a local environment file.
+4. Convert the returned notes into the **existing Goosh etude model**; display them using the **existing staff** and play them using the **existing piano/audio engine**.
+5. Keep the existing Studio editor, staff, sound code, data model, and unrelated UX unchanged.
+6. Move the feature from the experimental POC branch to the existing **redesign** branch without merging all POC files or overwriting the redesign layout.
+7. Use **Python**, not Express or another Node.js service. **One running Python HTTP process** must serve both the web files and the AI endpoint.
+8. Retain the user's prior ability to run on **port 8081** with **--bind 0.0.0.0** when explicitly needed.
+
+**Do not** introduce Express, FastAPI, Flask, a second API service, an additional port, a new music rendering system, or an unrelated design overhaul without a new explicit user instruction. A server-side request handler is still necessary to protect the OpenRouter key; it is incorporated into the same Python process that serves Goosh.
+
+## 2. Short architecture overview
+
+~~~text
+Browser (Goosh, same origin: http://localhost:8081)
+  |
+  | User opens Etude Studio -> creates/opens an etude -> Generate
+  v
+web/src/app.js
+  - Render desktop-only Generate button in studio()
+  - Modal selects dastgah
+  - Confirm before replacing existing notes
+  - Loading / failure / cancellation UI
+  |
+  v
+web/src/ai-etude.js
+  - POST /api/generate-etude (same origin)
+  - Validate and convert response to Goosh model
+  - Check expected frequencies against model.js
+  |
+  v
+scripts/goosh_server.py (same Python HTTP process and port)
+  - Serve unchanged files from web/
+  - Handle POST /api/generate-etude
+  - Read OPENROUTER_API_KEY from .env
+  - Call OpenRouter securely using urllib.request
+  - Normalize pitch/rhythm and return structured JSON
+  |
+  v
+Back in app.js
+  - Assign validated result to the active etude
+  - Save with existing localStorage persistence
+  - Render with the existing score.js + audio.js
+~~~
+
+There is **no independent Express backend**, no extra Node-based server, and no cross-origin request for normal use. The endpoint path is relative; it uses the port on which the Goosh page was opened.
+
+## 3. Exact files added or modified on redesign
+
+| Path | Action | Responsibility |
+| --- | --- | --- |
+| scripts/goosh_server.py | Added | Python static server + local OpenRouter API; env loader; mode presets; output validation/normalization; CLI port/bind. |
+| web/src/ai-etude.js | Added | Frontend request helper and strict conversion of AI notes to the existing Goosh etude format. |
+| web/src/app.js | Modified, focused addition | Imports the adapter; adds Generate button and dialog inside the existing studio() function; saves/re-renders successful results. |
+| web/index.html | Modified, single import version update | Changes the app.js import query from redesign-3 to redesign-ai-generate-1 to avoid using a cached old module. |
+| package.json | Modified, web script only | Replaces the original static-only Python command with python3 scripts/goosh_server.py. |
+| .env.example | Added | Documents the OpenRouter API key, selected model, and default port. |
+| .gitignore | Added | Excludes real .env files and Python cache files from Git. |
+| scripts/AI_ETUDE_README.md | Added | Short operational README, including port 8081 and LAN binding instructions. |
+
+**Not modified by this work on redesign:** web/src/score.js, web/src/audio.js, web/src/model.js, web/src/home.js, web/style.css, web/home.css, web/etudes.css, native/mobile code, and the main branch.
+
+The experimental branch had a standalone Node-based server and a separate ABC.js test page. **Those POC files were intentionally not migrated** into redesign. Instead, the API functionality was reimplemented in scripts/goosh_server.py and the new frontend adapter was adapted for a relative, same-origin URL.
+
+## 4. Starting the application
+
+### Recommended local-only start
+
+From the repository root:
+
+~~~bash
+git switch redesign
+git pull --ff-only origin redesign
+cp .env.example .env
+# Edit .env and put the real OpenRouter key there.
+npm run web
+~~~
+
+The package.json web script is now:
+
+~~~text
+python3 scripts/goosh_server.py
+~~~
+
+By default, this starts **127.0.0.1:8080**. Open http://localhost:8080.
+
+### Original user's port/bind preference
+
+Previously the user started the static server with:
+
+~~~bash
+python3 -m http.server 8081 --bind 0.0.0.0 -d web
+~~~
+
+That old command can serve HTML/JS/CSS but **cannot handle POST /api/generate-etude**. The compatible new one-process command is:
+
+~~~bash
+python3 scripts/goosh_server.py 8081 --bind 0.0.0.0
+~~~
+
+Open http://localhost:8081 on the same machine, or the machine's LAN IP from another device if the network permits it.
+
+For local-only use on port 8081, prefer:
+
+~~~bash
+python3 scripts/goosh_server.py 8081
+~~~
+
+The script uses Python's standard library (http.server, urllib.request, json, pathlib, etc.). No pip install, Express server, or second command is required. Python 3.9+ is the documented target.
+
+### Environment configuration
+
+The committed .env.example contains:
+
+~~~dotenv
+OPENROUTER_API_KEY=replace_with_your_key
+OPENROUTER_MODEL=openai/gpt-4o-mini
+GOOSH_PORT=8080
+~~~
+
+The real .env should be kept in the repository root; never commit or display the secret. scripts/goosh_server.py calls load_environment() at startup. It checks root .env first, then an optional old poc/.env if root .env does not exist; it uses os.environ.setdefault so existing exported variables win.
+
+The optional positional CLI port overrides GOOSH_PORT. The optional --bind value defaults to 127.0.0.1. If 0.0.0.0 is selected, the server logs a security warning.
+
+**Important:** A conventional static-only web server, a file:// URL, or a deployed static host with no API route will not make the Generate feature work. The Python handler must be running on that same origin.
+
+## 5. Existing Studio UI integration: web/src/app.js
+
+The Generate control was added **only inside studio()**, after the existing PDF action and before the existing editor panel. It uses Goosh's existing btn(), el(), row(), t(), render(), save(), and local state helpers. Existing Studio controls were not reimplemented.
+
+- A desktop-only condition, window.matchMedia('(min-width: 768px)').matches, decides whether the button is created. It is **not** shown in narrow mobile layouts.
+- The toolbar action displays the literal English label **Generate**.
+- If recording (rec) is active, generation is blocked with a stop-recording message.
+- The modal has a dastgah selector with four values: shur, segah, mahur, homayun.
+- The dialog displays loading information and error text in the currently selected UI language.
+- If the active etude already has notes, the user must confirm replacement **before** making the request. Cancelling that confirmation preserves the existing notes.
+- During the request the generate button and selector are disabled.
+- Each modal creates an AbortController. Closing the modal or changing the URL hash closes the dialog and aborts the request.
+- The selected active etude object and its ID are captured before awaiting the request. After the response, the code checks the abort signal and verifies that the current page, active ID, and object still match, so a late response cannot write into a different etude.
+- On success, Object.assign(target, result) updates the active etude, selection is cleared, save() persists it, the dialog closes, and render() redraws the existing editor.
+- On failure, an error is shown in the modal and the previous etude remains unchanged.
+- The generated title is also applied to the etude; the existing page redraw then updates its visible title.
+
+The button is in the **edit view of an opened/created etude**, not the Studio's list screen. If it appears missing, first open an etude, ensure the viewport is at least 768px wide, and confirm the correct branch/JS bundle is loaded.
+
+This integration does not add a new notation viewer, new playback engine, or a separate page for AI output.
+
+## 6. API contract: scripts/goosh_server.py
+
+**Endpoint:** POST /api/generate-etude  
+**Transport:** Same-origin HTTP; request and response in JSON  
+**Request content type:** application/json  
+**Maximum request body:** 2048 bytes (Content-Length required by current implementation)  
+**Allowed dastgah IDs:** shur, segah, mahur, homayun
+
+Example manual request (will consume OpenRouter usage if configured):
+
+~~~bash
+curl --fail-with-body -X POST http://127.0.0.1:8081/api/generate-etude \
+  -H 'Content-Type: application/json' \
+  -d '{"dastgah":"shur"}'
+~~~
+
+Success response shape:
+
+~~~json
+{
+  "title": "Generated etude title",
+  "abcNotation": "X:1\nT:Generated etude title\nM:4/4\nL:1/4\nK:none\n...",
+  "notes": [
+    { "pitch": "G4", "duration": 1, "frequency": 392.0 },
+    { "pitch": "Ak4", "duration": 1, "frequency": 427.4741 }
+  ]
+}
+~~~
+
+**This is an intentionally abbreviated shape example**: actual success output contains exactly **16** notes; the example only shows the first two entries. Duration is in quarter-note **beats**, not seconds. The returned frequency is in Hz. The abcNotation string is generated by the Python normalizer, but **is not currently rendered using ABC.js in Studio**.
+
+The server answers other POST paths with a JSON 404. Unsupported Content-Type returns 415; invalid/missing body length returns 413 or 400 according to the condition; malformed request JSON returns 400; unsupported dastgah returns 400; missing API key returns 503; upstream/invalid AI response returns 502. Error payloads use an "error" string. The handler inherits SimpleHTTPRequestHandler, which serves the existing files from web/.
+
+### OpenRouter request
+
+Python makes an outbound HTTPS POST to:
+
+https://openrouter.ai/api/v1/chat/completions
+
+It uses:
+- Authorization: Bearer + OPENROUTER_API_KEY (server-side only).
+- Content-Type: application/json.
+- X-Title: Goosh Persian Etude.
+- Model: OPENROUTER_MODEL, default openai/gpt-4o-mini.
+- temperature: 0.65; max_tokens: 1900.
+- provider.require_parameters: true.
+- response_format.type: json_schema with strict schema "persian_etude".
+- Messages containing the dastgah-specific pitch whitelist, tonic, fixed rhythm, microtone spelling, and request for 16 monophonic notes.
+- urllib.request.urlopen with a 45-second timeout.
+
+The current response schema demands title, abcNotation, and an array of 16 objects with pitch/duration/frequency. Despite requesting these values from the LLM, the Python normalizer **recomputes the rhythm, frequencies, and ABC** from its trusted pitch tokens. This is intentional: the frontend should not trust LLM-generated frequencies, note lengths, or ABC syntax directly.
+
+## 7. Dastgah presets and normalization
+
+Current POC pitch collections are fixed in the Python MODELS dictionary:
+
+| Dastgah ID | Display name | Tonic | Allowed pitch tokens |
+| --- | --- | --- | --- |
+| shur | شور / Shur | G4 | G4, Ak4, Bb4, C5, D5, Eb5, F5, G5 |
+| segah | سه‌گاه / Segah | Ek4 | Ek4, F4, G4, Ak4, B4, C5, D5, Ek5 |
+| mahur | ماهور / Mahur | C4 | C4, D4, E4, F4, G4, A4, B4, C5 |
+| homayun | همایون / Homayun | G4 | G4, Ak4, B4, C5, D5, Ek5, F5, G5 |
+
+Pitch-token conventions:
+- C4 is middle C.
+- Plain note (e.g., G4): unaltered equal-tempered pitch.
+- b: flat, -100 cents; #: sharp, +100 cents.
+- k: koron, **-50 cents** in this demo; s: sori, **+50 cents** in this demo.
+- The tuning is an approximation for a proof of concept; these are not canonical, exact tuning prescriptions for each Persian dastgah.
+
+The normalizer ensures:
+1. Exactly 16 allowed pitch tokens are present in the AI response.
+2. The first and final notes are forcibly set to the mode's tonic.
+3. If the mode has a mandatory microtonal pitch and no k/s note is present, an appropriate microtonal note is inserted at position 6 (zero-based index 5).
+4. The rhythm becomes the fixed 16-beat pattern below regardless of the model's proposed durations.
+5. Frequencies are recalculated from the note name, octave, and fixed cent offsets; values are rounded to 4 decimal places.
+6. ABC notation is regenerated from the normalized notes; the model's original abcNotation is not trusted.
+7. A nonempty title is taken from the model and truncated to 80 characters, or a fallback Persian title is used.
+
+Fixed durations by bar (quarter-note beats):
+
+~~~text
+Bar 1: 1,   1,   1, 1     = 4 beats
+Bar 2: 0.5, 0.5, 1, 2     = 4 beats
+Bar 3: 1,   0.5, 0.5, 2   = 4 beats
+Bar 4: 1,   1,   1, 1     = 4 beats
+
+Total: 16 notes, 16 quarter-note beats, four bars of 4/4.
+~~~
+
+The generated ABC uses X:, T:, M:4/4, L:1/4, K:none, with _/ and ^/ for quarter-flat/quarter-sharp. Again: **Studio uses score.js, not an ABC parser**.
+
+## 8. Conversion to Goosh's native etude model: web/src/ai-etude.js
+
+The frontend adapter imports **freq** and **valid** from the existing web/src/model.js and exposes:
+
+~~~js
+generateStudioEtude(dastgah, currentEtude, abortSignal)
+~~~
+
+It POSTs the chosen mode to the relative URL **/api/generate-etude**. It validates the returned title/16-note collection, pitch syntax, positive numeric durations, positive numeric frequencies, total rhythmic length, and eventual Goosh model validity.
+
+### Native note format
+
+The existing Goosh editor does **not** store ABC notes. It stores items of this shape:
+
+~~~js
+{ m: 67, at: 0.0, d: 0.6666666666666666 }
+~~~
+
+- m: integer MIDI note (G4 = 67).
+- at: note onset measured in **seconds** from the beginning of the etude.
+- d: note duration in **seconds**.
+- e.bpm: current Studio tempo; current generated notes preserve that tempo.
+
+For a duration in beats:
+
+~~~text
+secondsPerBeat = 60 / currentEtude.bpm
+note.at = cumulativeBeatPosition * secondsPerBeat
+note.d  = note.durationInBeats * secondsPerBeat
+~~~
+
+The mode-specific pitches are converted from C4/D4/etc. to MIDI numbers using semitone offsets and their octaves. Microtonal information is **not** encoded as a fractional MIDI number; it is expressed through the existing Goosh tuning fields.
+
+### Microtones and key-signature model
+
+web/src/model.js computes pitch frequency with:
+
+~~~js
+freq(e, m) =
+  440 * 2 ** (
+    (m - 69 + ((e.offset[m % 12] || 0)
+       + (e.marks[e.key[m % 12]] || 0)) / 100) / 12
+  )
+~~~
+
+The adapter writes a new e.key mapping from pitch class to the existing mark name:
+- # -> ♯, b -> ♭, k -> کرن, s -> سری.
+- Standard cent values are applied for these marks: ±100 for sharp/flat, ±50 for sori/koron.
+- e.offset is reset to an empty object for the generated etude.
+- Other current etude properties (including e.bpm and practice rule settings) are preserved.
+- The current e.notes array and generated title are replaced only after successful validation.
+- It rejects conflicting alterations of the same base pitch class (for example both unaltered A and Ak in the same generated etude), because the existing Goosh key signature operates at **pitch-class scope**, not as an independent accidental attached to each individual note.
+
+For every generated note, the adapter compares the frequency from Goosh's **existing** freq() with the server's returned frequency; a mismatch greater than **0.5 cents** rejects the response.
+
+The full result is validated with model.js's existing valid() before the Studio state changes. The score redraw runs through the existing sheet()/score() flow, and playback continues through voice(freq(e, n.m), n.at)(n.d).
+
+**Important functional side effect:** generating into an existing etude resets its previous custom per-pitch offsets and standardizes the relevant accidental cent values. The UI asks before replacement if there are existing notes. Codex should **not silently change this tuning behavior** without reviewing the current model's limitations and getting the user's approval.
+
+## 9. Existing rendering, sound, storage, and UX
+
+These integrations intentionally reuse existing code instead of making parallel versions:
+
+- **Notation/staff:** web/src/score.js draws the existing SVG treble staff from e.notes, e.key, etc. This is an onset-position-based drawing system, not full conventional rhythmic engraving with guaranteed barlines/beams/ties.
+- **Sound:** web/src/audio.js, invoked by the preexisting Studio Play handler with web/src/model.js's freq().
+- **Editing:** the same note-selection, timing edit, piano/record, signature, and practice controls already provided by Studio.
+- **Persistence:** app.js holds an active etude in collection and writes via the existing save() routine under localStorage keys prefixed "goosh.etude.".
+- **Language:** new UI labels use the existing t(English, Persian) helper.
+- **Layout:** no redesign CSS or extra Studio layout framework was introduced for AI.
+- **Mobile:** no mobile UI or native backend service was added. On narrow viewports the Generate control is deliberately omitted.
+
+The generated notes are **not** inserted into a second score viewer. All rendering happens through the same staff element used for manually recorded/written notes.
+
+## 10. Local security and operational constraints
+
+- The OpenRouter key stays in the Python process. **Never place it in web/src JavaScript, HTML, shipped assets, or Git commits.**
+- Real .env files are ignored by .gitignore; .env.example intentionally contains a placeholder only.
+- The default bind address is 127.0.0.1; this limits inbound access to the local machine.
+- **--bind 0.0.0.0 makes the HTTP server and /api/generate-etude endpoint reachable over the network** (subject to firewall/routing). The present API has **no user authentication, rate limiting, or billing quotas**. Anyone who can reach it may initiate billable OpenRouter requests, even if they cannot read the API key. This is **local development / trusted-LAN use only**, not production-ready public hosting.
+- OpenRouter calls can fail for invalid credentials, credit limits, chosen-model/schema incompatibility, connectivity issues, or timeouts. The UI reports these errors instead of changing the etude.
+- This integration should not be confused with building an Android APK: the Python process is not bundled with the Android WebView. A future mobile/server deployment requires a separately approved deployment design.
+
+## 11. Manual verification checklist for Codex
+
+**Do not mark these as passed without actually running them.** Previous work checked GitHub source and commit differences, but no real end-to-end OpenRouter request with the user's private key was executed.
+
+1. Check out redesign and use Python 3.9+.
+2. Set OPENROUTER_API_KEY in the ignored root .env file.
+3. Run: python3 scripts/goosh_server.py 8081.
+4. Open http://localhost:8081, navigate to **Etude Studio**, and open/create an etude.
+5. On desktop width >= 768px, verify Generate is next to the existing Studio actions.
+6. Open the dialog, select each supported dastgah, and generate an etude.
+7. Verify 16 notes appear **on the existing staff**, and the existing Play button produces the correct notes using the normal Goosh engine.
+8. Verify the resulting etude title, 4-bar/16-beat timeline, and stored notes/keys/frequencies.
+9. Verify existing selected/edited etudes still work and the etude persists on reload.
+10. Test replacing notes: cancel confirmation -> original notes unchanged; accept -> generated notes replace them.
+11. Test closing the dialog and navigating away while a request is pending; neither should mutate another etude.
+12. Test missing/invalid API key, unsupported dastgah, network errors, provider/schema errors, and malformed response handling.
+13. Test 8081 binding with --bind 0.0.0.0 only on a trusted network; verify no unintended public exposure.
+14. Check UI at narrow screen widths: Generate should not appear in the currently implemented mobile flow.
+15. Ensure preexisting redesign pages, piano behavior, and score controls have not changed.
+
+For non-billable checks, import scripts/goosh_server.py into a local Python test context and exercise normalise_etude(), get_frequency(), and the request validation without calling OpenRouter. If you add tests, keep them focused and do not change unrelated app logic.
+
+## 12. Known POC limitations / possible next steps (not authorized work)
+
+These are **known constraints**, not tasks the user has approved to implement:
+
+1. **Musical authenticity:** The preset modal collections and ±50-cent koron/sori are simplified. A qualified musician should verify intervals, characteristic movements, cadences, and modal naming before production use.
+2. **Rhythm and length:** 4 bars, 16 notes, and durations are hardcoded in Python. The model currently chooses primarily the pitch sequence; it does not control the final rhythmic structure.
+3. **Per-note accidentals:** The Goosh data model only allows one alteration per pitch class through key signatures. Mixed plain/microtonal spellings of the same base note cannot be represented in this adapter and are rejected.
+4. **Engraving:** The staff displays the notes, but it is not full ABC or music-engraving output. Do not assume ABC barlines will appear in the current SVG score.
+5. **Model/provider behavior:** Strict JSON schema support for the configured OpenRouter model/provider must be validated in the user's environment.
+6. **Security:** The Python handler is suitable for local proof-of-concept use only, especially if bound to 0.0.0.0.
+7. **Error handling:** Live integration and browser compatibility still need verification; do not claim production readiness without tests.
+8. **Mobile/offline:** The narrow-screen UI hides generation; an offline APK cannot access the Python endpoint unless a suitable remote service is explicitly designed later.
+
+Do not fix or extend these issues speculatively. Ask for or follow a **specific user instruction**, keep changes tightly scoped, and preserve the redesign branch's existing user interface and music engine.
+
+## 13. Commit and branch history
+
+- **feat/ai-persian-etude-poc:** initial experiment containing a separate Node-based API at 127.0.0.1:8787, standalone ABC.js test page, and first Studio connector; last POC commit: 5d8778060d885c1f44f0db6b51c4be70843b419c.
+- **redesign commit ee1a13ed562339376f3bbdd84be7eca39f7d9069:** ported only the Studio Generate integration and adapter; implemented OpenRouter request handling in a single Python HTTP process; updated npm run web, environment example, ignored secrets, import cache version, and operational docs.
+- **redesign commit bd6db51986d42f6738dc1086176333105db86103:** added configurable port and --bind options so the user's previous localhost:8081 / 0.0.0.0 workflow remains possible.
+- **This handoff document:** documentation only; no runtime files should be modified as part of creating it.
+
+**Summary for the next Codex session:** Continue on redesign, keep the single Python server and existing Studio architecture, treat the OpenRouter response as untrusted input, preserve the Goosh {m,at,d} + key-signature representation, never expose API credentials, and do not modify unrelated functionality/design. Only make further code changes when the user explicitly directs them.
