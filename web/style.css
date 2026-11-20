@@ -485,6 +485,11 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score-actions .score-tool-button.active {
   border-color: var(--accent);
 }
+#app[data-page="studio"] .score-actions .signature-toggle svg {
+  width: 30px;
+  height: 23px;
+  flex-shrink: 0;
+}
 #app[data-page="studio"] .score[data-tool="pen"],
 #app[data-page="studio"] .score[data-tool="pen"] svg,
 #app[data-page="studio"] .score[data-tool="pen"] svg *,
