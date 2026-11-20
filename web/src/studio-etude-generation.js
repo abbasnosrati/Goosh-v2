@@ -21,7 +21,7 @@ export function mountEtudeComposer(host, {
   const t = (en, ir) => fa ? ir : en;
   let state = states.get(etude);
   if (!state) {
-    state = { mode: 'manual', goal: '', musicSystem: 'iranian', styles: {}, tonic: 'C', controller: null };
+    state = { mode: 'manual', goal: '', musicSystem: 'iranian', styles: {}, tonic: 'C', controller: null, awaitingFirstAI: false };
     states.set(etude, state);
   }
   // A full Studio rerender or route change invalidates in-flight generation.
@@ -112,8 +112,9 @@ export function mountEtudeComposer(host, {
 
   let catalog = null;
   let busy = false;
-  const practiceLocked = () => state.mode === 'ai' &&
-    !etude.notes?.length && !etude.practiceSequence?.length;
+  // Empty-etude AI selection is a workflow gate, not a check that can be
+  // bypassed by manually placing one note on the staff.
+  const practiceLocked = () => state.mode === 'ai' && state.awaitingFirstAI;
   let previouslyUnsupported = false;
   const isReplace = () => Boolean(etude.notes?.length || etude.practiceSequence?.length);
   const sync = () => {
@@ -146,7 +147,11 @@ export function mountEtudeComposer(host, {
   };
   const changeMode = value => {
     if (busy) return;
-    state.mode = value;
+    if (state.mode !== value) {
+      state.awaitingFirstAI = value === 'ai' &&
+        !etude.notes?.length && !etude.practiceSequence?.length;
+      state.mode = value;
+    }
     sync();
     onModeChange?.(practiceLocked());
   };
@@ -241,6 +246,7 @@ export function mountEtudeComposer(host, {
       // into an entirely new composition request.
       const result = await generateStudioEtude(context, etude, controller.signal, [goal]);
       if (controller.signal.aborted || !host.isConnected || !isCurrent()) return;
+      state.awaitingFirstAI = false;
       onGenerated({
         ...result,
         practiceSequence: [newPracticeStep(goal, catalog)]
