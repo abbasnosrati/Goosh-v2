@@ -908,3 +908,41 @@ No modifications were requested or made to the audio engine, transport schedulin
 - Verify keyboard focus is clearly visible on the borderless title and file icons; check desktop and narrow/mobile layouts and RTL/LTR.
 - Confirm AI Generate remains beside Record in the Score toolbar and the score tools, Tempo, piano and audio behavior are unchanged.
 - Only source-level checks were run. Browser/device visual and functional testing is **not** claimed complete.
+
+## Studio key-signature toggle: context-sensitive staff icons (2026-11-20)
+
+**Branch:** `redesign`. **Requested change:** On the Etude Studio Score toolbar, use a visual **key-signature pictogram** for the button that opens the key-signature editor. While the user is already editing the key signature, the same button must display a **musical-staff pictogram** indicating return to the normal score/notes view. This is a two-state icon and tooltip change only, not a new editor or route.
+
+### Exact changes
+
+1. **`web/src/app.js` — `scoreSignatureIcon(view = 'signature')`:**
+   - Replaced the old generic single-path symbol with a clear 32×24 inline SVG illustration, built from native SVG DOM elements through `document.createElementNS` and theme-aware `currentColor`.
+   - **Normal Score view (`view='signature'`):** Draw five horizontal staff lines plus two conventional **sharp accidentals (♯ shapes)** at different vertical positions, making the icon depict an actual **key signature** rather than an abstract lines/crosses symbol.
+   - **Key-signature editing view (`view='staff'`):** Draw the same five-line staff with **two noteheads and stems**, and **no key-signature accidentals**. This visually communicates returning to the regular note/staff editing view.
+   - SVG retains `aria-hidden="true"` and `focusable="false"` because the button, not the graphic, owns its accessible name. No raster assets, image queries, external fonts, or icon dependencies were introduced.
+
+2. **`web/src/app.js` — `studio()` Score toolbar signature toggle:**
+   - The existing single toggle button still uses `.score-tool-button.signature-toggle`, `data-signature-toggle`, and the current `signatureMode` state and toggle callback **unchanged**.
+   - The icon now follows the current view: `scoreSignatureIcon(signatureMode ? 'staff' : 'signature')`.
+   - Button `title` and `aria-label` are localized and action-specific:
+     - Normal Score view: **Edit key signature** / **ویرایش سرکلید**
+     - In key-signature editor: **Return to score** / **بازگشت به خط حامل**
+   - Preserved `aria-pressed` and the `.active` class when `signatureMode` is true. Each existing `render()` automatically rebuilds the button with the correct icon and accessible label.
+
+3. **`web/style.css`:** Added a narrowly scoped `#app[data-page="studio"] .score-actions .signature-toggle svg` rule to render the pictogram at **30×23 CSS pixels**, giving the small staff and accidentals enough visual clarity inside the existing button. The rest of the toolbar's icons, alignment, colors, and behavior remain unchanged.
+
+4. **`web/index.html`:** Updated the CSS and JavaScript cache query strings to `signature-toggle-icons-1` so existing clients load the new visuals.
+
+5. **`CODEX_AI_ETUDE_HANDOFF.md`:** Documented this change in detail for subsequent Codex work.
+
+### Explicitly preserved
+
+The `signatureMode` toggle flow, selected key pitch, signature editing SVG, accidental selection, tuning and listening controls, Score notes renderer, playback transport, Pen/Eraser, Wrap staff, Zoom, Tempo, AI generation, Record, and all unrelated routes/features remain unchanged.
+
+### Manual checks for Codex (not yet run)
+
+- Open an etude in the Studio Score view: key-signature button should show a tiny five-line staff with sharp accidentals and have the "Edit key signature" tooltip/accessible label.
+- Click it: the key-signature editor should open in place, while the same button becomes a **plain notation staff with noteheads** and exposes the "Return to score" tooltip/accessible label. The active state remains visually clear.
+- Click the button again: normal score must return with its original key-signature icon; no note/tuning data should change simply by switching views.
+- Confirm visibility and alignment in light/dark themes and English/Persian, and at narrow/mobile widths; inspect browser rendering of the small SVG shapes.
+- Source-level code validation was performed; no live browser/device visual test was run.
