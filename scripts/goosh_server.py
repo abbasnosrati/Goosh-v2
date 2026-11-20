@@ -330,6 +330,20 @@ class GooshHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEB_ROOT), **kwargs)
 
+    def _serve_app_route(self):
+        """Rewrite only known HTML app routes, never JS/CSS/API/missing assets."""
+        path = urlsplit(self.path).path
+        if re.fullmatch(r"/(?:etudes|practice)(?:/[a-zA-Z0-9_-]+)?/?", path):
+            self.path = "/index.html"
+
+    def do_GET(self):
+        self._serve_app_route()
+        return super().do_GET()
+
+    def do_HEAD(self):
+        self._serve_app_route()
+        return super().do_HEAD()
+
     def do_POST(self):
         endpoint = urlsplit(self.path).path
         if endpoint not in ("/api/generate-etude", "/api/design-practice"):
