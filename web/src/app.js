@@ -842,35 +842,6 @@ function studio() {
     zoom = Math.min(3, zoom + .2);
     sheet();
   }, t('Zoom in', 'بزرگ‌نمایی'));
-  const timing = el('details', panel, undefined, 'controls');
-  el('summary', timing, t('Edit notes & timing', 'ویرایش نت و زمان'));
-  const edit = row(timing);
-  btn(edit, t('Select all', 'انتخاب همه'), () => {
-    sel = new Set(e.notes.keys());
-    sheet()
-  });
-  btn(edit, t('Delete', 'حذف'), () => {
-    e.notes = e.notes.filter((_, i) => !sel.has(i));
-    sel.clear();
-    save();
-    sheet()
-  }, t('Delete selected notes', 'حذف نت‌های انتخاب‌شده') + ' (Delete)').dataset.del = '';
-  const d = field(edit, t('Duration (s)', 'کشش (ثانیه)'), 1, () => {}, null, [.01, 120, .01]),
-    gap = field(edit, t('Rest (s)', 'سکوت (ثانیه)'), 0, () => {}, null, [0, 120, .01]);
-  btn(edit, t('Apply timing', 'اعمال زمان'), () => {
-    if (!d.reportValidity() || !gap.reportValidity()) return;
-    const targets = [...sel].map(i => e.notes[i]).sort((a, b) => a.at - b.at);
-    let last, at;
-    for (const n of targets) {
-      const old = n.at;
-      if (old !== last) at = last === undefined ? old : at + Number(d.value) + Number(gap.value);
-      last = old;
-      n.at = at;
-      n.d = Number(d.value)
-    }
-    save();
-    sheet()
-  })
   tuning();
   rules();
   sheet()
@@ -1322,7 +1293,6 @@ document.onkeydown = ev => {
   }
   if (page !== 'studio') return;
   if (ev.code === 'KeyR') $('[data-record]')?.click();
-  if (ev.code === 'Delete') $('[data-del]')?.click()
 };
 render()
 
