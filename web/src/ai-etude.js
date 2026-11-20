@@ -119,14 +119,14 @@ function convertEtude(data, current, dastgah) {
   return result
 }
 
-export async function generateStudioEtude(dastgah, current, signal) {
+export async function generateStudioEtude(dastgah, current, signal, practiceGoals = []) {
   if (!ALLOWED_MODES.has(dastgah)) throw new Error('Invalid dastgah.')
   let response
   try {
     response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dastgah, practiceGoals: (current.practiceSequence || []).filter(s => s.enabled).map(s => s.goal).filter((g,i,all) => all.indexOf(g) === i) }),
+      body: JSON.stringify({ dastgah, practiceGoals }),
       signal
     })
   } catch (error) {
