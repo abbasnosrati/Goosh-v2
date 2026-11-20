@@ -133,8 +133,11 @@ def normalise_etude(data, mode, frequency_for_pitch=get_frequency, meter="none")
 
     pitches[0] = mode["tonic"]
     pitches[-1] = mode["tonic"]
-    if mode["microtone"] and not any(re.search(r"[ks][3-6]$", p) for p in pitches):
-        pitches[5] = mode["microtone"]
+    if (mode["microtone"] and len(pitches) >= 3
+            and not any(re.search(r"[ks][3-6]$", p) for p in pitches)):
+        # Metered AI may choose fewer than the legacy sixteen notes. Keep
+        # the opening/closing tonic positions intact when adding a microtone.
+        pitches[min(5, len(pitches) - 2)] = mode["microtone"]
 
     title = data.get("title", "")
     title = title.strip()[:80] if isinstance(title, str) else ""
