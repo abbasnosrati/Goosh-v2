@@ -14,7 +14,7 @@ import {
 import {
   score
 } from './score.js'
-import { generateStudioEtude } from './ai-etude.js'
+import { generateStudioEtude } from './ai-etude.js?v=khara-abc-8bars-1'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),
   app = $('#app');
@@ -266,7 +266,7 @@ function noteSettings(note) {
   const precedingEnd = earlier.reduce((end,n) => Math.max(end,n.at+n.d),0);
   const rest = Math.max(0,note.at-precedingEnd);
   const dialog = el('dialog', document.body);
-  const heading = el('h2',dialog,t('Note settings','تنظیمات نت')+' · '+label(note.m));
+  const heading = el('h2',dialog,t('Note settings','تنظیمات نت')+' · '+(note.displayPitch || label(note.m)));
   dialog.setAttribute('aria-label',heading.textContent);
   const duration = field(dialog,t('Duration (s)','کشش (ثانیه)'),+note.d.toFixed(3),()=>{},null,[.001,100000,'any']);
   const silence = field(dialog,t('Rest before note (s)','سکوت پیش از نت (ثانیه)'),+rest.toFixed(3),()=>{},null,[0,100000,'any']);

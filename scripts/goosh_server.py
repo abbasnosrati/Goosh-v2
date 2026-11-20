@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from urllib.parse import urlsplit
+from abc_etude import SHUR_PROMPT, parse_abc_etude
 
 PROJECT = Path(__file__).resolve().parent.parent
 WEB_ROOT = PROJECT / "web"
@@ -189,6 +190,16 @@ def generate_etude(dastgah):
             {"role": "user", "content": prompt},
         ],
     }
+    if dastgah == "shur":
+        # Send the user's ABC-only 8-bar prompt unmodified. Convert its answer
+        # to the existing Studio JSON contract server-side (no second model).
+        payload = {
+            "model": model,
+            "temperature": .65,
+            "max_tokens": 2800,
+            "messages": [{"role": "user", "content": SHUR_PROMPT}],
+        }
+
     request = Request(
         "https://openrouter.ai/api/v1/chat/completions",
         data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
@@ -219,6 +230,8 @@ def generate_etude(dastgah):
 
     try:
         content = result["choices"][0]["message"]["content"]
+        if dastgah == "shur":
+            return parse_abc_etude(content, get_frequency)
         parsed = json.loads(content)
         return normalise_etude(parsed, mode)
     except (KeyError, IndexError, TypeError, json.JSONDecodeError, ValueError) as error:

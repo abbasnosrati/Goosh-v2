@@ -53,8 +53,9 @@ export function score(host, e, {
     e.notes.forEach((n, i) => {
       const at = slots.get(n.at);
       if (wrap && Math.floor(at / per) !== row) return;
+      const visualMidi = Number.isInteger(n.staffM) ? n.staffM : n.m;
       const x = margin + (at - row * per) * unit,
-        y = 104 - step(n.m) * 4.5;
+        y = 104 - step(visualMidi) * 4.5;
       for (let l = 113; l <= y; l += 9) line(x - 9, l, x + 9, l);
       for (let l = 59; l >= y; l -= 9) line(x - 9, l, x + 9, l);
       const el = draw('ellipse', {
@@ -66,11 +67,13 @@ export function score(host, e, {
         fill: 'currentColor',
         stroke: 'currentColor'
       });
-      if ([1, 3, 6, 8, 10].includes(n.m % 12)) draw('text', {
+      const noteAccidental = n.staffAccidental ||
+        ([1, 3, 6, 8, 10].includes(n.m % 12) ? '♯' : '');
+      if (noteAccidental) draw('text', {
         x: x - 17,
         y: y + 4,
         fill: 'currentColor'
-      }, '♯');
+      }, noteAccidental);
       if (selected.has(i)) el.setAttribute('stroke-width', 3);
       draw('circle', {
         cx: x,

@@ -41,15 +41,28 @@ the public internet. The API key itself stays in the server-side `.env`.
 
 
 Visit **http://localhost:8080**, open **Etude Studio**, create or open an etude,
-then select **Generate** in the desktop editor and choose شور, سه‌گاه, ماهور,
-or همایون. This generates exactly 16 notes across 4 bars of 4/4 using the
-OpenRouter model specified in `.env`.
+then select **Generate** in the desktop editor. The **Shur** option now
+sends the user's supplied 8-bar Daramad-e Khara prompt to OpenRouter
+verbatim; OpenRouter returns ABC notation in a code block. Python parses
+and validates the ABC into the JSON format used by the Goosh editor. The
+other three modal presets retain their original 4-bar JSON generation.
+The OpenRouter model is specified in `.env`.
 
 The API is **POST /api/generate-etude** with JSON `{"dastgah":"shur"}`.
 It returns `title`, `abcNotation`, and `notes` (pitch, duration in beats,
-and computed frequency in Hz). The adapter converts pitches into Goosh
-native `{m,at,d}` notes with its `key` / `marks` tuning system.
-The **existing** score renderer, audio engine and editor are reused.
+and computed frequency in Hz). The Shur response additionally includes
+`bars: 8`, `totalBeats`, and note-level `atBeats` so rests are preserved.
+The frontend adapter converts pitches/timing to Goosh's native
+`{m,at,d}` notes using its existing key/tuning fields.
+
+The key signature is `K:C _B _E _/A`. Shur supports both E-flat and
+variable E-koron at the same time; because the legacy model tunes by MIDI
+pitch class, E-koron is stored as an acoustically equivalent D-sharp with
+a +50-cent offset, plus optional staff display metadata so it appears on
+the E staff position with a koron accidental. Existing score and audio
+engines are reused; only optional display metadata support was added to
+score.js. This is a POC interoperability workaround, not a general
+per-note-accidental data-model upgrade.
 
 This is still a proof of concept: koron/sori use fixed -50/+50 cents,
 the available pitch collections are simplified reference scales, and
@@ -65,3 +78,24 @@ If you previously created `poc/.env` on the POC branch and kept it locally,
 the server can also read that file when root `.env` is absent. Prefer root
 `.env` on this branch. The API does not work with Python's original
 `python3 -m http.server`; use the updated `npm run web` command.
+
+## New Shur ABC-only prompt (2026-11-20)
+
+The exact prompt lives as `SHUR_PROMPT` in `scripts/abc_etude.py`. It
+requests **8 original bars in Daramad-e Khara** with `K:C _B _E _/A`,
+melodic focus on G4, alternate Eb4/E-koron, Ak4/Bb4, and a G4 cadence.
+The model is instructed to return **only an ABC code block**. We do NOT
+change that prompt into a JSON prompt. The local Python ABC parser turns
+the response into the structured API result; the browser never consumes
+the free-form model response directly.
+
+The parser accepts a bounded monophonic ABC subset with 8 measures,
+M: / L: headers, key-signature/within-bar accidentals, optional rests,
+and common tuplet notation. It checks measure lengths, pitch range and
+key signature. Invalid ABC returns HTTP 502 and leaves the existing
+etude unchanged.
+
+This ABC parsing feature has not yet been exercised with a live OpenRouter
+response in this environment. Verify in the user's environment, and
+do not mistake simplified accidentals/tuning for fully authentic
+Persian classical music notation.

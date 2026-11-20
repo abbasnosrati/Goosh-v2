@@ -1,5 +1,50 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
+> **2026-11-20 UPDATE — READ THIS FIRST:** The following integration has
+> been extended for Shur after the original 4-bar POC was documented.
+> The historical sections below describe the original design, and any
+> 4-bar / JSON-generation claim in those sections now applies to the
+> **other three modes** (Segah, Mahur, Homayun), not to Shur.
+>
+> For **Shur only**, Python now sends the user's specified **verbatim**
+> 8-bar *Daramad-e Khara* ABC-only prompt (constant SHUR_PROMPT in
+> scripts/abc_etude.py) to OpenRouter as the user message, with no JSON
+> response_format override. The model should output ABC inside a code fence.
+> scripts/abc_etude.py parses the ABC and produces the **same structured
+> API contract** required by Studio: title, abcNotation, notes with pitch,
+> duration and frequency. Shur additionally includes bars=8, totalBeats
+> and atBeats per note to preserve rest gaps.
+>
+> The parser checks exactly 8 measures, valid measure durations, the
+> C4–Bb4 register and K:C _B _E _/A. It maps plain A to A-koron,
+> plain B to B-flat, plain E to E-flat, and explicit _/E to E-koron.
+> It is a deliberately limited monophonic subset of ABC, not a general
+> ABC notation/engraving library; invalid responses are rejected (HTTP
+> 502), not silently converted into the older four-bar rhythm.
+>
+> web/src/ai-etude.js supports the new variable note count and atBeats.
+> Goosh's old pitch-class tuning cannot encode both E-flat and E-koron
+> on MIDI pitch class E independently. Shur encodes E-koron at the
+> enharmonic acoustic pitch D-sharp +50 cents via offset[3]=50, with
+> optional note.staffM=64 and note.staffAccidental='کرن' so the
+> **existing score.js** can draw an E-position koron accidental.
+> The normal score renderer and audio engine remain in use; score.js
+> only gained optional display pitch/accidental metadata support.
+> The Note settings heading uses note.displayPitch when present.
+> This is a compatibility workaround, not a full per-note tuning model.
+>
+> The same-origin one-process Python startup is unchanged:
+> python3 scripts/goosh_server.py 8081 --bind 0.0.0.0
+> (trusted LAN only; 127.0.0.1 remains safer by default).
+>
+> **Current feature status:** code integrated on redesign, but still
+> requires a real OpenRouter response and browser-level testing.
+> Do not claim 8-bar AI integration is already verified end-to-end.
+> Do not add an Express server, second backend, ABC.js renderer, or
+> unrelated refactors as part of this change.
+
+---
+
 **Repository:** abbasnosrati/Goosh-v2  
 **Target branch:** redesign  
 **Document date:** 2026-11-20  
