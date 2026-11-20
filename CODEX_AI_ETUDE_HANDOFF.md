@@ -1897,3 +1897,41 @@ This section supersedes any earlier handoff wording that says the musical-system
 **Manual acceptance:** Run local Python web server as previously, fetch branch and hard refresh. Open an Etude in Manual: the **Musical System** section contains Edit Key Signature and the regular Score section has **no duplicate switch**. Click Edit: scrolls to **Key Signature Editor**, shows **Back to Score** immediately alongside its title. Change a mark/cents and click Back: Score reappears with those settings preserved, at the same location. Repeat in AI mode, with or without a saved Etude, and verify that the Practice Design freeze behavior remains unchanged. Test keyboard focus and compact desktop width. No npm/Capacitor required for desktop.
 
 **Strict scope:** Do not duplicate the key editor, move its tuning UI into the Music System box, modify `e.key` / `e.offset` / `freq()`, or alter note generation/practice behavior merely to support this navigation.
+
+
+---
+
+# Piano key labels mirror the active key signature and tuned frequencies (2026-11-21)
+
+**User request:** When a Persian Dastgah changes the signature, corresponding physical Goosh piano keys should explicitly display **the same flat/sharp/Koron/Sori symbol** and **their actual changed frequency**. The existing audio already uses `freq(e,m)`; the bug was that a visually unchanged natural key label (e.g. A4) did not reveal its altered tuning. This visual feedback also needs to follow manual edits made in **Edit Key Signature** and, because it uses the same canonical signature, also works for Western musical systems.
+
+## Implemented
+
+**`web/src/app.js`** (scope: piano display only):
+- Added `updatePianoKey(button,shortcut)` and `refreshPianoKeyLabels()`. They read only the canonical `e.key`, `e.offset`, `e.marks` and `freq(e,m)`; no second tuning engine, state store, or duplicated note collection was introduced.
+- A key whose **natural pitch class** has an active signature mark now shows its letter, actual musical accidental and octave (e.g. A [Koron SVG] 4, E♭4, B♭4). Persian Koron/Sori use `appendPersianAccidental` from the existing shared SVG module, not a font glyph; flats/sharps use the existing ♭/♯ signs. The same alteration applies to the corresponding key in every octave.
+- Affected white keys additionally display the actual sounding frequency to two decimal places, with an explicit small **Hz** unit. Keys with a manually adjusted cent offset but no accidental also show tuned frequency. Unaltered keys retain their original note plus localized solfège syllable. Each key's accessible name and hover title include its up-to-date pitch label and frequency.
+- Black keys retain their own existing separate MIDI spelling and sound. **Important architecture note:** Goosh stores per-natural-letter signature marks in `e.key`; for example E♭ changes the E-natural-key playback, not the distinct D♯ black key. Showing ♭ on the E key is intentional and matches `freq()` and the existing staff model; do not silently remap black keys or change note IDs.
+- Both the octave-switch `jump()` path and first piano rendering now invoke the same presentation helper. `sheet()` refreshes labels after preset/dastgah selection and key-mark edits. The existing key editor's `updateReadout()` refreshes them during cents-slider dragging, numeric changes and ±1 cent controls, **without rebuilding the instrument or changing active key event handlers**. The previous app callback's tooltip-only refresh was replaced with this unified presentation refresh.
+- The original `b.begin`, `liveVoice(freq(e,m),...)`, onStart recording, pointer/multi-touch handling and octave scrolling remain untouched. All changes are in display-layer DOM nodes and tooltips, not audio synthesis or recorded note semantics.
+
+**`web/style.css`**:
+- Compact, scoped `.board button .piano-key-*` styles for accidental-aligned note labels, small shared SVG marks and two-line exact-Hz readouts on altered keys. Retains Goosh's existing white/black key colors, widths and interactive states. Unaltered keys retain their original two-line layout.
+- No new palette or unrelated restyle.
+
+**`web/index.html`**:
+- Refreshes CSS + app JS version keys to `piano-key-signature-1` for hard-reloaded desktop browser updates. The local Python server remains `python3 scripts/goosh_server.py 8081 --bind 0.0.0.0`.
+
+## Tests and expected behavior
+
+Isolated tests evaluated the actual fetched `app.js` keyboard helper functions with the real `model.js` frequency implementation and `music-signature.js` preset applier:
+- Untuned A4 retains standard `A4` + solfège (no Hz chip).
+- Under Shur `E♭, B♭, A-Koron`, A4 displays the existing **Koron SVG** and **427.47 Hz**; E4/B4 display the actual flat signs and correct frequency values (E♭4 ~311.13 Hz). It also labels altered A and B in higher octaves.
+- Independent black D♯5 keeps its own spelling and sound; it is not retuned just because E-flat affects E-natural.
+- A manual +13-cent change on A immediately changes the displayed frequency. Returning to a blank/natural signature removes the marks and frequency chips without deleting notes.
+- Sori uses the same shared vector symbol. Existing keyboard `.begin` functions remain intact across DOM-label refreshes.
+- Confirmed the new refresh hooks are called by score redraw and by the signature tuner slider readout. Full app JS syntax parsing passed.
+
+**Not completed:** a live desktop-browser visual regression, physical piano playback quality test, or end-to-end live OpenRouter test. Inspect narrow key widths and contrast in light and dark themes in the actual browser.
+
+**Scope warning:** Do not move each pitch to another MIDI key or change `freq()` to match visual labels. This is only a truthful representation of the currently sounding, already-tuned notes in the pre-existing Goosh keyboard. Do not alter the Manual/AI workflow, key signature editor, note recognition, or Practice learner as a follow-up without explicit user request.
