@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goosh | Persian Etude POC</title>
+<style>
+body{margin:0;background:#f7f8fa;color:#1c2731;font:16px system-ui,sans-serif}
+main{max-width:1040px;margin:48px auto;padding:24px}
+h1{font-size:25px}p{line-height:1.7}
+.controls{display:flex;flex-wrap:wrap;align-items:end;gap:12px;margin:24px 0}
+label{display:grid;gap:8px}select,button{font:inherit;padding:10px 16px;border:1px solid #b9c3cf;border-radius:7px}
+button{cursor:pointer;background:#e8eeef}button:disabled{cursor:not-allowed;opacity:.5}
+#status{min-height:24px}#notation{background:white;border:1px solid #d7dde4;border-radius:8px;padding:24px;overflow-x:auto;direction:ltr}
+#notation svg{max-width:100%}pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:white;padding:15px}
+#mobile-note{display:none}@media(max-width:767px){#desktop{display:none}#mobile-note{display:block}}
+</style>
+</head>
+<body><main>
+<div id="mobile-note">این صفحه فقط برای نسخه دسکتاپ است.</div>
+<section id="desktop">
+<h1>تست تولید اتود ایرانی با هوش مصنوعی</h1>
+<p>تست مستقل چهار میزانی با کوک آزمایشی ۵۰ سنت برای کرن/سری و صدای سینوسی.</p>
+<div class="controls">
+<label>دستگاه<select id="dastgah"><option value="shur">شور</option><option value="segah">سه‌گاه</option><option value="mahur">ماهور</option><option value="homayun">همایون</option></select></label>
+<button id="generate" type="button">تولید اتود</button>
+<button id="play" type="button" disabled>پخش صدا</button>
+<button id="stop" type="button" disabled>توقف</button>
+</div>
+<p id="status" role="status" aria-live="polite">دستگاه را انتخاب کنید.</p>
+<div id="notation" aria-label="نت اتود"></div>
+<details><summary>JSON دریافت‌شده</summary><pre id="raw-json"></pre></details>
+</section></main>
+<script src="/vendor/abcjs-basic-min.js"></script>
+<script>
+'use strict';
+const select=document.getElementById('dastgah');
+const generateButton=document.getElementById('generate');
+const playButton=document.getElementById('play');
+const stopButton=document.getElementById('stop');
+const statusLine=document.getElementById('status');
+const notation=document.getElementById('notation');
+const rawJson=document.getElementById('raw-json');
+let etude=null,context=null,voices=[],timer=null;
+function stopPlayback(){
+  if(timer)clearTimeout(timer);
+  timer=null;
+  for(const oscillator of voices){try{oscillator.stop()}catch{}}
+  voices=[];
+  stopButton.disabled=true;
+  playButton.disabled=!etude;
+}
+generateButton.addEventListener('click',async()=>{
+  stopPlayback();etude=null;playButton.disabled=true;generateButton.disabled=true;
+  notation.replaceChildren();rawJson.textContent='';
+  statusLine.textContent='در حال دریافت اتود از OpenRouter...';
+  try{
+    const response=await fetch('/api/generate-etude',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({dastgah:select.value})
+    });
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'API request failed.');
+    if(!Array.isArray(data.notes)||!data.abcNotation)throw new Error('Invalid etude format.');
+    etude=data;rawJson.textContent=JSON.stringify(data,null,2);
+    if(!window.ABCJS||typeof window.ABCJS.renderAbc!=='function'){
+      notation.textContent=data.abcNotation;
+      statusLine.textContent='اتود دریافت شد؛ abcjs بارگذاری نشده است.';
+    }else{
+      window.ABCJS.renderAbc('notation',data.abcNotation,{responsive:'resize',staffwidth:900});
+      statusLine.textContent='اتود تولید شد: '+data.title;
+    }
+    playButton.disabled=false;
+  }catch(error){statusLine.textContent='خطا: '+error.message}
+  finally{generateButton.disabled=false}
+});
+playButton.addEventListener('click',async()=>{
+  if(!etude)return;
+  stopPlayback();
+  if(!context)context=new(window.AudioContext||window.webkitAudioContext)();
+  try{
+    await context.resume();
+    const secondsPerBeat=60/90;
+    let cursor=context.currentTime+0.08;
+    for(const note of etude.notes){
+      if(!Number.isFinite(note.frequency)||note.frequency<=0||
+         !Number.isFinite(note.duration)||note.duration<=0)
+        throw new Error('نت یا فرکانس نامعتبر است.');
+      const length=note.duration*secondsPerBeat;
+      const release=Math.min(0.045,length/4);
+      const end=cursor+Math.max(0.07,length-0.012);
+      const oscillator=context.createOscillator(),gain=context.createGain();
+      oscillator.type='sine';
+      oscillator.frequency.setValueAtTime(note.frequency,cursor);
+      gain.gain.setValueAtTime(0,cursor);
+      gain.gain.linearRampToValueAtTime(0.12,cursor+0.012);
+      gain.gain.setValueAtTime(0.12,end-release);
+      gain.gain.linearRampToValueAtTime(0,end);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(cursor);oscillator.stop(end+0.004);
+      voices.push(oscillator);cursor+=length;
+    }
+    stopButton.disabled=false;
+    statusLine.textContent='در حال پخش اتود...';
+    timer=setTimeout(()=>{
+      voices=[];timer=null;stopButton.disabled=true;
+      statusLine.textContent='پخش تمام شد.';
+    },Math.ceil((cursor-context.currentTime)*1000));
+  }catch(error){stopPlayback();statusLine.textContent='خطای پخش: '+error.message}
+});
+stopButton.addEventListener('click',()=>{stopPlayback();statusLine.textContent='پخش متوقف شد.'});
+</script>
+</body></html>
