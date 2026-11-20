@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import math
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -212,7 +213,7 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
                 or set(tuning_cents) != natural_pcs
                 or any(type(value) not in (int, float) or
                        not -1200 <= value <= 1200 or
-                       not __import__("math").isfinite(value)
+                       not math.isfinite(value)
                        for value in tuning_cents.values())):
             raise APIError(400, "Invalid staff tuning.")
     def frequency_for_pitch(token):
