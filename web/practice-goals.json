@@ -1,0 +1,299 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "pitch",
+      "en": "Pitch & Intervals",
+      "fa": "نت و فواصل"
+    },
+    {
+      "id": "melody",
+      "en": "Melody & Sight-Singing",
+      "fa": "ملودی و سلفژ"
+    },
+    {
+      "id": "rhythm",
+      "en": "Rhythm",
+      "fa": "ریتم"
+    },
+    {
+      "id": "theory",
+      "en": "Scales & Harmony",
+      "fa": "گام و هارمونی"
+    }
+  ],
+  "responses": {
+    "choice": {
+      "en": "Multiple Choice",
+      "fa": "چندگزینه‌ای"
+    },
+    "text": {
+      "en": "Type Answer",
+      "fa": "نوشتن پاسخ"
+    },
+    "staff": {
+      "en": "Notation / Staff",
+      "fa": "نوشتن روی حامل"
+    },
+    "mic": {
+      "en": "Microphone",
+      "fa": "میکروفن"
+    },
+    "piano": {
+      "en": "Virtual Piano",
+      "fa": "پیانوی مجازی"
+    },
+    "tap": {
+      "en": "Tap Rhythm",
+      "fa": "ضربه ریتمیک"
+    }
+  },
+  "scopes": {
+    "each": {
+      "en": "Each note",
+      "fa": "هر نت"
+    },
+    "pairs": {
+      "en": "Note pairs",
+      "fa": "جفت نت"
+    },
+    "phrases": {
+      "en": "Each phrase",
+      "fa": "هر جمله"
+    },
+    "whole": {
+      "en": "Whole etude",
+      "fa": "کل اتود"
+    },
+    "selected": {
+      "en": "Selected notes",
+      "fa": "نت‌های انتخابی"
+    }
+  },
+  "referenceTimings": {
+    "none": {
+      "en": "No separate reference",
+      "fa": "بدون مرجع جداگانه"
+    },
+    "start": {
+      "en": "At start",
+      "fa": "ابتدای بخش"
+    },
+    "before": {
+      "en": "Before each question",
+      "fa": "قبل از هر سؤال"
+    },
+    "after": {
+      "en": "After each question",
+      "fa": "بعد از هر سؤال"
+    }
+  },
+  "feedbackTimings": {
+    "after": {
+      "en": "After each answer",
+      "fa": "بعد از هر پاسخ"
+    },
+    "end": {
+      "en": "At section end",
+      "fa": "پایان بخش"
+    },
+    "none": {
+      "en": "Hidden",
+      "fa": "بدون نمایش"
+    }
+  },
+  "goals": [
+    {
+      "id": "note-identification",
+      "category": "pitch",
+      "label": {
+        "en": "Note Identification",
+        "fa": "تشخیص نت"
+      },
+      "description": {
+        "en": "Recognize the pitch name from sound.",
+        "fa": "تشخیص نام نت از روی صدا"
+      },
+      "responses": [
+        "choice",
+        "text",
+        "staff"
+      ],
+      "defaultResponse": "choice",
+      "scope": "each",
+      "aiGuidance": "Compose clearly separated single notes with controlled pitch variety; avoid unnecessary complexity."
+    },
+    {
+      "id": "pitch-matching",
+      "category": "pitch",
+      "label": {
+        "en": "Pitch Matching",
+        "fa": "بازتولید نت و کنترل کوک"
+      },
+      "description": {
+        "en": "Reproduce the heard pitch by instrument or voice.",
+        "fa": "اجرای نت شنیده‌شده با ساز یا آواز"
+      },
+      "responses": [
+        "mic",
+        "piano"
+      ],
+      "defaultResponse": "mic",
+      "scope": "each",
+      "aiGuidance": "Write comfortably sustained, playable notes; leave room for listening and reproducing each pitch."
+    },
+    {
+      "id": "interval-training",
+      "category": "pitch",
+      "label": {
+        "en": "Interval Training",
+        "fa": "تشخیص و اجرای فاصله"
+      },
+      "description": {
+        "en": "Recognize or perform intervals between notes.",
+        "fa": "تشخیص یا اجرای فاصله بین دو نت"
+      },
+      "responses": [
+        "choice",
+        "text",
+        "mic",
+        "piano"
+      ],
+      "defaultResponse": "choice",
+      "scope": "pairs",
+      "aiGuidance": "Include varied but deliberate successive intervals suitable for the chosen difficulty."
+    },
+    {
+      "id": "melodic-imitation",
+      "category": "melody",
+      "label": {
+        "en": "Melodic Imitation",
+        "fa": "تقلید ملودی"
+      },
+      "description": {
+        "en": "Listen to a phrase and reproduce it.",
+        "fa": "شنیدن و بازنوازی جمله‌های ملودیک"
+      },
+      "responses": [
+        "mic",
+        "piano"
+      ],
+      "defaultResponse": "mic",
+      "scope": "phrases",
+      "aiGuidance": "Build short memorable phrases with recognizable motifs, breathing points and clear contours."
+    },
+    {
+      "id": "melodic-dictation",
+      "category": "melody",
+      "label": {
+        "en": "Melodic Dictation",
+        "fa": "دیکته ملودی"
+      },
+      "description": {
+        "en": "Transcribe the heard melody.",
+        "fa": "نوشتن نت‌های ملودی شنیده‌شده"
+      },
+      "responses": [
+        "staff",
+        "text"
+      ],
+      "defaultResponse": "staff",
+      "scope": "phrases",
+      "aiGuidance": "Build notationally clear phrases, suitable lengths and limited ambiguity for transcription."
+    },
+    {
+      "id": "sight-singing",
+      "category": "melody",
+      "label": {
+        "en": "Sight-Singing",
+        "fa": "سلفژ از روی نت"
+      },
+      "description": {
+        "en": "Sing written notes without first hearing the complete melody.",
+        "fa": "خواندن نت‌های نوشته‌شده بدون شنیدن کل ملودی"
+      },
+      "responses": [
+        "mic"
+      ],
+      "defaultResponse": "mic",
+      "scope": "phrases",
+      "aiGuidance": "Keep a singable range, readable rhythms and smooth contour for the chosen level."
+    },
+    {
+      "id": "rhythm-imitation",
+      "category": "rhythm",
+      "label": {
+        "en": "Rhythm Imitation",
+        "fa": "تقلید ریتم"
+      },
+      "description": {
+        "en": "Repeat a heard rhythmic pattern.",
+        "fa": "تکرار الگوی ریتمیک شنیده‌شده"
+      },
+      "responses": [
+        "tap",
+        "mic"
+      ],
+      "defaultResponse": "tap",
+      "scope": "phrases",
+      "aiGuidance": "Create explicit rhythmic cells with consistent pulse, rests and progressive variety."
+    },
+    {
+      "id": "rhythmic-dictation",
+      "category": "rhythm",
+      "label": {
+        "en": "Rhythmic Dictation",
+        "fa": "دیکته ریتم"
+      },
+      "description": {
+        "en": "Write down a heard rhythm.",
+        "fa": "نوشتن کشش‌ها و سکوت‌های شنیده‌شده"
+      },
+      "responses": [
+        "staff",
+        "choice"
+      ],
+      "defaultResponse": "staff",
+      "scope": "phrases",
+      "aiGuidance": "Use rhythm patterns with clearly identifiable note lengths and rests; avoid notation ambiguities."
+    },
+    {
+      "id": "scale-mode-recognition",
+      "category": "theory",
+      "label": {
+        "en": "Scale & Mode Recognition",
+        "fa": "تشخیص گام و مد"
+      },
+      "description": {
+        "en": "Identify the tonal or modal character of a passage.",
+        "fa": "تشخیص گام یا فضای مدال از جمله شنیده‌شده"
+      },
+      "responses": [
+        "choice",
+        "text"
+      ],
+      "defaultResponse": "choice",
+      "scope": "whole",
+      "aiGuidance": "Make characteristic scale degrees and structural modal notes perceptible; preserve authentic melodic behavior."
+    },
+    {
+      "id": "chord-recognition",
+      "category": "theory",
+      "label": {
+        "en": "Chord Recognition",
+        "fa": "تشخیص آکورد"
+      },
+      "description": {
+        "en": "Identify chord qualities from sounding harmony.",
+        "fa": "تشخیص نوع آکورد از صدای هم‌زمان نت‌ها"
+      },
+      "responses": [
+        "choice",
+        "text"
+      ],
+      "defaultResponse": "choice",
+      "scope": "whole",
+      "aiGuidance": "Use discernible harmonic sonorities rather than monophonic-only material; flag if harmony support is unavailable."
+    }
+  ]
+}
