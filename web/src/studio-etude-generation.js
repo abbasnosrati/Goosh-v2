@@ -17,7 +17,8 @@ const create = (tag, parent, text, className) => {
 };
 
 export function mountEtudeComposer(host, {
-  etude, fa, isRecording, isCurrent, onGenerated, onModeChange, onSignatureChange
+  etude, fa, isRecording, isCurrent, onGenerated, onModeChange, onSignatureChange,
+  onEditKeySignature, signatureIcon, signatureEditing = false
 }) {
   const t = (en, ir) => fa ? ir : en;
   let state = states.get(etude);
@@ -104,6 +105,20 @@ export function mountEtudeComposer(host, {
     'Selecting a mode sets the score and piano tuning. Use Edit Key Signature to fine-tune it.',
     'با انتخاب دستگاه یا مد، سرکلید و کوک پیانو تنظیم می‌شود. برای تنظیم دقیق‌تر، از ویرایش سرکلید استفاده کنید.'
   ), 'studio-compose-music-hint');
+  // Entry belongs to the shared musical settings in BOTH Manual and AI.
+  // The return action lives next to the editor's heading, where it is needed.
+  const signatureActions = create('div', sharedMusic, null, 'studio-signature-actions');
+  const editSignature = create('button', signatureActions, null, 'signature-toggle studio-signature-entry');
+  editSignature.type = 'button';
+  editSignature.hidden = signatureEditing;
+  editSignature.setAttribute('aria-label', t('Edit Key Signature', 'ویرایش سرکلید'));
+  const editIcon = signatureIcon?.();
+  if (editIcon) {
+    editIcon.classList.add('score-switch-symbol');
+    editSignature.append(editIcon);
+  }
+  create('span', editSignature, t('Edit Key Signature','ویرایش سرکلید'), 'signature-toggle-label');
+  editSignature.onclick = () => onEditKeySignature?.();
   // Primary Practice Goal and Generate are AI-only, unlike the music selector.
   const goalLabel = create('label', content, null, 'practice-field studio-compose-goal');
   create('span', goalLabel, t('Primary practice goal', 'هدف اصلی تمرین'));
