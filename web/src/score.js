@@ -69,11 +69,6 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
         cx:x+14+6*i,cy:y,r:1.55,fill:'currentColor'
       })
     }
-    const annotate=(x,beats,s)=>{
-      if(!s.exact)draw('text',{
-        x,y:137,'font-size':9,'text-anchor':'middle',fill:'currentColor',opacity:.8
-      },Number(beats.toFixed(2))+'♩')
-    }
     const rest=ev=>{
       const x=ev.x,beats=ev.duration/second,s=symbol(beats)
       if(s.kind==='whole'||s.kind==='half')
@@ -93,7 +88,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
             fill:'none',stroke:'currentColor','stroke-width':2.2})
         }
       }
-      dots(x,89,s.dots);annotate(x,beats,s)
+      dots(x,89,s.dots)
     }
     const note=({note:n,index},x)=>{
       const visual=Number.isInteger(n.staffM)?n.staffM:n.m
@@ -129,7 +124,6 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
         'font-family':koron?'"Noto Music", "Bravura", "Segoe UI Symbol", serif':'inherit',
         fill:'currentColor'},accidental)
       if(selected.has(index))head.setAttribute('stroke-width',3)
-      annotate(x,beats,s)
       // Small arrow near (not around) the note. Keep the original index for
       // playback highlighting across sorted and wrapped score rows.
       const indicatorX = x + (y >= 86 ? -12 : 12);
