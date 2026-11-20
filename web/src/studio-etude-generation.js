@@ -76,6 +76,7 @@ export function mountEtudeComposer(host, {
 
   let catalog = null;
   let busy = false;
+  let previouslyUnsupported = false;
   const isReplace = () => Boolean(etude.notes?.length || etude.practiceSequence?.length);
   const sync = () => {
     manual.classList.toggle('active', state.mode === 'manual');
@@ -95,7 +96,8 @@ export function mountEtudeComposer(host, {
       'Chord recognition needs polyphonic notation, which the current score does not support.',
       'تشخیص آکورد به نت‌نویسی چندصدایی نیاز دارد که خط حامل فعلی پشتیبانی نمی‌کند.'
     ), 'error');
-    else if (status.dataset.tone === 'error' && !busy) showStudioMessage(status, '');
+    else if (previouslyUnsupported) showStudioMessage(status, '');
+    previouslyUnsupported = unsupported;
   };
   const changeMode = value => {
     if (busy) return;
