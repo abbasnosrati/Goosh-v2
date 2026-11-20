@@ -3,6 +3,7 @@
 
 Python standard library only; no Node/Express backend or extra Python packages.
 """
+import argparse
 import json
 import os
 import re
@@ -269,9 +270,22 @@ class GooshHandler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     load_environment()
-    port = int(os.environ.get("GOOSH_PORT", "8080"))
-    with ThreadingHTTPServer(("127.0.0.1", port), GooshHandler) as server:
-        print("Goosh + AI API: http://127.0.0.1:" + str(port), flush=True)
+    parser = argparse.ArgumentParser(description="Serve Goosh UI and OpenRouter API together.")
+    parser.add_argument("port", nargs="?", type=int,
+                        default=int(os.environ.get("GOOSH_PORT", "8080")),
+                        help="HTTP port (default: GOOSH_PORT or 8080)")
+    parser.add_argument("--bind", default="127.0.0.1",
+                        help="Bind address (default: 127.0.0.1; 0.0.0.0 for LAN)")
+    args = parser.parse_args()
+    if not (1 <= args.port <= 65535):
+        parser.error("port must be between 1 and 65535")
+
+    with ThreadingHTTPServer((args.bind, args.port), GooshHandler) as server:
+        print("Goosh + AI API listening at http://" + args.bind + ":" + str(args.port),
+              flush=True)
+        if args.bind in ("0.0.0.0", "::"):
+            print("WARNING: LAN users can access the AI API and incur OpenRouter charges.",
+                  flush=True)
         if not os.environ.get("OPENROUTER_API_KEY"):
             print("Note: set OPENROUTER_API_KEY in .env before using Generate.", flush=True)
         try:

@@ -16,6 +16,30 @@ npm run web
 
 You may also run `python3 scripts/goosh_server.py` without npm.
 
+### Previous port 8081 / LAN access
+
+To keep the same port and bind address as your previous static-server command:
+
+```bash
+python3 scripts/goosh_server.py 8081 --bind 0.0.0.0
+```
+
+This serves **both** the current Goosh UI and its OpenRouter API on port 8081.
+Open http://localhost:8081 on the development machine, or
+http://<your-computer-LAN-IP>:8081 on another device.
+
+For testing only on this computer, omit `--bind 0.0.0.0`:
+
+```bash
+python3 scripts/goosh_server.py 8081
+```
+
+**Security:** binding to `0.0.0.0` exposes the AI endpoint to other clients
+that can reach your computer. They can spend your OpenRouter credits. Use only
+on a trusted network, with firewall restrictions, and never expose this POC to
+the public internet. The API key itself stays in the server-side `.env`.
+
+
 Visit **http://localhost:8080**, open **Etude Studio**, create or open an etude,
 then select **Generate** in the desktop editor and choose شور, سه‌گاه, ماهور,
 or همایون. This generates exactly 16 notes across 4 bars of 4/4 using the
