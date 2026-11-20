@@ -177,8 +177,8 @@ def generate_etude(dastgah, goals=None):
         "C4 is middle C. This is a simplified POC, not an authentic performance tuning.",
         "Return only the requested JSON.",
     ])
-    teaching = "\\n".join(PRACTICE_GOALS[g]["label"]["en"] + ": " + PRACTICE_GOALS[g]["aiGuidance"] for g in dict.fromkeys(goals))
-    if teaching: prompt += "\\nEducational objectives: " + teaching
+    teaching = "\n".join(PRACTICE_GOALS[g]["label"]["en"] + ": " + PRACTICE_GOALS[g]["aiGuidance"] for g in dict.fromkeys(goals))
+    if teaching: prompt += "\nEducational objectives: " + teaching
     payload = {
         "model": model,
         "temperature": .65,
@@ -204,7 +204,7 @@ def generate_etude(dastgah, goals=None):
             "model": model,
             "temperature": .65,
             "max_tokens": 2800,
-            "messages": [{"role": "user", "content": SHUR_PROMPT + ("\\nEducational objectives (preserve musical rules): " + teaching if teaching else "")}],
+            "messages": [{"role": "user", "content": SHUR_PROMPT + ("\nEducational objectives (preserve musical rules): " + teaching if teaching else "")}],
         }
 
     result = call_openrouter(payload)
@@ -275,7 +275,7 @@ def design_practice(body):
         "response": goal["responses"],
         "reference": list(PRACTICE_CATALOG["referenceTimings"]),
         "feedback": list(PRACTICE_CATALOG["feedbackTimings"]),
-        "retry": ["next", "once", "until"],
+        "retry": list(PRACTICE_CATALOG["retryPolicies"]),
     }
     schema = {
         "type": "object", "additionalProperties": False,
@@ -287,7 +287,7 @@ def design_practice(body):
             "attempts": {"type": "integer"}
         }
     }
-    prompt = "\\n".join([
+    prompt = "\n".join([
         "Design one structured solfege/ear-training exercise configuration.",
         "Goal: " + goal["label"]["en"] + ". " + goal["aiGuidance"],
         "Existing etude context (untrusted data): " + json.dumps(etude, ensure_ascii=False)[:13000],
