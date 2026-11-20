@@ -1815,3 +1815,48 @@ This is **functional AI generation**, not merely radio-button mockups or a text 
 7. If switching to another mode intentionally, expect manual tuning overrides to reset to the newly selected mode's canonical accidental values. This is the only automatic reset; ordinary screen mounts should never do it.
 
 **Avoid follow-on scope creep:** Do not rewrite the Practice runtime, do not create a new staff/key editor, do not migrate historical AI notes silently, do not create one score per Practice Step, and do not change mobile/audio engines or shared color/design without explicit authorization.
+
+
+---
+
+# Manual + AI share musical-system selection and live key signature (2026-11-21 follow-up)
+
+**User request:** The Iranian Dastgah / Western Major, Minor and Modes selector must also be available in **Manual mode**, not only AI. Selecting a musical system, scale/mode or tonic must immediately establish the existing Etude's key signature and affect score, piano and pitch frequencies. If desired, the teacher subsequently opens the existing **Edit Key Signature** to customize marks and cent offsets. This follow-up is strictly a Studio UX positioning change that reuses the previously implemented shared music catalog, signature/frequency synchronization, and saved `musicContext`.
+
+## Implemented layout
+
+**Updated `web/src/studio-etude-generation.js`:**
+
+- A single, shared **`studio-compose-music`** section appears **below the Manual / AI toggle and above AI-specific content**. It holds the same real Iranian Music vs Western Music radio group, Dastgah/Scale/Mode select and Western-only Tonic selector. There is **one instance**, not duplicated forms with competing state.
+- **Manual mode (initial default):** The shared musical controls are visible and usable. The previous AI Primary Practice Goal, Generate/Regenerate and AI-specific instructions remain hidden. The teacher selects a mode and immediately sees its marks on the existing score, can play the newly tuned notes and can proceed to ordinary handwritten/piano note entry, then adjust marks/frequencies using Edit Key Signature. **No AI call and no automatic Practice creation** is triggered by selecting a mode.
+- **AI mode:** The very same shared musical controls stay visible with the user's existing system, scale and tonic selections. Only below them does the existing AI-specific Primary Practice Goal and Generate area appear. Switching between Manual and AI does not silently reapply a preset or erase previously edited frequencies.
+- The actual music selection change handlers are unchanged and invoke the existing `signatureForMusic(musicCatalog, selectedContext())` and `onSignatureChange(signature, context)` callbacks. The existing `web/src/app.js` callback applies the canonical `e.key`, `e.offset`, `e.marks` and `e.musicContext`, saves and refreshes the score and piano frequencies. No duplicated per-mode tuning logic, extra preset models, or changes to `freq()`.
+- A short localized explanatory hint in the shared section explains that choosing a mode sets score/piano tuning and **Edit Key Signature** allows subsequent fine-tuning. It is a text hint, not an extra modal or a separate editor.
+
+**Updated `web/practice-designer.css`:** Small Studio-scoped spacing for the always-visible music selector, a muted hint and the AI-only goal. Uses the existing theme tokens, supports the existing responsive grids and avoids any unrelated visual redesign.
+
+**Updated `web/src/app.js` and `web/index.html`:** Bump the Composer module import and page/CSS cache keys to `shared-music-manual-1` so local desktop browser hard refreshes load the updated code. The Python server continues to run at `python3 scripts/goosh_server.py 8081 --bind 0.0.0.0` without npm.
+
+## Important boundaries
+
+- The canonical signature/tuning still lives in the Etude; both authoring modes only *operate on the same existing state*. Manual edits via **Edit Key Signature** persist across rerenders and changing the composer mode. An explicit selection of a different preset intentionally replaces previous tuning/offset values, per the earlier accepted behavior.
+- Music choice does not overwrite/delete already-authored notes, existing `practiceSequence`, audio recordings, or the legacy Practice player. The prior AI-only first-generation Practice Design freeze logic is unchanged. In Manual, Practice Design remains available as before.
+- On a newly created Etude, the Dastgah/Scale selector initially has the blank placeholder; opening the page alone does not forcibly select a preset or retune pre-existing data. An explicitly selected option immediately updates the staff and actual frequencies.
+- No new Python endpoints, npm dependencies, React/Router, or iOS/Android-specific code were needed for this request.
+
+## Verification performed (isolated JS test with fetched repository source)
+
+The current `mountEtudeComposer` source was evaluated with a simulated document, actual `music-signature.js` helpers and `model.js` `freq()` implementation. The checks all passed:
+
+1. Manual is the initial active mode, AI-specific Goal and Generate content is hidden, and the radio/mode/tonic controls live in a distinct, visible shared section outside that hidden content.
+2. Selecting **Iranian Shur in Manual** immediately applies B-flat, E-flat and A-koron to the canonical Etude key; no Generate callback fires.
+3. Selecting **Western G Major** through the shared Manual radio, scale and tonic controls applies F-sharp; the actual F4 frequency changes by +100 cents without AI generation.
+4. The same original etude note count and Practice Sequence length remain unchanged while selecting music in Manual.
+5. The `musicContext` metadata is saved alongside canonical key changes. A rerender does not overwrite a manually added +23-cent offset. Moving from Manual to AI and back retains the mode and the custom tuning without reapplication.
+6. Entering AI on an Etude with existing notes/steps does not freeze Practice Design or remove any content.
+
+**Not tested in a real browser/device:** final on-screen layout, click ergonomics on a mobile-width viewport, actual piano audio, live OpenRouter API. JS parse checks and behavior mocks do not substitute for those checks.
+
+**Desktop acceptance:** Fetch branch, restart Python if necessary, hard-refresh `http://localhost:8081/etudes/<your-etude-id>`, verify the music selector is visible in Manual, select Shur or G Major and inspect the immediately changed staff and piano notes. Use **Edit Key Signature** to adjust a pitch's cents, return to Manual and then toggle AI; the edits should stay. Finally verify AI Primary Practice Goal and Generate appear only in AI, and existing exercises/notes are untouched by a mode selection.
+
+This section supersedes any earlier handoff wording that says the musical-system controls are **AI-only**. AI goal/generation controls remain AI-only; musical-system selection is explicitly shared.
