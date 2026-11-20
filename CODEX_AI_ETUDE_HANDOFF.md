@@ -2233,3 +2233,34 @@ The user observed that nudging a Score note slightly to either side created or c
 **Verified:** All 12 Western tonic entries produce the expected Persian note-name/spelling display and retain all 12 original English labels; the seven Western mode labels use their English catalog text in both languages; all option IDs remain stable. Full edited composer JS parsed successfully. Real device/browser visual QA still required.
 
 **Do not** translate Western mode names into Persian again or save localized Tonic display labels in Etude data. Locale only controls presentation, not pitch identifiers.
+
+
+---
+
+# Free Score Drag correction: INSERT before/after NOTE or REST; NEVER swap/replace (2026-11-21)
+
+**User correction (supersedes previous Free horizontal Drag design):**
+The user saw that pulling note #3 "in front of" note #5 visually behaved as though note #5 replaced note #3 in its original slot. This is explicitly **WRONG in Free meter**. Free is not a timeline-position drag or a two-item swap. User further specified that **a rest is also a musical event/slot and counts in the sequence, just like a sounding note**. A dragged note must move **before or after another note OR before or after a rest**. The target must remain in the same relative order with all other untouched events. Only the intervening events shift as needed to close the vacated slot and open the new insertion slot. The original note's pitch, accidental, duration, and unique identity must stay unchanged during a horizontal-only move. There is no need for a second music/audio engine or new storage collection.
+
+## Actual changes
+
+- **`web/src/model.js` → existing `planScoreNoteReorder()` Free branch only:** Previously it grouped *only sounding notes* and used note-index-aligned silent gaps; the user correctly pointed out that this fails to treat rests as first-class notation positions. The Free branch now derives one ordered ephemeral event sequence from the existing canonical `e.notes`: each **note/chord group** as a note event, and each true time gap between groups as an explicit derived **rest event** with its original duration. No new persistent rest model is created. On horizontal drop, remove only the dragged note event and insert it before or after the actual destination event. Do NOT exchange its position with the target. Reflow the event sequence into normal onset times using unchanged event durations; preserve the relative order of every other note AND rest event, as well as their total temporal span. A drop within the original source slot returns `moves:[]`, so no silence is unexpectedly created. Chord/overlapping voice restrictions remain as safe guards. The existing Metered branch (slot swapping within a bar, capacity-aware transfer between bars) is intentionally unchanged.
+- **`web/src/score.js` → existing `dragSlot()`:** In Free, the drop candidates now include both rendered `notes` AND `rest` events. A target drop near the event's head/left side means `position:'before'`; moving right of the target means `position:'after'`. The ghost note and thin vertical guide preview the proposed insertion **to the left or right of** the target, instead of sitting over and looking like it would replace the target. The existing Select pointer capture, vertical pitch handling, Pen, Eraser, Score rendering and audio are unchanged.
+- **`web/src/app.js`:** The existing move callback already passes the whole `slot` object to `planScoreNoteReorder()` and atomically applies the proposed `moves:[{index,at}]`, with a single Undo entry retaining every prior onset. No second apply/undo path is needed. Its Score import version is updated to `free-note-rest-insertion-1`. `web/index.html` app import version is also `free-note-rest-insertion-1`.
+- **Codex instruction:** For any future Free Drag change, treat silence as an event in the stable ordinal sequence, not as an incidental property attached to note indexes. **Do NOT** move target note #5 into note #3's vacated position; **do NOT** implement continuous/free-floating timestamp movement for this interaction; **do NOT** silently omit rest slots. If a dedicated Timeline UI is requested later, it is a separate future feature not authorized by this task.
+
+## Concrete musical examples
+
+- Free note order `1, 2, 3, 4, 5, 6`: drag **3 BEFORE 5** → `1, 2, 4, 3, 5, 6`. Note **5 stays after 3** and does **not** jump back into position 3. Drag 3 AFTER 5 → `1, 2, 4, 5, 3, 6`.
+- With a rest event `N1, N2, REST(quarter), N3, N4`: drag N1 BEFORE REST → `N2, N1, REST, N3, N4`. Drag N1 AFTER REST → `N2, REST, N1, N3, N4`. Rest is an actual independent item with its own quarter duration, not a detached gap that arbitrarily follows a changed note.
+- Drag a note a few pixels while still within its source slot → *no change at all*. A horizontal-only reordering preserves per-note Koron/Sori/accidentals. Vertical moves keep their existing signature rules and Undo exactness.
+
+## Validation
+
+- Checked all 12 tonic/naming changes from the previous independent task remain intact; no changes to Western styles, score audio, Practice, AI, tempo, meter presets or stored event format.
+- The actual `model.js` Free reorder planner + original `app.js` move/Undo callback were exercised: third note before fifth preserves other note order, never swaps fifth into the third slot; a dragged note can be inserted before/after a rest event; Undo restores every old onset and the exact gap durations. Metered note swap remains unchanged.
+- The actual Score SVG pointer logic was tested with mocked PointerEvents: dropping over note #5's head targets `before`; dropping to its right targets `after`; Free quarter rest is recognized as an actual drop target on both sides; a small source-slot wiggle remains a no-op in the planner.
+- Property testing generated **35,000 Free insertion candidates** spanning varied lengths, initial/intermediate rests and before/after destinations. Every valid result preserved all note and rest events' relative order (except the moved note), their exact lengths and total time span; original note data was never mutated by the planner.
+- Source JavaScript syntax checks passed. **Real browser mouse/touch, audio and APK end-to-end testing has not been performed.**
+
+This section takes priority over the earlier handoff passage that described Free Drag as a note-only ordinal reorder with gaps associated with positions rather than explicit rest events.
