@@ -167,10 +167,10 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
     }else at=source.at
     if(dragStep)at=Math.round(at/dragStep)*dragStep
     else at=Math.round(at*1000)/1000
-    const maxAt=measured
-      ?Math.max(0,(e.measureCount||1)*timeline.meter.barQuarterBeats*second-source.d)
-      :1e7-source.d
-    return {at:Math.min(maxAt,Math.max(0,at)),x}
+    // Never silently relocate an overhanging note to the last valid slot:
+    // measuredEditAllowed() will reject out-of-range drops explicitly.
+    // The existing note model still bounds all absolute times to 1e7.
+    return {at:Math.min(1e7,Math.max(0,at)),x}
   }
   function dragDestination(ev,source){
     let nearest=null
