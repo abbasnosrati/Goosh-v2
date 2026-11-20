@@ -93,3 +93,97 @@
 @media print {
   #app[data-page="studio"] .studio-compose-host { display:none!important; }
 }
+
+/* One canonical Studio goal picker, with two neighboring create methods. */
+#app[data-page="studio"] .practice-add-row {
+  display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;
+}
+#app[data-page="studio"] .practice-goal-picker {
+  flex:1 1 240px;min-width:min(100%,240px);
+}
+#app[data-page="studio"] .practice-goal-picker select {
+  width:100%;min-width:0;
+}
+#app[data-page="studio"] .practice-add-actions {
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+}
+#app[data-page="studio"] .practice-action-wrap {
+  position:relative;display:flex;align-items:stretch;
+}
+#app[data-page="studio"] .practice-action-wrap button {
+  margin:0;white-space:nowrap;min-width:144px;
+}
+#app[data-page="studio"] .practice-add-button {background:var(--accent);color:var(--panel);}
+#app[data-page="studio"] .practice-add-actions .practice-ai-button {
+  margin:0;border-color:var(--line);background:var(--panel);color:var(--ink);
+}
+#app[data-page="studio"] .practice-action-wrap button:disabled {
+  opacity:.45;cursor:not-allowed;
+}
+#app[data-page="studio"] .practice-action-wrap.needs-goal:focus-visible {
+  outline:2px solid var(--accent);outline-offset:3px;border-radius:8px;
+}
+#app[data-page="studio"] .practice-goal-tooltip {
+  display:none;position:absolute;inset-block-end:calc(100% + 8px);inset-inline-start:0;
+  width:max-content;max-width:min(240px,80vw);padding:9px 11px;
+  background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  border-radius:9px;box-shadow:var(--shadow);z-index:5;
+  font-size:.82rem;white-space:normal;pointer-events:none;
+}
+#app[data-page="studio"] .practice-action-wrap.needs-goal:hover .practice-goal-tooltip,
+#app[data-page="studio"] .practice-action-wrap.needs-goal:focus-within .practice-goal-tooltip {
+  display:block;
+}
+#app[data-page="studio"] .practice-frozen-message {
+  border:1px solid var(--line);background:var(--soft);border-radius:12px;
+  color:var(--ink);padding:13px 16px;font-size:.91rem;margin:16px 0 4px;
+}
+#app[data-page="studio"] .practice-frozen-message[hidden] {display:none;}
+#app[data-page="studio"] .practice-designer.practice-frozen {
+  opacity:.42;filter:grayscale(.3);pointer-events:none;user-select:none;
+}
+#app[data-page="studio"] .studio-music-system {
+  border:0;margin:14px 0 10px;padding:0;min-width:0;
+}
+#app[data-page="studio"] .studio-music-system legend {
+  color:var(--ink);font-size:.87rem;font-weight:650;margin-bottom:9px;
+}
+#app[data-page="studio"] .studio-music-choices {
+  display:flex;flex-wrap:wrap;gap:9px;
+}
+#app[data-page="studio"] .studio-music-choice {
+  display:inline-flex;align-items:center;gap:9px;margin:0;
+  padding:10px 13px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);color:var(--ink);cursor:pointer;font-size:.9rem;
+}
+#app[data-page="studio"] .studio-music-choice:has(input:checked) {
+  border-color:var(--accent);color:var(--accent);background:var(--bg);
+}
+#app[data-page="studio"] .studio-music-choice input {
+  accent-color:var(--accent);width:17px;height:17px;min-height:17px;margin:0;
+}
+#app[data-page="studio"] .studio-compose .practice-field[hidden] {display:none;}
+.practice-ai-dialog {
+  width:min(440px,92vw);max-width:min(440px,92vw);
+}
+.practice-ai-dialog .practice-ai-selected {
+  margin:9px 0;color:var(--ink);
+}
+.practice-ai-dialog textarea {
+  width:100%;min-height:100px;box-sizing:border-box;
+  background:var(--panel);color:var(--ink);
+  border:1px solid var(--line);border-radius:9px;
+  padding:12px;font:inherit;resize:vertical;
+}
+.practice-ai-dialog .practice-ai-status {min-height:1em;margin:10px 0;}
+.practice-ai-dialog .practice-ai-status:empty {display:none;}
+.practice-ai-dialog .etude-delete-actions {margin-top:14px;}
+@media (max-width:560px) {
+  #app[data-page="studio"] .practice-add-actions {width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+  #app[data-page="studio"] .practice-action-wrap {min-width:0;}
+  #app[data-page="studio"] .practice-action-wrap button {width:100%;min-width:0;white-space:normal;}
+  #app[data-page="studio"] .studio-music-choice {flex:1 1 120px;}
+}
+@media print {
+  #app[data-page="studio"] .practice-frozen-message {display:none!important;}
+}
