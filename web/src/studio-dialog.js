@@ -35,8 +35,10 @@ export function confirmStudioAction({ title, description, confirmLabel,
     cancel.onclick = () => dialog.close();
     proceed.onclick = () => { accepted = true; dialog.close(); };
     const routeClose = () => { if (dialog.open) dialog.close(); };
+    window.addEventListener('popstate', routeClose);
     window.addEventListener('hashchange', routeClose);
     dialog.onclose = () => {
+      window.removeEventListener('popstate', routeClose);
       window.removeEventListener('hashchange', routeClose);
       dialog.remove();
       resolve(accepted);
