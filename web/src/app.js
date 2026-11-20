@@ -19,8 +19,8 @@ import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=koron-align-a4-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { mountEtudeComposer } from './studio-etude-generation.js'
-import { renderStudioPractice } from './studio-practice.js'
+import { mountEtudeComposer } from './studio-etude-generation.js?v=goal-first-1'
+import { renderStudioPractice } from './studio-practice.js?v=goal-first-1'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),
   app = $('#app');
