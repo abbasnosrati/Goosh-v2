@@ -1016,7 +1016,7 @@ html[lang="fa"] #app[data-page="practice"]:has(> .shelves) .etude-item strong::a
 }
 #app[data-page="studio"] .etude-card > .etude-item,
 #app[data-page="practice"] .etude-card > .etude-item {
-  padding-bottom: 62px;
+  padding-right: 70px;
 }
 #app[data-page="studio"] .etude-card > .etude-delete,
 #app[data-page="practice"] .etude-card > .etude-delete {
@@ -1049,4 +1049,75 @@ html[lang="fa"] #app[data-page="practice"]:has(> .shelves) .etude-item strong::a
     color: #b53340;
     border-color: currentColor;
   }
+}
+
+/* Custom etude-delete dialog: consistent with Goosh light/dark themes. */
+.etude-delete-dialog {
+  width: min(430px, calc(100vw - 32px));
+  max-width: none;
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: clamp(20px, 5vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 24px 72px rgb(0 0 0 / 25%);
+  text-align: start;
+}
+.etude-delete-dialog::backdrop {
+  background: rgb(4 17 27 / 65%);
+  backdrop-filter: blur(5px);
+}
+.etude-delete-dialog h2 {
+  margin: 0 0 16px;
+  font-size: clamp(21px, 4vw, 25px);
+  font-weight: 750;
+  line-height: 1.4;
+}
+.etude-delete-name {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.etude-delete-dialog p {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.etude-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+.etude-delete-actions button {
+  min-height: 44px;
+  padding: 9px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.etude-delete-cancel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+.etude-delete-confirm {
+  background: #ae3442;
+  border: 1px solid #ae3442;
+  color: white;
+}
+@media (hover:hover) {
+  .etude-delete-confirm:hover { background: #922634; border-color: #922634; }
+  .etude-delete-cancel:hover { background: var(--soft); }
+}
+@media (max-width: 420px) {
+  .etude-delete-actions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .etude-delete-actions button { padding-inline: 8px; }
 }
