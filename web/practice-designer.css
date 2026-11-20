@@ -78,7 +78,7 @@
 #app[data-page="studio"] .studio-signature-actions {
   display: flex;
   align-items: center;
-  margin-inline-start: auto;
+  margin-inline-start: 0;
 }
 #app[data-page="studio"] .studio-signature-entry {
   display: inline-flex;
