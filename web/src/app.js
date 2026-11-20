@@ -1021,10 +1021,29 @@ async function startScorePlayback() {
   const requestId = ++scorePlaybackRequestId;
   scorePlaybackPending = true;
   updateScoreTransportButtons();
-  await pianoSamplesReady;
-  if (requestId !== scorePlaybackRequestId || e !== requestedEtude ||
-      page !== 'studio') return;
+  const sampleResults = await pianoSamplesReady;
+  if (requestId !== scorePlaybackRequestId) return;
   scorePlaybackPending = false;
+  if (e !== requestedEtude || page !== 'studio') {
+    updateScoreTransportButtons();
+    return;
+  }
+  // Never silently substitute the bright oscillator fallback for the
+  // studio's acoustic piano while a sample request failed.
+  if (sampleResults.some(result => result.status === 'rejected')) {
+    const status = $('[data-score-audio-status]');
+    if (status) {
+      status.textContent = t(
+        'Piano samples could not be loaded. Reload the page to retry.',
+        'نمونه‌صداهای پیانو بارگیری نشدند. برای تلاش دوباره صفحه را بازخوانی کنید.'
+      );
+      status.hidden = false;
+    }
+    updateScoreTransportButtons();
+    return;
+  }
+  const status = $('[data-score-audio-status]');
+  if (status) { status.textContent = ''; status.hidden = true; }
   const notes = e.notes.map((n,index) => ({
     index, at:n.at, d:Math.min(n.d,6), hz:freq(e,n.m)
   }));
@@ -1325,6 +1344,10 @@ function studio() {
 
   const transportActions = el('div', scoreActions, undefined, 'score-transport-actions');
   transportActions.hidden = signatureMode;
+  const audioStatus = el('p', transportActions, undefined, 'score-audio-status');
+  audioStatus.dataset.scoreAudioStatus = '';
+  audioStatus.setAttribute('role', 'status');
+  audioStatus.hidden = true;
   const playButton = btn(transportActions, '', () => {
     if (scoreTransport || scorePlaybackPending) stopScorePlayback();
     else startScorePlayback();
