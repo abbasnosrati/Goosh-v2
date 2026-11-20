@@ -59,9 +59,6 @@ function infoChip(el,parent,label,glyph){
   icon(chip,glyph);
   el('span',chip,label);
 }
-function navigateToEtude(id, mode){
-  location.hash=mode+'/'+id;
-}
 function renderDesktop({el,app,t,collection,navigate}) {
   const page=el('div',app,undefined,'g-desktop');
   const hero=el('section',page,undefined,'g-hero');
@@ -165,7 +162,7 @@ function renderDesktop({el,app,t,collection,navigate}) {
 
   return page;
 }
-function renderDashboard({el,app,t,collection,createEtude,importEtude}) {
+function renderDashboard({el,app,t,collection,navigate,createEtude,importEtude}) {
   const dashboard=el('div',app,undefined,'g-dashboard');
   const welcome=el('section',dashboard,undefined,'g-dashboard-heading');
   const top=el('div',welcome,undefined,'g-dashboard-top');
@@ -212,7 +209,7 @@ function renderDashboard({el,app,t,collection,createEtude,importEtude}) {
   }
   for(const [id,entry] of entries){
     const item=el('button',list,undefined,'g-etude-row');
-    item.type='button';item.onclick=()=>navigateToEtude(id,'studio');
+    item.type='button';item.onclick=()=>navigate('studio',id);
     const symbol=el('span',item,undefined,'g-etude-symbol');icon(symbol,entry.origin==='imported'?'import':'music');
     const info=el('span',item,undefined,'g-etude-info');
     el('strong',info,entry.data.title||t('Untitled etude','اتود بدون نام'));
@@ -220,7 +217,7 @@ function renderDashboard({el,app,t,collection,createEtude,importEtude}) {
     icon(item,'arrow','g-row-arrow');
   }
   if(collection.size>4){
-    textAction(el,etudes,t('View all etudes','نمایش همه اتودها'),'arrow',()=>{location.hash='studio'},'g-action-text');
+    textAction(el,etudes,t('View all etudes','نمایش همه اتودها'),'arrow',()=>navigate('studio'),'g-action-text');
   }
   const feed=el('div',etudes,undefined,'g-community-mini');
   const feedTitle=el('div',feed,undefined,'g-mini-title');
@@ -242,15 +239,14 @@ function renderDashboard({el,app,t,collection,createEtude,importEtude}) {
   el('h3',daily,t('One etude at a time','هر بار یک اتود'));
   el('p',daily,t('Open an etude and work through it note by note.','یک اتود را باز کن و نت‌به‌نت تمرینش کن.'));
   const first=entries[0];
-  textAction(el,daily,t('Start practicing','شروع تمرین'),'play',()=>{
-    location.hash=first?'practice/'+first[0]:'practice';
-  },'g-action-primary');
+  textAction(el,daily,t('Start practicing','شروع تمرین'),'play',()=>
+    navigate('practice',first?.[0]),'g-action-primary');
   const practiceListTitle=el('div',practice,undefined,'g-list-title');
   el('h3',practiceListTitle,t('Ready to practice','آماده تمرین'));
   if(!entries.length)el('span',practice,t('Import or create an etude to begin.','برای شروع، یک اتود بساز یا وارد کن.'),'g-muted-info');
   for(const [id,entry] of entries.slice(0,2)){
     const item=el('button',practice,undefined,'g-practice-link');
-    item.type='button';item.onclick=()=>navigateToEtude(id,'practice');
+    item.type='button';item.onclick=()=>navigate('practice',id);
     icon(item,'play');
     el('span',item,entry.data.title||t('Untitled etude','اتود بدون نام'));
     icon(item,'arrow','g-row-arrow');
