@@ -14,9 +14,11 @@ import {
 } from './audio.js?v=score-transport-1'
 import {
   score
-} from './score.js?v=key-sig-view-1'
+} from './score.js?v=persian-marks-1'
 import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
-  from './key-signature.js?v=key-sig-tuner-2'
+  from './key-signature.js?v=persian-marks-1'
+import {isPersianAccidental, appendPersianAccidental}
+  from './persian-accidentals.js?v=persian-marks-1'
 import { generateStudioEtude } from './ai-etude.js?v=khara-free-phrases-3'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),
@@ -347,7 +349,7 @@ function renderSignatureControls(){
     'signature-editor-selected')
   const marks=el('div',box,undefined,'signature-editor-marks')
   for(const {mark:option,glyph,en,fa:ir} of SIGNATURE_MARKS){
-    const button=btn(marks,glyph,()=>{
+    const button=btn(marks,isPersianAccidental(option)?'':glyph,()=>{
       if((e.key[pc]||'')===option&&!e.offset[pc])return
       stopSignaturePreview()
       stopScorePlayback()
@@ -361,7 +363,10 @@ function renderSignatureControls(){
     if(option===mark)button.classList.add('active')
     button.setAttribute('aria-label',t(en,ir))
     button.setAttribute('aria-pressed',String(option===mark))
-    if(option==='کرن'||option==='سری')button.classList.add('signature-microtonal')
+    if(isPersianAccidental(option)){
+      button.classList.add('signature-microtonal')
+      appendPersianAccidental(button,option,{width:24,height:30})
+    }
   }
   // Focused in-place tuning panel inspired by a hardware tuner.
   // Display absolute cents relative to the natural note, not a fabricated

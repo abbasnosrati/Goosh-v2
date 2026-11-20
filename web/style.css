@@ -838,3 +838,16 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   #app[data-page="studio"] .signature-tuner-actions {grid-template-columns: repeat(2, minmax(0, 1fr));}
   #app[data-page="studio"] .signature-tuner-reset {grid-column: 1 / -1;}
 }
+
+/* Persian accidentals are vector paths, not music-font glyphs. */
+#app[data-page="studio"] .signature-editor-mark.signature-microtonal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+#app[data-page="studio"] .signature-editor-mark.signature-microtonal svg[data-persian-accidental] {
+  display: block;
+  flex: 0 0 auto;
+  color: inherit;
+  pointer-events: none;
+}

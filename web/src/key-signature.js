@@ -1,4 +1,6 @@
 // Shared key/tuning model: do not duplicate or shadow e.key/e.offset.
+import {isPersianAccidental, appendPersianAccidental}
+  from './persian-accidentals.js?v=persian-marks-1'
 const ns='http://www.w3.org/2000/svg'
 const steps=[0,0,1,1,2,3,3,4,4,5,5,6]
 const step=m=>Math.floor(m/12)*7+steps[m%12]-37
@@ -15,8 +17,8 @@ export const SIGNATURE_MARKS=[
   {mark:'',glyph:'♮',en:'Natural',fa:'طبیعی'},
   {mark:'♭',glyph:'♭',en:'Flat',fa:'بمل'},
   {mark:'♯',glyph:'♯',en:'Sharp',fa:'دیز'},
-  {mark:'کرن',glyph:'𝇪',en:'Koron',fa:'کرن'},
-  {mark:'سری',glyph:'𝇫',en:'Sori',fa:'سری'}
+  {mark:'کرن',glyph:'',en:'Koron',fa:'کرن'},
+  {mark:'سری',glyph:'',en:'Sori',fa:'سری'}
 ]
 export const signatureGlyph=mark=>SIGNATURE_MARKS.find(item=>item.mark===mark)?.glyph||mark
 
@@ -55,13 +57,16 @@ export function drawKeySignatureEditor(host,e,{selectedPc=0,onSelect}={}){
     // Unmarked staff positions must remain entirely blank; the existing
     // transparent click targets still allow selecting an empty pitch.
     if(mark||e.offset[pitch.pc]){
-      draw('text',{
-        x,y:y+7,'font-size':27,
-        'text-anchor':'middle',fill:'currentColor',
-        'font-family':mark==='کرن'||mark==='سری'
-          ? '"Noto Music","Bravura","Segoe UI Symbol",serif':'inherit',
-        'pointer-events':'none'
-      },mark?signatureGlyph(mark):'♮')
+      if(isPersianAccidental(mark)){
+        // Render the existing mark with the same shared SVG as the score.
+        appendPersianAccidental(svg,mark,{x:x-13,y:y-23,width:26,height:37})
+      } else {
+        draw('text',{
+          x,y:y+7,'font-size':27,
+          'text-anchor':'middle',fill:'currentColor',
+          'pointer-events':'none'
+        },mark?signatureGlyph(mark):'♮')
+      }
     }
     draw('text',{
       x,y:143,'font-size':12,

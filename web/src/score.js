@@ -1,3 +1,6 @@
+import {isPersianAccidental, appendPersianAccidental}
+  from './persian-accidentals.js?v=persian-marks-1'
+
 const ns = 'http://www.w3.org/2000/svg',
   steps = [0,0,1,1,2,3,3,4,4,5,5,6]
 const step = m => Math.floor(m/12)*7 + steps[m%12]-37
@@ -61,15 +64,16 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
     for(let i=0;i<5;i++)line(4,104-9*i,w-4,104-9*i)
     draw('text',{x:7,y:103,'font-size':46,fill:'currentColor'},'𝄞')
     const sigMidi={0:72,2:74,4:76,5:77,7:79,9:69,11:71}
-    const glyphs={'کرن':'𝇪','سری':'𝇫','♭':'♭','♯':'♯'}
-    Object.entries(e.key).forEach(([pc,mark],i)=>draw('text',{
-      x:40+17*i,
-      y:106-step(sigMidi[Number(pc)]??(60+Number(pc)))*4.5,
-      'font-size':mark==='کرن'||mark==='سری'?19:17,
-      'font-family':mark==='کرن'||mark==='سری'
-        ? '"Noto Music","Bravura","Segoe UI Symbol",serif':'inherit',
-      fill:'currentColor'
-    },glyphs[mark]||mark))
+    Object.entries(e.key).forEach(([pc,mark],i)=>{
+      const x=40+17*i
+      const y=106-step(sigMidi[Number(pc)]??(60+Number(pc)))*4.5
+      if(isPersianAccidental(mark)){
+        appendPersianAccidental(svg,mark,{x:x-10,y:y-19,width:20,height:27})
+      } else {
+        // Flat/sharp/natural remain untouched as standard text glyphs.
+        draw('text',{x,y,'font-size':17,fill:'currentColor'},mark)
+      }
+    })
     const dots=(x,y,n)=>{
       for(let i=0;i<n;i++)draw('circle',{
         cx:x+14+6*i,cy:y,r:1.55,fill:'currentColor'
@@ -123,12 +127,13 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
       }
       const onLine=Math.abs((y-104)/9-Math.round((y-104)/9))<.02
       dots(x,onLine?y-4.5:y,s.dots)
-      const koron=n.staffAccidental==='کرن'
-      const accidental=koron?'𝇪':(n.staffAccidental||
-        ([1,3,6,8,10].includes(n.m%12)?'♯':''))
-      if(accidental)draw('text',{x:x-17,y:y+4,'font-size':koron?19:16,
-        'font-family':koron?'"Noto Music", "Bravura", "Segoe UI Symbol", serif':'inherit',
-        fill:'currentColor'},accidental)
+      const accidental=n.staffAccidental||
+        ([1,3,6,8,10].includes(n.m%12)?'♯':'')
+      if(isPersianAccidental(accidental)){
+        appendPersianAccidental(svg,accidental,{x:x-27,y:y-16,width:19,height:27})
+      }else if(accidental){
+        draw('text',{x:x-17,y:y+4,'font-size':16,fill:'currentColor'},accidental)
+      }
       if(selected.has(index))head.setAttribute('stroke-width',3)
       // Small arrow near (not around) the note. Keep the original index for
       // playback highlighting across sorted and wrapped score rows.
