@@ -780,3 +780,19 @@ Manual checks: Play→Stop→Play returns to note 1; Play→Pause→Resume conti
 **Post-change layout:** Score title → editing/playback toolbar → staff → numeric Tempo and zoom controls → the remaining Studio content; there is no `Edit notes & timing` accordion between them.
 
 **Manual verification still needed:** Open Studio in desktop and mobile layouts and both languages; confirm the accordion and its controls are gone while Note settings opened by clicking a note, Pen/Eraser, Undo, Tempo, Zoom, Record, Play/Pause/Stop and remaining Studio sections continue to work. Only static syntax and source checks were performed; no browser/device verification is claimed.
+
+## Studio editor width aligned with desktop navbar (2026-11-20)
+
+**Branch:** `redesign`. **User request:** The open Etude Studio editor appeared much narrower than the shared desktop header/navigation content width. Match the editor's outer content edges to the established desktop header gutters, rather than the small centered navigation pill.
+
+### Exact changes
+- `web/style.css`: Added one scoped `@media (min-width: 1100px)` rule targeting `#app[data-page="studio"]:not(:has(> .shelves))`. The `:not(:has(> .shelves))` clause distinguishes the **opened editor** from the separately designed Etudes library; only the opened Studio editor receives this width change.
+- Used the identical shared-header gutter calculation from `web/home.css`: `max(clamp(20px, 4vw, 64px), calc((100vw - 1360px) / 2 + 64px))`. Set the editor to `width: calc(100% - 2 * var(--studio-desktop-gutter))`, `max-width: 1232px`, `margin-inline: auto` and `padding-inline: 0`. This removes the old 1050px content-width bottleneck and aligns Studio's headline, title/actions row, piano, score and remaining editor sections to the same horizontal edges as the desktop header content.
+- Below 1100px, existing mobile/tablet width, padding, piano scrolling and bottom navigation styles remain unchanged.
+- `web/index.html`: Bumped only the `web/style.css` query-string version to `studio-header-width-1` to avoid browsers retaining the old narrow stylesheet.
+
+### Non-goals / preserved behavior
+No `app.js`, rendering, musical/recording logic, keyboard handling, playback transport, export, modal, or other routes were changed. The shared navbar appearance and the existing Etudes gallery/Practice widths remain unchanged.
+
+### Manual checks still required
+Compare Studio left/right outer edges to the desktop header's wordmark/controls at common viewports (1100, 1280, 1360, 1600px). Confirm the Studio body and piano/staff expand without horizontal page overflow, the separate Etudes list does not change width, and mobile/tablet layouts stay as before. Only CSS/source checks were performed, no actual browser/device visual validation.
