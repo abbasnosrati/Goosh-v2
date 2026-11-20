@@ -444,7 +444,6 @@ function studio() {
     }
   });
   el('h2',panel,t('Score','خط حامل'),'score-title');
-  el('div', panel, undefined, 'score')
   const scoreActions = row(panel);
   scoreActions.classList.add('score-actions');
   btn(scoreActions, t('Pen', 'قلم'), () => {
@@ -467,6 +466,7 @@ function studio() {
     wrap = !wrap;
     render()
   }).classList.toggle('active', wrap);
+  el('div', panel, undefined, 'score');
   const timing = el('details', panel, undefined, 'controls');
   el('summary', timing, t('Edit notes & timing', 'ویرایش نت و زمان'));
   const edit = row(timing);
