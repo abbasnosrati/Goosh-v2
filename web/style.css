@@ -414,8 +414,21 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   fill: currentColor;
   flex: none;
 }
-#app[data-page="studio"] .score-actions .score-record {
-  white-space: nowrap;
+#app[data-page="studio"] .score-actions .score-record,
+#app[data-page="studio"] .score-actions .score-generate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 9px;
+}
+#app[data-page="studio"] .score-actions .score-generate svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 
