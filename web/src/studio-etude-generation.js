@@ -22,8 +22,18 @@ export function mountEtudeComposer(host, {
   const t = (en, ir) => fa ? ir : en;
   let state = states.get(etude);
   if (!state) {
-    state = { mode: 'manual', goal: '', musicSystem: 'iranian', styles: {}, tonic: 'C', controller: null, awaitingFirstAI: false };
-    states.set(etude, state);
+    const previous = etude.musicContext;
+    const validPrevious = previous && ['iranian','western'].includes(previous.musicSystem);
+    state = {
+      mode:'manual', goal:'',
+      musicSystem:validPrevious ? previous.musicSystem : 'iranian',
+      styles:validPrevious
+        ? {[previous.musicSystem]:previous.musicSystem === 'iranian' ? previous.dastgah : previous.scale}
+        : {},
+      tonic:previous?.tonic || 'C',
+      controller:null, awaitingFirstAI:false
+    };
+    states.set(etude,state);
   }
   // A full Studio rerender or route change invalidates in-flight generation.
   if (state.controller) {
@@ -103,7 +113,7 @@ export function mountEtudeComposer(host, {
     // A preset selection updates the canonical score and playback immediately.
     // Initial data load does NOT overwrite previously custom-edited signatures.
     const signature = signatureForMusic(musicCatalog, selectedContext());
-    onSignatureChange?.(signature);
+    onSignatureChange?.(signature, selectedContext());
   }
   function fillStyleOptions() {
     const system = currentSystem();
