@@ -369,6 +369,16 @@ function undoScoreEdit() {
     if (e.notes.includes(action.note)) {scoreUndoStack.pop();return false;}
     stopScorePlayback();
     e.notes.splice(Math.min(action.index,e.notes.length),0,action.note);
+  } else if (action.kind==='move') {
+    if (!e.notes.includes(action.note)) {scoreUndoStack.pop();return false;}
+    stopScorePlayback();
+    // A drag clears a per-note accidental; Undo must restore the exact
+    // original notation metadata, not merely its MIDI and onset.
+    for(const property of ['m','at','staffM','staffAccidental','displayPitch']){
+      if(Object.hasOwn(action.before,property))
+        action.note[property]=action.before[property];
+      else delete action.note[property];
+    }
   } else return false;
   scoreUndoStack.pop();
   sel.clear();
@@ -657,6 +667,45 @@ function sheet() {
       e.notes.push(inserted);
       rememberScoreEdit({kind:'pen',note:inserted,shifted});
       sel.clear();
+      save();
+      sheet();
+    },
+    move: (index,target) => {
+      if(scoreTool!=='select'||signatureMode||rec||
+         !Number.isInteger(index)||index<0||index>=e.notes.length||!target)return;
+      const note=e.notes[index],m=target.m,at=target.at;
+      if(!Number.isInteger(m)||m<0||m>127||
+         !Number.isFinite(at)||at<0||at>1e7)return;
+      // A moved note is reinterpreted as a natural staff pitch. Existing
+      // e.key/e.offset then determine the sounding Koron/Flat/Sharp/Sori.
+      // Remove old explicit staff accidentals, including legacy Ek4.
+      const written=Number.isInteger(note.staffM)?note.staffM:note.m;
+      const previousAt=note.at;
+      if(m===written&&Math.abs(at-previousAt)<1e-7)return;
+      const candidate=e.notes.map((entry,i)=>i===index
+        ?{...entry,m,at,staffM:undefined,staffAccidental:undefined,
+           displayPitch:undefined}
+        :entry);
+      if(!measuredEditAllowed(candidate)){
+        meterMessage(
+          'This move does not fit the current meter or prepared measures.',
+          'این جابه‌جایی با کسر میزان یا تعداد میزان‌های فعلی سازگار نیست.'
+        );
+        return;
+      }
+      const before={};
+      for(const property of ['m','at','staffM','staffAccidental','displayPitch'])
+        if(Object.hasOwn(note,property))before[property]=note[property];
+      stopScorePlayback();
+      note.m=m;
+      note.at=at;
+      delete note.staffM;
+      delete note.staffAccidental;
+      delete note.displayPitch;
+      rememberScoreEdit({kind:'move',note,before});
+      sel.clear();
+      sel.add(index);
+      meterMessage('','');
       save();
       sheet();
     }
