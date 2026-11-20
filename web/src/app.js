@@ -1323,10 +1323,45 @@ function studio() {
     }
     stopScorePlayback();
     e.meter=selected;
+    if(meterInfo(e))
+      e.measureCount=Math.max(e.measureCount||1,meterTimeline(e).bars.length);
     meterMessage('','');
     save();
     penValue.hidden=!meterInfo(e);
+    measureField.hidden=!meterInfo(e);
+    measureNumber.value=String(e.measureCount||4);
     recordingHint.hidden=!meterInfo(e);
+    sheet();
+  };
+  const measureField=el('label',scoreBelowActions,undefined,'score-measure-count');
+  measureField.hidden=!meterInfo(e);
+  el('span',measureField,t('Measures','تعداد میزان'));
+  const measureNumber=el('input',measureField);
+  measureNumber.type='number';
+  measureNumber.min='1';
+  measureNumber.max='256';
+  measureNumber.step='1';
+  measureNumber.value=String(e.measureCount||4);
+  measureNumber.setAttribute('aria-label',t('Number of measures','تعداد میزان‌ها'));
+  measureNumber.onchange=()=>{
+    const count=Number(measureNumber.value);
+    if(!Number.isInteger(count)||count<1||count>256){
+      measureNumber.value=String(e.measureCount||4);
+      return;
+    }
+    const proposed={...e,measureCount:count};
+    const result=meterTimeline(proposed);
+    if(result.issues.length||result.bars.length>count){
+      meterMessage(
+        'The requested number of measures would cut off existing notes.',
+        'تعداد میزان انتخابی برای نت‌های موجود کافی نیست.'
+      );
+      measureNumber.value=String(e.measureCount||4);
+      return;
+    }
+    e.measureCount=count;
+    meterMessage('','');
+    save();
     sheet();
   };
   const penValue=el('label',scoreBelowActions,undefined,'score-pen-length');
