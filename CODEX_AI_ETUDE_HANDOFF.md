@@ -692,3 +692,40 @@ Manual checks: Play→Stop→Play returns to note 1; Play→Pause→Resume conti
 7. Ensure no changes were introduced to piano audio, etude export/import, AI generation, practice scoring, the generated rhythmic notation, or unrelated pages.
 
 **Verification status:** JavaScript source syntax and the intended DOM/CSS wiring were checked at source level. The browser, mobile/WebView, audio output and real pointer-cursor rendering were not exercised here; do not mark these manual checks as passed without actually executing them.
+
+## Studio Pen and Eraser keyboard Undo — Ctrl+Z (2026-11-20)
+
+**Branch:** `redesign`. **Requested scope:** Add Undo for note insertions made with Pen and deletions made with Eraser, without changing other Studio editing features.
+
+### Implementation details
+
+- **`web/src/app.js` / editor state:** Introduced `scoreUndoStack = []`, an in-memory history dedicated exclusively to Pen/Eraser actions; capped at the most recent **100** changes. This is not persisted to storage.
+- **`rememberScoreEdit(action)`:** Records action kind (`pen` or `erase`), the exact note object reference, the erased note's former array index (for Eraser), current `activeId`, and the current `e.notes` array reference.
+- **Pen / `sheet()` insert callback:** Creates a note with the preexisting values `{m, at, d:60/e.bpm}`, pushes it to `e.notes`, records a `pen` history action, saves, and redraws. Normal note insertion semantics do not change.
+- **Eraser / `sheet()` pick callback:** Checks index validity, stops the current Score transport as before, splices exactly the targeted note, records an `erase` history action with the removed note object and original index, clears selection, saves, and redraws. Does not open a modal.
+- **`undoScoreEdit()`:** Undoes only the most recent supported edit (last in, first out):
+  - Undo Pen = find that specific inserted note by object identity and remove it.
+  - Undo Eraser = reinsert the same removed note object at its former index (bounded by current notes length), restoring pitch, onset, duration, and any original per-note metadata.
+  - Before editing, rejects missing/stale etudes or replaced `e.notes` arrays and clears stale history; does not apply actions to another etude. Also refuses Undo while recording.
+  - Stops Score playback before changing notes; on successful Undo removes the history entry, clears selected indices, calls the existing `save()`, then `sheet()`.
+- **Route isolation:** `loadRoute()` clears the Undo stack when another route/etude is opened.
+- **Keyboard handling:** Near the start of the existing `document.onkeydown` handler, detect **Ctrl+Z** (and **Cmd+Z** on macOS) with `ev.code === 'KeyZ'`, without Shift or Alt, only in Studio with an active etude, and only when not recording.
+  - Ignore auto-repeat and any open modal.
+  - Do **not** intercept Undo when focus is in `input`, `select`, `textarea`, or a contenteditable region; native text-field undo stays intact.
+  - Call `preventDefault()` **only if** a Score edit was actually undone. No default browser shortcut is hijacked when history is empty.
+  - No Redo (`Ctrl+Y`/`Ctrl+Shift+Z`) or new toolbar button was added, since neither was requested.
+- **`web/index.html`:** Changed the `app.js` import query to `score-pen-eraser-undo-1` to avoid stale loaded JavaScript.
+- **`CODEX_AI_ETUDE_HANDOFF.md`:** This handoff section documents the new behavior, scope, and checks.
+
+### Suggested manual checks (not yet executed)
+
+1. Insert 2 notes using Pen, press Ctrl+Z twice: last added note disappears first, then the earlier one; both removals persist after reload.
+2. Erase 2 distinct notes, press Ctrl+Z twice: the second removed note returns first, then the first, with identical original pitch, timing, and note metadata.
+3. Mix actions (Pen, Eraser, Pen) and verify repeated Ctrl+Z reverses them in reverse chronological order.
+4. Undo a deleted note in a chord or in a wrapped Score line; the original index is used and other notes remain untouched.
+5. Click in an Etude title/timing input field and use Ctrl+Z for text editing: the Score history must **not** be consumed. Undo should likewise be unavailable in an open dialog.
+6. Verify an Undo stops Score playback and leaves no stale marker; confirm that recording mode does not permit Undo.
+7. Switch etudes, then Ctrl+Z: earlier etude history cannot change the newly active etude. Replacing a note array through another operation makes old history invalid.
+8. Try Ctrl+Z/Cmd+Z on supported desktop platforms. No additional button, Redo behavior, or unrelated audio/AI/practice change should appear.
+
+**Verification:** Source-level syntax and wiring were checked. Browser interaction and persistence tests have not been run; do not mark the checks above as passed without executing them.
