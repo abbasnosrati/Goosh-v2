@@ -50,8 +50,10 @@
 #app[data-page="studio"]:has(> .shelves) .shelves {
   display: grid;
   grid-template-columns: repeat(4,minmax(0,1fr));
+  grid-template-rows: max-content;
+  grid-auto-rows: 1fr;
   gap: 22px;
-  align-items: start;
+  align-items: stretch;
   margin-top: 16px;
 }
 #app[data-page="studio"]:has(> .shelves) .shelves::before {
@@ -1013,6 +1015,16 @@ html[lang="fa"] #app[data-page="practice"]:has(> .shelves) .etude-item strong::a
 #app[data-page="practice"] .etude-card {
   position: relative;
   min-width: 0;
+}
+/* Stretch all Studio cards to the tallest card, without moving the delete button. */
+#app[data-page="studio"]:has(> .shelves) .etude-card {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  height: 100%;
+}
+#app[data-page="studio"]:has(> .shelves) .etude-card > .etude-item {
+  flex: 1 1 auto;
 }
 #app[data-page="studio"] .etude-card > .etude-item,
 #app[data-page="practice"] .etude-card > .etude-item {
