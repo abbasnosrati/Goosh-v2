@@ -1485,3 +1485,53 @@ Implementation changes are committed to the feature branch, not `redesign` or `m
 For local browser AI functionality run the existing Python-backed `npm run web` command and configure `OPENROUTER_API_KEY` in a local uncommitted `.env`. Merely serving the `web/` folder as static files allows manual editing, but does not provide the new AI endpoint. The catalog JSON file must be deployed beside the other `web/` assets; it is fetched at runtime by the Studio module.
 
 - Final single-source-of-truth cleanup: the legacy AI etude handler no longer duplicates its OpenRouter API-key precheck; the shared `call_openrouter(payload)` now exclusively owns credential validation for both etude and practice AI requests.
+
+
+---
+
+# Goal-first AI composition and non-destructive multiple practices (2026-11-20)
+
+**Branch:** `feature/practice-sequence-studio` (continues from the previously established `redesign`-based practice-sequence implementation).
+
+## Agreed business rule — do not violate
+
+**One Etude = one canonical collection of musical notes + multiple independently configurable practice steps.** A new practice step MUST NOT generate additional musical notes or duplicate the score. All steps in `etude.practiceSequence` refer to the **same** `etude.notes`, `etude.key`, `etude.offset`, `etude.marks`, and musical context. If the teacher needs completely different music, create a **new Etude**, not a second score nested under an existing practice step. The user explicitly rejected a “different score per practice” architecture.
+
+The following workflows must be distinguishable:
+
+- **Manual composition:** the teacher composes/edits the canonical staff and piano using the existing controls, then configures any number of practice steps in the existing `Practice Design` section.
+- **AI composition:** the teacher chooses **AI**, then MUST choose one of the ten training goals from `web/practice-goals.json` before the `Generate Etude` button becomes active. They also choose the dastgah using the existing supported options. Goosh asks OpenRouter to compose notes for the selected goal, then creates exactly **one** default practice step for that goal. Additional exercises can be added from the Practice Designer without altering any notes.
+- **AI exercise configuration:** the existing Practice Designer AI feature still generates *only settings for one new step*, using the unchanged score.
+- **Regenerate Etude:** if the Etude already contains notes or practice steps, the label becomes `Regenerate Etude` and a confirmation modal explains that the existing notes, tuning, and practice steps will be **replaced**. On success, the score and old plan are replaced with the new music and exactly one step for the newly selected goal. The legacy `rule` settings are restored to `fresh().rule` for a clean practice configuration. **No mutation happens on cancel or API error**. The existing BPM is retained as the generation timebase. There is no undo for this destructive replacement; the confirmation explicitly states that.
+- The pedagogical correctness of AI-composed music is not guaranteed by a prompt alone. The earlier goal guidance and basic response format checks remain; additional pedagogical validators will be needed later.
+
+## Implementation details (files and contracts)
+
+1. **NEW `web/src/studio-etude-generation.js`** owns the Manual/AI chooser and goal-first AI generation experience. Its `mountEtudeComposer(host, {etude,fa,isRecording,isCurrent,onGenerated})` presents two explicit modes within the current Etude Studio; it **does not** create new pages, fork the editor, or copy notes. It loads goals through the existing `loadPracticeCatalog()` exported by `studio-practice.js`, so AI and manual settings use the exact same catalog and categories. It uses a WeakMap keyed by the canonical etude for UI-only mode/selection state (no secondary score store). The active form requires a chosen goal and disabled Generate until it is valid; `chord-recognition` is visible but deliberately not generatable because the score is currently monophonic. The old score tools remain operational in Manual mode. Generated results are only committed if the current route/etude/host are still active, and an in-flight request is aborted during a full Studio rerender. The user can switch modes without changing music. The AI mode's instructional text explains the score-sharing rule.
+2. **NEW `web/src/studio-dialog.js`** wraps Goosh's existing `<dialog>`-based confirmation styling (`etude-delete-dialog` and its action classes) and accessible inline status messages. `confirmStudioAction({...})` returns a promise resolving true only after the user explicitly confirms; Escape, Cancel, route navigation and modal closure abort the action. `showStudioMessage(host,text,tone)` uses `role="status"` or `role="alert"`. Neither helper calls browser `alert()` or `confirm()`.
+3. **MODIFIED `web/src/app.js`** mounts the shared composer immediately in the Studio score panel. Replaced the previous desktop-only “AI generate” toolbar button and independent generate dialog to avoid two competing AI flows. On successful generation the existing etude object is updated **in place**, its practice sequence becomes one step, legacy `rule` is reset, score playback is stopped, the score undo stack and selection are cleared, and the Studio is rerendered with the generated practice step expanded. The teacher sees the newly composed notes on the **same** staff; the staff is not cleared, because clearing it would conflict with the agreed shared-score model. Nothing in the learner-facing `practice()` player was changed. `practiceToExpand` is transient presentation state, not a second saved practice store.
+4. **MODIFIED `web/src/ai-etude.js`** changes `generateStudioEtude(dastgah, current, signal, practiceGoals = [])` to receive the goal IDs **explicitly** and posts exactly `{dastgah, practiceGoals}` to the existing Python API. This prevents stale goals from an existing practice sequence leaking into a regenerate request. The original music conversion, pitch/tuning validation, OpenRouter response format and backend transport remain unchanged.
+5. **MODIFIED `web/src/studio-practice.js`** replaces a browser `confirm()` for deleting a single practice with the project's dialog pattern; deletion affects only that step, not the shared score. Replaces the browser `alert()` for invalid selected-note numbers with an inline, accessible validation message. Each step is explicitly labelled `Practice 1`, `Practice 2`, etc., while retaining stable step IDs and ordering. This component remains the single authoring UI for additional practice steps, including AI-generated configuration.
+6. **MODIFIED `web/practice-designer.css`** adds only Studio-scoped styles for the Manual/AI control, goal/dastgah fields, generate action, inline status, and expanded step labels. All colors and surfaces use the project's existing `--accent`, `--panel`, `--bg`, `--ink`, `--muted`, `--line` and `--shadow` tokens. No UI framework or package was introduced. The new composer is hidden from printed scores.
+7. **MODIFIED `web/index.html`** refreshes the Studio app and Practice Designer stylesheet cache-busting query strings. Both importers reference **the same** `studio-practice.js?v=goal-first-1` URL so the cached goal catalog is not duplicated as two separate JS module instances.
+
+## Behavior examples
+
+**Case A — new AI etude:** Start a new Etude > choose AI > select “Pitch Matching” > choose Shur > Generate Etude. New notes replace the empty staff, and `practiceSequence` becomes `[ {goal:"pitch-matching", ...} ]`. Its Practice Designer card is expanded for adjustment.
+
+**Case B — add a second practice:** In Practice Design choose “Note Identification” and Add Exercise. The plan now has two steps ordered 1/2, but `etude.notes` is **byte-for-byte untouched**. Edit or configure either step independently.
+
+**Case C — switch to Manual:** Choose Manual; all previous piano, recording, staff, key-signature and other tools remain. No automatic regeneration, note deletion or practice deletion occurs.
+
+**Case D — regenerate:** Choose AI > select the desired new goal > Regenerate Etude. An in-app modal warns the teacher that prior notes, tuning and practice steps will be replaced. Cancel leaves the existing etude unchanged. Confirm starts generation; only a **successful and validated** response causes an atomic replacement with one new initial step. Failed requests leave the previous etude intact and show an inline error.
+
+## Scope, limitations, and verification
+
+- **No new Practice runtime**: the learner-facing Practice route still operates on legacy `e.rule`, not the ordered new `practiceSequence`. The user explicitly asked not to modify that route during Studio authoring work.
+- **No multi-score architecture**, no background rerendering, no hidden modifications to etude notes during practice-only authoring.
+- **No extra dependencies**.
+- Existing unrelated browser alerts elsewhere in the legacy app (share, print, import) were deliberately left untouched under strict scope control. No new/edited Manual/AI or Practice Design path uses them.
+- Syntax-only JavaScript parsing of all changed modules was checked through the GitHub-connected source retrieval workflow. No end-to-end browser/Android/OpenRouter integration test was performed or claimed.
+- The local Python OpenRouter backend continues to accept the selected goal ID as `practiceGoals`, as implemented previously. Goal-aware **music-quality validation** is still a future requirement: the current server adds musical guidance to prompts but does not guarantee perfect adherence for all ten educational goals.
+- Further changes should preserve the two-workspace product architecture: **author in Etude Studio, execute in Practice**. Keep a single notes model, a single goals catalog and a single ordered practice sequence.
+
