@@ -729,3 +729,37 @@ Manual checks: Play→Stop→Play returns to note 1; Play→Pause→Resume conti
 8. Try Ctrl+Z/Cmd+Z on supported desktop platforms. No additional button, Redo behavior, or unrelated audio/AI/practice change should appear.
 
 **Verification:** Source-level syntax and wiring were checked. Browser interaction and persistence tests have not been run; do not mark the checks above as passed without executing them.
+
+## Studio Score toolbar refinement — BPM numeric-only and zoom below staff (2026-11-20)
+
+**Branch:** `redesign`. **Scope:** Studio Score layout and Tempo entry controls only.
+
+### Requested visual changes
+- Move the existing **Tempo (BPM)** control and the **zoom − / +** buttons from the primary Score toolbar to a new compact row **directly under the staff**, before **Edit notes & timing**.
+- Keep the other primary toolbar controls in their previous position under the Score heading: Select/Pen/Eraser, Play/Stop, Pause/Resume, Wrap staff, and the Record control anchored to the far right.
+- Remove the adjacent **Tempo slider** completely. Tempo changes now occur through a single text-enterable **numeric input**; the `BPM` unit label remains for clarity.
+- Hide the browser-native number spinner affordances in CSS so there is no additional adjacent up/down stepper; the numeric field accepts typed values only and remains keyboard accessible.
+
+### Exact implementation
+1. **`web/src/app.js` / `studio()`:**
+   - Removed the Tempo widget and zoom −/+ buttons from the `scoreActions` row above the staff.
+   - After `el('div', panel, undefined, 'score')`, inserted `const scoreBelowActions = row(panel)` with class `score-below-actions`. It contains Tempo and the existing zoom buttons; the existing `details.controls` timing editor follows it.
+   - The new `score-tempo` control holds its localized label, a single `input[type=number].score-tempo-number`, and the `BPM` suffix. Valid values remain **20–300 BPM**, step **1**, with `inputMode = 'numeric'`.
+   - Deleted `tempoSlider`, its `input[type=range]` DOM, slider listeners and slider sync logic. The number's `onchange` validates the field and invokes the **existing `setEtudeTempo(Number(value))`**, restoring the current BPM on invalid input. Do not replace the tempo implementation with a display-only number: it scales all note onset times, durations and rests and saves the etude.
+   - Zoom handlers are unchanged: minus invokes `zoom = Math.max(.4, zoom - .2); sheet()`; plus invokes `zoom = Math.min(3, zoom + .2); sheet()`. Only their parent DOM row moved.
+2. **`web/style.css`:**
+   - Added scoped flex styling for `#app[data-page="studio"] .score-below-actions`, with wrap and spacing, and a minimum 44×44 touch target for each zoom button.
+   - Retained the existing Tempo label/input/unit visual language with a compact numeric field.
+   - Deleted the former `.score-tempo-slider` styling and its mobile media-query stretch behavior.
+   - Hid native spinner buttons for the BPM field through `appearance:textfield` and `::-webkit-inner-spin-button`/`::-webkit-outer-spin-button`. This does not change keyboard input or numeric validation.
+3. **`web/index.html`:** Updated the query-string versions of `web/style.css` and `web/src/app.js` to `score-below-controls-1` to avoid stale cached layouts.
+4. **`CODEX_AI_ETUDE_HANDOFF.md`:** Documented these changes here.
+
+### Required manual verification — not yet executed
+- The primary row under the Score title has no BPM/slider/zoom buttons. Only the previously existing editing, playback, Wrap and Record controls remain there.
+- Directly **below** the staff, there is a single compact Tempo number with `BPM` label and the existing `−` / `+` zoom buttons; no range slider or browser spinner controls appear.
+- Type a valid BPM (e.g. 80 then 120), commit the field, and confirm that actual note/rest timing changes, playback and persistence follow the existing `setEtudeTempo` behavior.
+- Invalid numbers and out-of-range values must not overwrite the saved tempo. Check pressing Tab/Enter and using keyboard accessibility.
+- Check responsive layouts and light/dark theme. The bottom toolbar must not overlap the staff or Edit notes & timing, and no unrelated editor/transport behavior should change.
+
+**Testing status:** Source-level JavaScript syntax and code placement checked; no live browser/device visual or audio tests have been run.
