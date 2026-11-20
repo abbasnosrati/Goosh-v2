@@ -23,6 +23,7 @@ import { mountEtudeComposer } from './studio-etude-generation.js?v=goal-first-1'
 import { renderStudioPractice } from './studio-practice.js?v=goal-first-1'
 import { renderHome } from './home.js?v=clean-routes-1';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
+import {installAndroidBackNavigation} from './native-navigation.js';
 
 // Canonicalize older /#studio and /#practice links before state initialization.
 upgradeLegacyHash();
@@ -1619,5 +1620,6 @@ document.onkeydown = ev => {
   if (ev.code === 'KeyR') $('[data-record]')?.click();
 };
 render()
+installAndroidBackNavigation()
 
 document.onkeyup = ev => held.get(ev.code)?.()
