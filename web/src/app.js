@@ -374,9 +374,9 @@ function renderSignatureControls(){
 
   const readout=el('div',card,undefined,'signature-tuner-readout')
   const centsValue=el('strong',readout,undefined,'signature-tuner-value')
-  const frequency=el('span',readout,undefined,'signature-tuner-frequency')
 
   const scale=el('div',card,undefined,'signature-tuner-scale')
+  const frequency=el('span',scale,undefined,'signature-tuner-frequency')
   const slider=el('input',scale,undefined,'signature-tuning-slider')
   slider.type='range'
   slider.step='1'
