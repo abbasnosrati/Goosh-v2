@@ -17,7 +17,7 @@ function symbol(beats) {
     Math.abs(Math.log(beats/a.value))?b:a)
   return {...best,exact:Math.abs(beats-best.value)<Math.max(.005,best.value*.012)}
 }
-export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,tool='select',fa=false}={}) {
+export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,move,tool='select',fa=false}={}) {
   host.replaceChildren()
   const second=60/(e.bpm||90),width=Math.max(240,host.clientWidth||700)
   const timeline=meterTimeline(e)
@@ -141,10 +141,92 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
     while(midi>24&&step(midi)>staffStep)midi--
     return midi
   }
+  // The SELECT tool can move the existing note object, not produce a second
+  // notation/audio timeline. Other notes keep their original start times.
+  // In measured mode the same 1/32-note grid as piano recording is used.
+  const dragMarkers = []
+  const dragStep=measured?second/8:null
+  function dragOnset(rowIndex,x,source){
+    const row=rows[rowIndex]
+    const notes=row.items.filter(ev=>ev.type==='notes')
+    const near=notes.reduce((best,ev)=>
+      !best||Math.abs(ev.x-x)<Math.abs(best.x-x)?ev:best,null)
+    if(near&&Math.abs(near.x-x)<=CHORD_ZONE)
+      return {at:near.at,x:near.x}
+    const anchors=row.items.filter(ev=>Number.isFinite(ev.at))
+    const left=[...anchors].reverse().find(ev=>ev.x<=x)
+    const right=anchors.find(ev=>ev.x>x)
+    let at
+    if(left&&right){
+      const fraction=(x-left.x)/(right.x-left.x)
+      at=left.at+fraction*(right.at-left.at)
+    }else if(left){
+      at=left.at+(x-left.x)*second/Math.max(28,left.span)
+    }else if(right){
+      at=right.at-(right.x-x)*second/Math.max(28,right.span)
+    }else at=source.at
+    if(dragStep)at=Math.round(at/dragStep)*dragStep
+    else at=Math.round(at*1000)/1000
+    const maxAt=measured
+      ?Math.max(0,(e.measureCount||1)*timeline.meter.barQuarterBeats*second-source.d)
+      :1e7-source.d
+    return {at:Math.min(maxAt,Math.max(0,at)),x}
+  }
+  function dragDestination(ev,source){
+    let nearest=null
+    for(const [index,row] of rows.entries()){
+      const svg=row.svg
+      if(!svg)continue
+      const rect=svg.getBoundingClientRect()
+      if(!rect.width||!rect.height)continue
+      const distance=Math.max(0,rect.top-ev.clientY,ev.clientY-rect.bottom)
+      const x=(ev.clientX-rect.left)*(row.width/rect.width)
+      if(distance>18||x<3||x>row.width-3)continue
+      if(!nearest||distance<nearest.distance)
+        nearest={index,row,rect,x,distance}
+    }
+    if(!nearest)return null
+    const {index,rect,x}=nearest
+    const y=(ev.clientY-rect.top)*(165/rect.height)
+    const m=pitchFromY(y)
+    const timing=dragOnset(index,x,source)
+    return {rowIndex:index,m,at:timing.at,
+      x:Math.max(12,Math.min(nearest.row.width-12,timing.x)),
+      y:104-step(m)*4.5}
+  }
+  function showDragPreview(destination){
+    for(const marker of dragMarkers){
+      if(marker)marker.group.setAttribute('display','none')
+    }
+    if(!destination)return
+    const marker=dragMarkers[destination.rowIndex]
+    if(!marker)return
+    const {x,y}=destination
+    marker.head.setAttribute('cx',x)
+    marker.head.setAttribute('cy',y)
+    marker.head.setAttribute('transform','rotate(-20 '+x+' '+y+')')
+    marker.guide.setAttribute('x1',x)
+    marker.guide.setAttribute('x2',x)
+    marker.ledger.forEach((line,i)=>{
+      const positions=[]
+      for(let l=113;l<=y;l+=9)positions.push(l)
+      for(let l=59;l>=y;l-=9)positions.push(l)
+      line.setAttribute('display',i<positions.length?'inline':'none')
+      if(i<positions.length){
+        line.setAttribute('x1',x-10)
+        line.setAttribute('x2',x+10)
+        line.setAttribute('y1',positions[i])
+        line.setAttribute('y2',positions[i])
+      }
+    })
+    marker.group.setAttribute('display','inline')
+  }
   for(const [rowIndex,row] of rows.entries()){
     const svg=document.createElementNS(ns,'svg')
     const w=wrap?width:Math.max(width,row.extent+16)
     svg.setAttribute('width',w);svg.setAttribute('height',165);host.append(svg)
+    row.svg=svg
+    row.width=w
     const draw=(tag,attrs,content)=>{
       const el=document.createElementNS(ns,tag)
       for(const k in attrs)el.setAttribute(k,attrs[k])
@@ -276,11 +358,59 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
         'pointer-events':'none','data-playback-note':index,
         'data-playback-from':onset,'data-playback-to':onset+n.d
       })
-      draw('circle',{cx:x,cy:y,r:10,fill:'transparent'}).onclick=ev=>{
-        // In Pen mode this bubbles to the shared placement planner. Clicking
-        // the notehead's exact X is a chord, not a selection or overwrite.
+      const hit=draw('circle',{cx:x,cy:y,r:10,fill:'transparent',
+        'data-score-note':index})
+      let pointer=null,ignoreClick=false
+      if(tool==='select'&&move){
+        hit.style.touchAction='none'
+        hit.style.cursor='grab'
+        hit.onpointerdown=ev=>{
+          if(ev.button!==undefined&&ev.button!==0)return
+          if(ev.isPrimary===false)return
+          ignoreClick=false
+          pointer={id:ev.pointerId,startX:ev.clientX,startY:ev.clientY,
+            dragged:false}
+          hit.setPointerCapture?.(ev.pointerId)
+          ev.stopPropagation()
+        }
+        hit.onpointermove=ev=>{
+          if(!pointer||ev.pointerId!==pointer.id)return
+          if(!pointer.dragged &&
+             Math.hypot(ev.clientX-pointer.startX,ev.clientY-pointer.startY)<5)return
+          pointer.dragged=true
+          hit.style.cursor='grabbing'
+          showDragPreview(dragDestination(ev,e.notes[index]))
+          ev.preventDefault?.()
+        }
+        hit.onpointerup=ev=>{
+          if(!pointer||ev.pointerId!==pointer.id)return
+          const dragged=pointer.dragged
+          pointer=null
+          ignoreClick=true
+          hit.releasePointerCapture?.(ev.pointerId)
+          hit.style.cursor='grab'
+          if(dragged){
+            const target=dragDestination(ev,e.notes[index])
+            showDragPreview(null)
+            if(target)move(index,{m:target.m,at:target.at})
+          }else pick?.(index,ev.shiftKey||ev.ctrlKey||ev.metaKey)
+          ev.stopPropagation()
+        }
+        hit.onpointercancel=ev=>{
+          if(pointer?.id!==ev.pointerId)return
+          pointer=null
+          ignoreClick=true
+          hit.style.cursor='grab'
+          showDragPreview(null)
+          ev.stopPropagation()
+        }
+      }
+      hit.onclick=ev=>{
+        // Pen clicks must reach the shared chord/sequence planner.
         if(tool==='pen')return
-        ev.stopPropagation();pick?.(index,ev.shiftKey||ev.ctrlKey||ev.metaKey)
+        ev.stopPropagation()
+        if(ignoreClick){ignoreClick=false;return}
+        pick?.(index,ev.shiftKey||ev.ctrlKey||ev.metaKey)
       }
     }
     for(const ev of row.items){
@@ -310,6 +440,33 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
           })
         }
       }
+    }
+    if(tool==='select'&&move){
+      // A passive ghost shows the snapped pitch/position during dragging.
+      // It is separate from the original notehead and never captures input.
+      const group=document.createElementNS(ns,'g')
+      group.setAttribute('pointer-events','none')
+      group.setAttribute('aria-hidden','true')
+      group.setAttribute('display','none')
+      svg.append(group)
+      const markerElement=(tag,attrs)=>{
+        const node=document.createElementNS(ns,tag)
+        for(const [key,value] of Object.entries(attrs))node.setAttribute(key,value)
+        group.append(node)
+        return node
+      }
+      const guide=markerElement('line',{
+        y1:26,y2:153,stroke:'var(--accent)','stroke-width':1,
+        'stroke-dasharray':'3 4','stroke-opacity':.45
+      })
+      const ledger=Array.from({length:10},()=>markerElement('line',{
+        stroke:'var(--accent)','stroke-opacity':.65,'stroke-width':1.1
+      }))
+      const head=markerElement('ellipse',{
+        rx:6.8,ry:4.8,fill:'var(--accent)','fill-opacity':.25,
+        stroke:'var(--accent)','stroke-opacity':.8,'stroke-width':1.3
+      })
+      dragMarkers[rowIndex]={group,guide,ledger,head}
     }
     if(tool==='pen'){
       // A ghost note communicates BOTH the exact snapped pitch and which
