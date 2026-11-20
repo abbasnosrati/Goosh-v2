@@ -315,7 +315,11 @@ function paintPlaybackMarker(force = false) {
   playback.markerSignature = signature;
   $('.score')?.querySelectorAll('[data-playback-note]').forEach(marker => {
     const index = Number(marker.getAttribute('data-playback-note'));
-    marker.setAttribute('opacity', active.has(index) ? '1' : '0');
+    const from=Number(marker.getAttribute('data-playback-from'));
+    const to=Number(marker.getAttribute('data-playback-to'));
+    const segmentMatches=Number.isFinite(from)&&Number.isFinite(to)
+      ?elapsed>=from-1e-7&&elapsed<to: true;
+    marker.setAttribute('opacity',active.has(index)&&segmentMatches?'1':'0');
   });
 }
 
