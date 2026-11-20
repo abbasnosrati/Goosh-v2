@@ -1648,3 +1648,90 @@ The new URL structure does not create authenticated sharing, Universal Links, An
 - An isolated, executable mock of the Android App-plugin callback passed priority handling for an open dialog, `history.back()` when `canGoBack=true`, replacement navigation to Home on a direct-start nested route without history, exit only at Home without history, and no Android Back listener registration on iOS.
 - Re-read the pre-routing `redesign` version and the current feature-branch source: the body of `function practice()` is **byte-for-byte identical** (5,975 bytes). The routing listener immediately following that function changed, but exercise execution did not.
 - Parsed the changed JavaScript sources without syntax failures. The Python server logic was inspected at source level; no Python runtime compilation or network-backed server/device verification was possible. A container GitHub checkout attempt failed because the execution container could not resolve github.com; the connected GitHub source was the authoritative editing and inspection channel.
+
+
+---
+
+# Studio UX refinement: Iranian/Western AI composition and single-goal Practice Design (2026-11-21)
+
+**Repository:** `abbasnosrati/Goosh-v2`. **Branch:** `feature/practice-sequence-studio` from `redesign`. This section supersedes older documentation wherever it describes the former standalone `AI: Design exercises` disclosure, the old preselected Practice Design goal, or the AI composer as Iranian/Dastgah-only.
+
+## Approved user journey and non-negotiable rules
+
+The teacher identified a UX conflict: when composing music through AI, the teacher had to select a training goal *above* the score, while the Practice Designer *below* simultaneously presented another selectable goal, Add Exercise and the independent AI design disclosure. This created competing decisions. The approved solution is **not** a wholesale restructuring of the Manual composer or a multi-score Etude architecture.
+
+- **Manual mode:** Preserve the existing normal Studio editing journey. The teacher can author notes and use Practice Design. No new first-Generate prerequisite applies to Manual mode. The Practice Designer has a blank goal placeholder by default, requiring an explicit choice before adding a new exercise.
+- **AI mode on a new, empty Etude:** Freeze/disable the Practice Design section **until successful first AI music generation**, with a short visible explanation. The muted section remains visible to orient the teacher but is not interactive or keyboard-focusable while frozen. The primary AI training goal is chosen above, along with musical system and scale/dastgah. Generate composes the canonical Etude's music, creates exactly one default `practiceSequence` item for the chosen goal and opens that item. Practice Design is then unlocked. Merely placing notes manually while the first-AI workflow is pending must not accidentally unlock it.
+- **AI mode on an existing Etude:** If the Etude already contains notes and/or saved practice steps, Practice Design remains available. Switching modes never deletes notes or exercises, and the current `practiceSequence` stays intact. `Regenerate Etude` is a separate explicitly confirmed destructive operation, as documented above.
+- **One Etude, one canonical score, multiple different practice steps:** `etude.notes` remains the single source of musical truth. Adding a manual or AI-designed exercise changes only `practiceSequence`; it does **not** call `/api/generate-etude`, recompose notes, copy the score, or change tunings.
+- **The current Practice learner/runtime stays unchanged** and continues to use `e.rule` until a separately authorized player implementation exists. Changing the authoring UI here is not the same as implementing 10 learner-facing modes.
+
+## Musical-system selector and supported generation
+
+The AI composer now contains an actual `input[type="radio"]` group under **Musical System**, with two choices:
+
+- **Iranian Music** — the next select is explicitly labelled **Dastgah**, currently listing Shur, Segah, Mahur, Homayun, retaining their previous generation behavior and special Shur ABC pipeline. Do not rename this to Western modes or remove the Persian microtone support.
+- **Western Music** — the next select is labelled **Scale / Mode**. Western Music here means **Western tonal scales and modes**, *not* Arabic/Turkish/Indian or other traditions. Supported items: Major (Ionian), Natural Minor (Aeolian), Dorian, Phrygian, Lydian, Mixolydian, Locrian. These seven unique pitch collections avoid redundant Ionian/Aeolian duplicate menu entries. A **Tonic** selector provides all 12 chromatic tonics, with enharmonic labels for black-key choices. The server chooses the compatible single-accidental spelling for the selected scale/tonic (e.g. C-sharp vs D-flat) based on the existing notation capabilities.
+
+This is **functional AI generation**, not merely radio-button mockups or a text rename. The user runs Goosh on desktop with `python3 scripts/goosh_server.py 8081 --bind 0.0.0.0`. No Node or npm installation is needed for desktop web testing. AI still requires an accessible OpenRouter API key/server as previously.
+
+### Single Source of Truth for music catalogs
+
+**New `web/music-systems.json`:** one data catalog read by BOTH the browser composer and the Python server. It contains system IDs, EN/FA labels, style IDs, EN/FA style labels, Western eight-degree chromatic interval formulas (tonic through octave), 12 chromatic tonic IDs/labels/possible enharmonic spellings, and **the existing Iranian mode's exact allowed pitch tokens, tonic, and microtone**. The last fields were moved out of the old hardcoded Python MODELS dictionary so the actual Iranian generation constraints remain identical without duplicate lists.
+
+**New `web/src/music-catalog.js`:** caches one validated fetch of `./music-systems.json`; rejects missing/invalid catalogs and retries after fetch failure. Composer uses this loader, while Practice goal selection continues using the existing `web/practice-goals.json` as its authoritative ten-goal catalog.
+
+**Updated `scripts/goosh_server.py`:**
+- Reads `web/music-systems.json` at Python server startup (restart the server after updating this branch).
+- Derives Iranian `MODELS`, Western `WESTERN_SCALES`, and tonic spellings from the canonical file.
+- `generate_etude(..., music_system="iranian", scale=None, tonic="C")` preserves backward compatibility for callers omitting the new fields, validates the system and mode against the catalog, and retains the original Shur ABC parsing branch.
+- Added `make_western_mode(scale,tonic)`, which derives valid diatonic note names and pitch tokens for eight successive scale degrees from interval formulas. It prefers a spelling requiring only naturals, single sharps and single flats; no double sharps/flats are sent into the current Goosh score model. The same existing schema, pitch normalization, frequency calculation, 16-note non-Shur POC rhythm pattern, OpenRouter integration and API endpoint remain in use. The generated music must use allowed scale pitches; prompt guidance is not a full expert-level composition validator.
+- `POST /api/generate-etude` receives optional `musicSystem`, `dastgah`, `scale`, `tonic` and `practiceGoals`. The server validates any Western scale and tonic options, reuses the existing generic generator for Western non-Shur notation and recomputes canonical frequencies. The separate `/api/design-practice` endpoint is unchanged and never generates note data.
+- OpenRouter's request title is now `Goosh Etude` rather than a Persian-specific label, because it serves both traditions.
+
+**Updated `web/src/ai-etude.js`:** `generateStudioEtude(context,current,signal,practiceGoals)` now sends the selected musical context explicitly instead of a single `dastgah`. `convertEtude` only activates the specialized Shur/free-meter converter when the selected context is **Iranian Shur**; Western modes use the existing standard 16-note adapter and the existing `freq()` / `valid()` verification. The error message explains how to launch the Python server directly on port 8081.
+
+**Updated `web/src/studio-etude-generation.js`:**
+- Actual accessible radio controls, contextual Dastgah vs Scale/Mode dropdown, Western-only Tonic dropdown, unchanged required AI Primary Practice Goal.
+- State for last chosen style per musical system and the current tonic is transient per-etude UI state in the existing WeakMap, not a second saved score model or duplicate goal source.
+- Music choices are read from the shared JSON. `Generate` remains disabled until catalogs, musical style and a training goal are ready. Chord Recognition remains visible but unavailable to generate because the current score is monophonic.
+- Maintains `awaitingFirstAI`: entering AI on a new completely empty Etude activates the workflow freeze, which remains until **successful Generate**. Returning to Manual unlocks immediately. Entering AI on existing notes/steps does not freeze. On API failure, cancellation or incomplete response, saved content is not overwritten and the new-Etude workflow remains frozen.
+- `onModeChange(locked)` communicates only the frozen/unfrozen presentation state to the existing Practice Design host; it does not edit `e.practiceSequence` or the music.
+- Existing confirmed Regenerate behavior is preserved: it replaces canonical notes and practice sequence only after successful generation and deliberate confirmation.
+
+## Practice Design UX — no redundant goal selector in AI
+
+**Updated `web/src/studio-practice.js`:**
+- The **only Practice Design goal picker** is now a select with a **blank, explicit placeholder** (`Select a practice goal…`). It no longer defaults silently to the first goal.
+- **Add Exercise** and **Design with AI** are adjacent actions reading this very same select; neither action works until an explicit goal is chosen.
+- Both are genuinely `disabled` when the goal is empty. A compact `role="tooltip"` message, `Select a practice goal first.`, appears via a focusable wrapper on mouse hover, keyboard focus or pointer/tap. The wrapper receives pointer events even though the actual button is disabled. This is **not** a browser alert, confirm, or a blocking dialog.
+- Add Exercise directly appends one `newPracticeStep(selectedGoal,catalog)` with default settings and expands it. The canonical score is never changed.
+- Design with AI now opens a **native HTML `<dialog>`** styled using Goosh's existing modal classes. It displays the **already chosen goal as read-only text** (NO second goal select), an optional teacher-instruction textarea, Generate Exercise and Cancel buttons, and accessible in-modal status/error text.
+- On Generate Exercise, POST the chosen goal, optional instructions and a bounded copy of the existing score context to the pre-existing `/api/design-practice`. Validate the returned settings against the shared catalog, create and expand one exercise, and keep music unchanged. On failure, keep the modal open and show an in-app error. Cancel or modal close does not write any data; an AbortController cancels a pending request.
+- Existing practice items can still be rearranged, duplicated, edited and deleted through their original controls. Existing in-app delete confirmation is retained. Selected Goal and expanded-card state are preserved during regular Practice Design rerenders.
+- **New `setStudioPracticeLocked(host,locked,fa)`** toggles `inert`, the visual freeze class, `aria-hidden`, and a localized explanatory message on the existing Practice Design section; it does not remove saved steps. Crucially, rerenders inherit **the section's actual current inert state**, so returning to Manual and editing cannot accidentally reactivate the AI freeze due to a stale initial option.
+- The former `AI: Design exercises` `<details>` and independent always-visible AI prompt have been removed, not duplicated in another part of the page.
+
+**Updated `web/src/app.js`:** imports the exported `setStudioPracticeLocked`; mounts the existing composer with `onModeChange`, then the existing Practice Designer with the composer-provided initial locked flag. Switching Manual/AI toggles only the Practice Designer's interactive state, without remounting the score or rewriting notes. After generated content is saved, the existing rerender opens Practice 1. The router, sound engine, key-signature tools, legacy Practice learner and unrelated pages are unchanged.
+
+**Updated `web/practice-designer.css`:** scoped Studio-only layout for the new radio group, two side-by-side Practice Design buttons, disabled styles and focus/hover/touch tooltips, AI instructions modal, and frozen practice explanation. Existing CSS color variables are reused; no new palette, framework, global change, or unrelated restyle. Responsive layouts stack or shrink safely. The stylesheet and JavaScript import cache-version URLs were updated in `web/index.html` and related module imports.
+
+## Regression and testing record
+
+**Completed (non-network, source-level and isolated tests):**
+- All edited JS modules pass syntax-only parsing: `app.js`, `studio-etude-generation.js`, `studio-practice.js`, `ai-etude.js`, `music-catalog.js`, `studio-dialog.js`.
+- Ran an isolated JavaScript DOM mock against the **actual connected-repository composer source**: checked that a new AI etude freezes, returning to Manual unfreezes, Western Scale/Mode choices appear, Generate is disabled until a goal is explicitly selected, the request uses selected Western Phrygian/E tonic and `pitch-matching` goal, successful generation creates the first Practice Step and unlocks design, and existing Etudes are never frozen upon switching to AI.
+- Ran an isolated JavaScript DOM mock against the **actual connected-repository Practice Design source**: both buttons disabled without a goal, two in-app tooltips exist, selecting a goal enables both actions, Add Exercise inserts only one step, the selected goal survives a rerender, AI opens a modal with **no second select**, its request contains that one goal, it appends a second step without changing notes, and lock/unlock keeps existing steps intact.
+- Independently verified all **84 Western scale/tonic combinations** (7 distinct diatonic scales/modes × 12 chromatic tonic classes) can be spelled within single-sharp/single-flat notation and that every generated pitch maps to the exact intended semitone and Goosh pitch-class tuning. This is **algorithmic math validation**, not an OpenRouter generation-quality test.
+- Python source and data contracts were inspected, but no live Python server, OpenRouter request, browser visual regression, Android build or iOS build was executed via the connected GitHub editing workflow. No claim of full end-to-end verification is made.
+
+**Manual desktop acceptance checklist (`python3 scripts/goosh_server.py 8081 --bind 0.0.0.0`):**
+1. Stop and restart the Python process after fetching these commits (the server reads both catalogs on startup). Refresh `http://localhost:8081/etudes/<local-id>`.
+2. In Manual: verify Studio and Practice Design are fully usable; Goal has an explicit unselected placeholder; hover/focus/tap either disabled action to see its hint; select a goal to enable both. Add Exercise -> Practice 1.
+3. Choose Design with AI on the **same** selected goal; check the modal has no second goal input, cancellation writes nothing and success adds Practice 2 without modifying `etude.notes`. Errors should remain inside the modal rather than native alerts.
+4. Start a new empty Etude, select AI. Confirm the entire Practice Design section is muted/inert and explains to generate first. Select Iranian and Shur, pick a primary goal, Generate. On success the generated score appears on the existing staff, Practice 1 expands and the frozen section unlocks. The same procedure should work for Western Major/Minor/Modes with Tonic and valid OpenRouter credentials.
+5. Switch back to Manual before Generate to ensure the Practice Design reactivates. With an existing Etude containing notes/practices, switch to AI and back; make sure all stored settings remain visible and unchanged.
+6. Test Regenerate confirmation separately (Cancel preserves existing work; success creates a new score and one new practice). Test both languages, dark/light themes and mobile-width layout in the desktop browser.
+7. On this Python backend, an API request that fails because no OpenRouter key is configured should present the error in context without erasing the Etude. No npm install is required to run the **desktop web** server.
+
+**Do not** reinterpret “Western Music” as all global music traditions, reintroduce a second Goal in the AI modal, unfreeze the first-AI workflow on incidental note edits, create multiple scores per etude, or change the legacy learner runtime without explicit user authorization.
