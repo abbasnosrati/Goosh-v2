@@ -67,11 +67,17 @@ export function score(host, e, {
         fill: 'currentColor',
         stroke: 'currentColor'
       });
-      const noteAccidental = n.staffAccidental ||
-        ([1, 3, 6, 8, 10].includes(n.m % 12) ? '♯' : '');
+      // A variable E-koron has an explicit Persian Koron accidental even
+      // though E-flat stays in the key signature. Draw the musical glyph,
+      // not the Persian word 'کرن', immediately before this note.
+      const explicitKoron = n.staffAccidental === 'کرن';
+      const noteAccidental = explicitKoron ? '𝇪' : (n.staffAccidental ||
+        ([1, 3, 6, 8, 10].includes(n.m % 12) ? '♯' : ''));
       if (noteAccidental) draw('text', {
         x: x - 17,
         y: y + 4,
+        'font-size': explicitKoron ? 19 : 16,
+        'font-family': explicitKoron ? '"Noto Music", "Bravura", "Segoe UI Symbol", serif' : 'inherit',
         fill: 'currentColor'
       }, noteAccidental);
       if (selected.has(i)) el.setAttribute('stroke-width', 3);
