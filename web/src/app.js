@@ -14,7 +14,7 @@ import {
 import {
   score
 } from './score.js'
-import { generateStudioEtude } from './ai-etude.js?v=khara-abc-8bars-1'
+import { generateStudioEtude } from './ai-etude.js?v=khara-free-phrases-2'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),
   app = $('#app');

@@ -8,13 +8,16 @@ from fractions import Fraction
 
 # Sent to OpenRouter verbatim for the Shur experiment, with backticks restored.
 # The model returns ABC; this module converts it into the JSON contract for Goosh.
-SHUR_PROMPT = r"""You are a master Persian Classical Music composer. Generate an original, soulful 8-bar etude in Dastgah-e Shur (Gusheh: Daramad-e Khara) using standard ABC Notation.
+SHUR_PROMPT = r"""You are a master Persian Classical Music composer. Generate an original, soulful free-meter etude in Dastgah-e Shur (Gusheh: Daramad-e Khara) using standard ABC Notation. Use expressive, variable-length phrases as in an improvisatory avaz; use approximately 8–12 phrase divisions, not uniform 4/4 measures.
 
 STRICT RULES:
 1. Do NOT copy the sample motif literally; use its rhythmic feel, phrasing, and modal gravity to compose a fresh etude.
 2. Output ONLY valid ABC notation inside a code block (no explanations).
 3. Use microtonal ABC syntax where needed: <BT>_<BT> for flat, <BT>^<BT> for sharp, <BT>_/<BT> for Koron (quarter-flat), <BT>^/<BT> for Sori (quarter-sharp).
-4. Remember: In the key signature below, B is Bb, E is Eb, and A is Ak (La Koron). Therefore, write plain <BT>A<BT> for La Koron, plain <BT>B<BT> for Bb, and explicitly write <BT>_/E<BT> when shifting to the variable note Mi Koron (Ek4).
+4. Remember: In the target key signature below, B is Bb, E is Eb, and A is Ak (La Koron). Therefore, write plain <BT>A<BT> for La Koron, plain <BT>B<BT> for Bb, and explicitly write <BT>_/E<BT> when shifting to the variable note Mi Koron (Ek4).
+5. Your original output MUST use X:, T:, M:none, L:1/16, and K:C _B _E _/A. Under M:none, barlines separate expressive phrases; their lengths may differ. Use rests and varied durations as expressive devices, not a fixed meter.
+6. The reference sample below uses a different key spelling (K:Gm ^/A). Study only its contour, phrasing, pauses, and rhythmic expression. Do NOT copy its key signature or A-sori spelling into your output; the target uses A-koron and K:C _B _E _/A.
+7. In ABC, <BT>G4<BT> means a G note with duration 4 units of L:1/16; the 4 is NOT an octave number. Use ABC uppercase note letters for the C4–Bb4 target range, and keep every played pitch within that range.
 
 GUSHEH CONSTRAINTS (JSON):
 {
@@ -28,8 +31,8 @@ GUSHEH CONSTRAINTS (JSON):
   "secondaryIst": "Ak4",
   "range": { "lowest": "C4", "highest": "Bb4" },
   "variableNotes": ["Ek4"],
-  "sampleMotif": "L:1/8\nG4 F2 G2 | _/E2 F2 D4 | E D E F D E C2 | C D _/E F G2 E2 | D/E/F/G/ A/B/c/B/ A4 | F2 G2 G4 ||",
-  "melodicRules": "Blend sustained G4 anchors with brisk stepwise runs. Alternate between Eb4 and variable Ek4 in the lower tetrachord (C4-G4), insert fast climbs to Bb4 pausing on Ak4, and resolve onto G4."
+  "sampleMotif": "X:1\nT:Goosheh - Shoor Sol\nM:none\nL:1/16\nQ:1/4=80\nK:Gm ^/A\nG4 | F G4 | F G4 | F G _/E F D2 |\nz _/E D _E F D _/E C2 | z4 |\nC D _/E F G4 |\nF G4 |\nC D _/E F G _/A _B4 _/A2 G8 |\n_/A4 |\nF G4 | G4 |]",
+  "melodicRules": "Freely improvise fresh phrases inspired by the reference's sustained G anchors, silences, rubato-like rhythmic space and short stepwise runs. Alternate Eb4 and variable Ek4 in the C4-G4 lower tetrachord; build fresh climbs toward Bb4, pause on Ak4, and resolve to G4. Keep the melodic ideas ORIGINAL, not a transcription of the sample."
 }""".replace("<BT>", chr(96))
 
 ABC_NOTE = re.compile(
@@ -112,13 +115,14 @@ def parse_abc_etude(raw_text, get_frequency):
         raise ValueError("Expected K:C _B _E _/A for Daramad-e Khara.")
 
     meter = headers.get("M", "4/4").strip()
+    free_meter = meter.lower() == "none"
     meter = "4/4" if meter == "C" else "2/2" if meter == "C|" else meter
     try:
-        beats_per_bar = Fraction(meter) * 4
+        beats_per_bar = None if free_meter else Fraction(meter) * 4
         unit = Fraction(headers.get("L", "1/8")) * 4
     except (ValueError, ZeroDivisionError) as error:
         raise ValueError("Invalid ABC M: or L: header.") from error
-    if beats_per_bar <= 0 or unit <= 0 or beats_per_bar > 16 or unit > 4:
+    if (not free_meter and (beats_per_bar <= 0 or beats_per_bar > 16)) or unit <= 0 or unit > 4:
         raise ValueError("Unsupported meter or note unit.")
 
     music = " ".join(music_lines)
@@ -127,7 +131,10 @@ def parse_abc_etude(raw_text, get_frequency):
     if re.search(r"\[[A-Ga-g][A-Ga-g]", music):
         raise ValueError("Polyphonic ABC chords are unsupported.")
     bars = [part.strip() for part in BARLINE.split(music) if part.strip()]
-    if len(bars) != 8:
+    if free_meter:
+        if not 4 <= len(bars) <= 24:
+            raise ValueError("Expected 4–24 free-meter phrases, received " + str(len(bars)) + ".")
+    elif len(bars) != 8:
         raise ValueError("Expected exactly 8 ABC measures, received " + str(len(bars)) + ".")
 
     title = headers.get("T", "Daramad-e Khara - Shur").strip()[:80]
@@ -193,7 +200,7 @@ def parse_abc_etude(raw_text, get_frequency):
 
         if tuplet_remaining:
             raise ValueError("Incomplete ABC tuplet in bar " + str(bar_index + 1))
-        if bar_duration != beats_per_bar:
+        if not free_meter and bar_duration != beats_per_bar:
             raise ValueError("Bar " + str(bar_index + 1)
                              + " does not match the declared meter ("
                              + str(float(bar_duration)) + " vs "
@@ -201,13 +208,13 @@ def parse_abc_etude(raw_text, get_frequency):
 
     if not notes:
         raise ValueError("Generated etude contains no notes.")
-    if len(notes) > 256:
-        raise ValueError("Generated etude has too many notes.")
+    if len(notes) > 256 or position > 256:
+        raise ValueError("Generated etude exceeds note or duration limits.")
 
     return {
         "title": title,
         "abcNotation": abc,
-        "bars": 8,
+        "bars": len(bars),
         "totalBeats": float(position),
         "notes": notes,
     }

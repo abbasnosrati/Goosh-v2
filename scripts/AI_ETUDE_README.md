@@ -51,7 +51,7 @@ The OpenRouter model is specified in `.env`.
 The API is **POST /api/generate-etude** with JSON `{"dastgah":"shur"}`.
 It returns `title`, `abcNotation`, and `notes` (pitch, duration in beats,
 and computed frequency in Hz). The Shur response additionally includes
-`bars: 8`, `totalBeats`, and note-level `atBeats` so rests are preserved.
+`bars` (phrase count), `totalBeats`, and note-level `atBeats` so rests are preserved.
 The frontend adapter converts pitches/timing to Goosh's native
 `{m,at,d}` notes using its existing key/tuning fields.
 
@@ -81,19 +81,36 @@ the server can also read that file when root `.env` is absent. Prefer root
 
 ## New Shur ABC-only prompt (2026-11-20)
 
-The exact prompt lives as `SHUR_PROMPT` in `scripts/abc_etude.py`. It
-requests **8 original bars in Daramad-e Khara** with `K:C _B _E _/A`,
-melodic focus on G4, alternate Eb4/E-koron, Ak4/Bb4, and a G4 cadence.
-The model is instructed to return **only an ABC code block**. We do NOT
-change that prompt into a JSON prompt. The local Python ABC parser turns
-the response into the structured API result; the browser never consumes
-the free-form model response directly.
+The current prompt lives as `SHUR_PROMPT` in `scripts/abc_etude.py`.
+The user replaced the earlier sample motif with the complete ABC example
+**"Goosheh - Shoor Sol"** (X:1, M:none, L:1/16, Q:1/4=80,
+K:Gm ^/A and its free-length phrases). This example is supplied to the
+AI as **an inspiration for new improvisatory melodic phrasing**, not
+as music to copy, play back, or convert directly.
 
-The parser accepts a bounded monophonic ABC subset with 8 measures,
-M: / L: headers, key-signature/within-bar accidentals, optional rests,
-and common tuplet notation. It checks measure lengths, pitch range and
-key signature. Invalid ABC returns HTTP 502 and leaves the existing
-etude unchanged.
+For original output, the **Shur target key remains K:C _B _E _/A**
+(B-flat, E-flat, A-koron), with explicitly marked variable E-koron;
+the example's A-sori spelling is reference material, not a change to the
+required target key. The AI must create fresh **M:none** ABC with
+variable-length phrases (approximately 8–12); a numeric duration such
+as G4 means four L:1/16 units, NOT octave 4.
+
+OpenRouter is still asked for **only an ABC code block**, not JSON.
+The same Python process parses that ABC into the structured JSON result
+used by Goosh Studio: `title`, `abcNotation`, `bars` (the number of
+free-length phrase divisions), `totalBeats`, and `notes` with
+`atBeats`, `duration`, `pitch`, and `frequency`. The browser
+continues to receive structured JSON, converted to Goosh's existing
+native score/playback format. No second backend is involved.
+
+The parser accepts a bounded monophonic ABC subset, `M:none` for
+free-meter phrases, notes and rests with varied durations, signature
+and note accidentals, and simple tuplets. It allows **4–24 phrase
+divisions** for `M:none` without requiring each phrase to sum to
+the same number of beats. Fixed-meter ABC continues to receive its
+existing 8-bar validation. Pitch range and target key restrictions
+remain enforced. Invalid ABC is reported via HTTP 502 rather than
+silently rewriting the improvised rhythm.
 
 This ABC parsing feature has not yet been exercised with a live OpenRouter
 response in this environment. Verify in the user's environment, and

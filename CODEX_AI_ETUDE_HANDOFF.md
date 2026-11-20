@@ -1,5 +1,37 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
+> **LATEST UPDATE — 2026-11-20, free-meter Shur sample replacement:**
+> The user replaced the Shur Daramad-e Khara reference motif with their
+> multi-phrase ABC example titled **"Goosheh - Shoor Sol"**, with `M:none`,
+> `L:1/16`, expressive rests, uneven phrase lengths and `Q:1/4=80`.
+> The **entire exact ABC example is now embedded as sampleMotif** in
+> `scripts/abc_etude.py`. This is INSPIRATION for OpenRouter to create
+> a new original improvisation, NOT audio to reproduce and NOT notation
+> that the Python code copies into the etude.
+>
+> Shur generation prompt now requests **original free-meter ABC** with
+> variable-length phrase groups (~8–12), `M:none`, `L:1/16`,
+> `K:C _B _E _/A`. The user's sample uses `K:Gm ^/A` with a different
+> A alteration; this is kept verbatim as a sample but the **target key is
+> still B-flat / E-flat / A-koron**. The prompt explicitly instructs
+> the AI to follow target key, not the sample's key spelling.
+>
+> `parse_abc_etude()` now accepts `M:none` and validates **4–24
+> variable-length phrases** without forcing fixed durations per phrase.
+> It preserves rests and note lengths, returns the actual phrase count
+> in `bars`, and still validates note range, spelling, key signature
+> and bounded total duration. `web/src/ai-etude.js` accepts this
+> free-meter output while continuing to return Goosh native note data.
+> The remaining three modes' fixed 4-bar JSON generation is unchanged.
+>
+> **Important:** references to "8 bars" below describe the previous
+> Shur implementation or fixed-meter fallback, NOT the current free-
+> meter Shur generation. Run Python parser/browser tests and a real
+> OpenRouter call before asserting end-to-end success. No standalone
+> Express/backend was added.
+>
+> ---
+
 > **2026-11-20 UPDATE — READ THIS FIRST:** The following integration has
 > been extended for Shur after the original 4-bar POC was documented.
 > The historical sections below describe the original design, and any
