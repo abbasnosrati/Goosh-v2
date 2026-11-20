@@ -363,70 +363,126 @@ function renderSignatureControls(){
     button.setAttribute('aria-pressed',String(option===mark))
     if(option==='کرن'||option==='سری')button.classList.add('signature-microtonal')
   }
-  const tune=el('div',box,undefined,'signature-editor-tuning')
-  el('span',tune,t('Tuning','کوک'),'signature-tuning-label')
-  const slider=el('input',tune,undefined,'signature-tuning-slider')
+  // Focused in-place tuning panel inspired by a hardware tuner.
+  // Display absolute cents relative to the natural note, not a fabricated
+  // "recorded note" or cents offset relative to a different accidental.
+  const card=el('div',box,undefined,'signature-tuner-card')
+  const header=el('div',card,undefined,'signature-tuner-heading')
+  const headingCopy=el('div',header,undefined,'signature-tuner-heading-copy')
+  el('span',headingCopy,t('KEY SIGNATURE TUNING','تنظیم کوک سرکلید'),'signature-tuner-eyebrow')
+  el('h3',headingCopy,t('Tune ','کوک نت ')+label(selected.midi),'signature-tuner-title')
+
+  const readout=el('div',card,undefined,'signature-tuner-readout')
+  const centsValue=el('strong',readout,undefined,'signature-tuner-value')
+  const frequency=el('span',readout,undefined,'signature-tuner-frequency')
+
+  const scale=el('div',card,undefined,'signature-tuner-scale')
+  const slider=el('input',scale,undefined,'signature-tuning-slider')
   slider.type='range'
-  slider.min=String(Math.max(-1200,Math.min(base-200,effective)))
-  slider.max=String(Math.min(1200,Math.max(base+200,effective)))
   slider.step='1'
-  slider.value=String(effective)
-  slider.setAttribute('aria-label',t('Tune pitch in cents','تنظیم کوک نت با کشیدن'))
-  const input=el('input',tune,undefined,'signature-tuning-number')
+  slider.setAttribute('aria-label',t('Tune pitch in cents','تنظیم کوک نت برحسب سنت'))
+  const ticks=el('div',scale,undefined,'signature-tuner-ticks')
+  ticks.setAttribute('aria-hidden','true')
+
+  const adjust=el('div',card,undefined,'signature-tuner-adjust')
+  const down=btn(adjust,'−',()=>setAndSave(currentCents()-1),t('Lower pitch by one cent','کاهش کوک به اندازه یک سنت'))
+  down.className='signature-tuner-step'
+  const input=el('input',adjust,undefined,'signature-tuning-number')
   input.type='number'
   input.required=true
   input.min='-1200'
   input.max='1200'
   input.step='1'
-  input.value=String(effective)
+  input.inputMode='numeric'
   input.setAttribute('aria-label',t('Pitch tuning in cents','کوک نت برحسب سنت'))
-  el('span',tune,'¢','signature-cent-unit')
+  const up=btn(adjust,'+',()=>setAndSave(currentCents()+1),t('Raise pitch by one cent','افزایش کوک به اندازه یک سنت'))
+  up.className='signature-tuner-step'
+
+  const actions=el('div',card,undefined,'signature-tuner-actions')
+  const reset=btn(actions,'↺ '+t('Reset','بازنشانی'),()=>setAndSave(base),
+    t('Reset to this signature mark’s default tuning','بازگرداندن کوک پیش‌فرض علامت سرکلید'))
+  reset.className='signature-tuner-reset'
+  const original=btn(actions,t('Play original','شنیدن صدای اصلی'),()=>{
+    auditionSignature(440*2**((selected.midi-69)/12),true)
+  },t('Play original natural note','شنیدن صدای طبیعی نت'))
+  original.className='signature-editor-listen signature-editor-original'
+  original.setAttribute('aria-label',t('Play original natural note','شنیدن صدای طبیعی نت'))
+  original.prepend(scoreTransportIcon('play'))
+  const tuned=btn(actions,t('Play tuned','شنیدن صدای تنظیم‌شده'),()=>{
+    auditionSignature(freq(e,selected.midi),true)
+  },t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
+  tuned.className='signature-editor-listen signature-editor-tuned'
+  tuned.setAttribute('aria-label',t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
+  tuned.prepend(scoreTransportIcon('play'))
+
+  const currentCents=()=>base+(e.offset[pc]||0)
+  const formatSigned=n=>(n>0?'+':'')+n
+  const updateReadout=value=>{
+    centsValue.textContent=formatSigned(value)+' ¢'
+    frequency.textContent=freq(e,selected.midi).toFixed(2)+' Hz'
+    slider.style.setProperty('--tuning-progress',
+      ((value-Number(slider.min))/(Number(slider.max)-Number(slider.min)||1)*100)+'%')
+  }
+  const updateSliderRange=value=>{
+    // Keep a fine-tuning range around the accidental's default setting,
+    // but still represent values entered directly in the numeric field.
+    const min=Math.max(-1200,Math.min(base-100,value))
+    const max=Math.min(1200,Math.max(base+100,value))
+    slider.min=String(min)
+    slider.max=String(max)
+    ticks.replaceChildren()
+    for(let i=0;i<5;i++){
+      const tick=Math.round(min+(max-min)*i/4)
+      el('span',ticks,formatSigned(tick)+'¢')
+    }
+  }
   const applyCents=value=>{
     const delta=value-(e.marks[e.key[pc]]||0)
-    if(!Number.isFinite(value)||value < -1200||value > 1200||
+    if(!Number.isInteger(value)||value < -1200||value > 1200||
         delta < -1200||delta > 1200)return false
     stopScorePlayback()
     if(delta)e.offset[pc]=delta
     else delete e.offset[pc]
     return true
   }
-  const hearTuned=()=>auditionSignature(freq(e,selected.midi),true)
+  const setAndSave=value=>{
+    if(!applyCents(value))return false
+    if(value<Number(slider.min)||value>Number(slider.max))
+      updateSliderRange(value)
+    slider.value=String(value)
+    input.value=String(value)
+    updateReadout(value)
+    save()
+    auditionSignature(freq(e,selected.midi),true)
+    return true
+  }
+
+  updateSliderRange(effective)
+  slider.value=String(effective)
+  input.value=String(effective)
+  updateReadout(effective)
   slider.oninput=()=>{
     const value=Number(slider.value)
     if(!applyCents(value))return
     input.value=String(value)
-    // Audition live at a bounded rate; each note is naturally short.
+    updateReadout(value)
+    // Throttled, short preview while dragging; no duplicated audio voices.
     auditionSignature(freq(e,selected.midi))
   }
   slider.onchange=()=>{
-    if(!applyCents(Number(slider.value)))return
-    input.value=slider.value
+    const value=Number(slider.value)
+    if(!applyCents(value))return
+    input.value=String(value)
+    updateReadout(value)
     save()
-    hearTuned()
+    auditionSignature(freq(e,selected.midi),true)
   }
   input.onchange=()=>{
-    if(!input.value||!input.reportValidity()||!applyCents(Number(input.value))){
-      input.value=String((e.marks[e.key[pc]]||0)+(e.offset[pc]||0))
-      return
-    }
     const value=Number(input.value)
-    slider.min=String(Math.max(-1200,Math.min(base-200,value)))
-    slider.max=String(Math.min(1200,Math.max(base+200,value)))
-    slider.value=String(value)
-    save()
-    hearTuned()
+    if(!input.value||!input.reportValidity()||!setAndSave(value))
+      input.value=String(currentCents())
   }
-  const previews=el('div',box,undefined,'signature-editor-previews')
-  const original=btn(previews,'♪ '+t('Original','صدای اصلی'),()=>{
-    // Natural reference: always unaltered equal-tempered selected note.
-    auditionSignature(440*2**((selected.midi-69)/12),true)
-  },t('Play original natural note','شنیدن صدای طبیعی نت'))
-  original.className='signature-editor-listen signature-editor-original'
-  original.setAttribute('aria-label',t('Play original natural note','شنیدن صدای طبیعی نت'))
-  const tuned=btn(previews,'♪ '+t('Tuned','صدای تنظیم‌شده'),hearTuned,
-    t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
-  tuned.className='signature-editor-listen signature-editor-tuned'
-  tuned.setAttribute('aria-label',t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
+
 }
 
 function sheet() {
