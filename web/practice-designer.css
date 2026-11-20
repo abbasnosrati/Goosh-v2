@@ -75,6 +75,42 @@
   color: var(--muted);
   font-size: .8rem;
 }
+#app[data-page="studio"] .studio-signature-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+#app[data-page="studio"] .studio-signature-entry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+#app[data-page="studio"] .studio-signature-entry:hover {
+  border-color: var(--accent);
+}
+#app[data-page="studio"] .studio-signature-entry:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+#app[data-page="studio"] .studio-signature-entry[hidden] { display: none !important; }
+#app[data-page="studio"] .studio-signature-entry .score-switch-symbol {
+  width: 30px;
+  height: 24px;
+  flex-shrink: 0;
+}
+#app[data-page="studio"] .studio-signature-entry .signature-toggle-label {
+  white-space: nowrap;
+}
 #app[data-page="studio"] .studio-compose-goal {
   margin-top: 13px;
   max-width: 420px;
