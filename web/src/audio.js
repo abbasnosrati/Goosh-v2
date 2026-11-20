@@ -129,6 +129,12 @@ async function preload(m) {
 export const ready = Promise.allSettled(Array.from({
   length: 30
 }, (_, i) => preload(21 + i * 3)))
+
+// A quick piano key tap in Goosh is deliberately allowed to decay naturally
+// for two seconds. Score playback should use the exact same sample envelope
+// instead of prematurely damping every notated short note.
+export const PIANO_TAP_RING_SECONDS = 2;
+
 export function voice(hz, delay = 0, output = null, onEnded = null) {
   const midi = 69 + 12 * Math.log2(hz / 440)
   const root = Math.max(21, Math.min(108, 21 + 3 * Math.round((midi - 21) / 3)))
