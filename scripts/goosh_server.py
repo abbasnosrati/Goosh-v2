@@ -34,6 +34,7 @@ WESTERN_SCALES = {item["id"]: item for item in MUSIC_SYSTEMS["western"]["styles"
 WESTERN_TONICS = {item["id"]: item for item in MUSIC_CATALOG["tonics"]}
 
 RHYTHM = [1, 1, 1, 1, .5, .5, 1, 2, 1, .5, .5, 2, 1, 1, 1, 1]
+METER_CHOICES = {"none","2/4","3/4","4/4","5/4","6/8","7/8","9/8","12/8"}
 SEMITONES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 CENTS = {"": 0, "#": 100, "b": -100, "k": -50, "s": 50}
 ABC_MARKS = {"": "", "#": "^", "b": "_", "k": "_/", "s": "^/"}
@@ -91,7 +92,9 @@ def format_abc(title, notes):
                       "K:none", " | ".join(measures) + " |]"))
 
 
-def response_schema(mode):
+def response_schema(mode, meter="none"):
+    metered = meter != "none"
+    note_keys = ["pitch", "duration", "frequency", "restBefore"] if metered else ["pitch", "duration", "frequency"]
     return {
         "type": "object", "additionalProperties": False,
         "required": ["title", "abcNotation", "notes"],
@@ -99,14 +102,15 @@ def response_schema(mode):
             "title": {"type": "string"},
             "abcNotation": {"type": "string"},
             "notes": {
-                "type": "array", "minItems": 16, "maxItems": 16,
+                "type": "array", "minItems": 1 if metered else 16, "maxItems": 128 if metered else 16,
                 "items": {
                     "type": "object", "additionalProperties": False,
-                    "required": ["pitch", "duration", "frequency"],
+                    "required": note_keys,
                     "properties": {
                         "pitch": {"type": "string", "enum": mode["pitches"]},
                         "duration": {"type": "number"},
                         "frequency": {"type": "number"},
+                        **({"restBefore":{"type":"number"}} if metered else {}),
                     },
                 },
             },
@@ -114,11 +118,12 @@ def response_schema(mode):
     }
 
 
-def normalise_etude(data, mode, frequency_for_pitch=get_frequency):
+def normalise_etude(data, mode, frequency_for_pitch=get_frequency, meter="none"):
     if not isinstance(data, dict) or not isinstance(data.get("notes"), list):
         raise ValueError("The model did not return an etude.")
-    if len(data["notes"]) != 16:
-        raise ValueError("The model must return 16 notes.")
+    metered = meter != "none"
+    if not ((1 <= len(data["notes"]) <= 128) if metered else len(data["notes"]) == 16):
+        raise ValueError("The model returned an invalid number of notes.")
     allowed = set(mode["pitches"])
     pitches = []
     for note in data["notes"]:
@@ -134,6 +139,37 @@ def normalise_etude(data, mode, frequency_for_pitch=get_frequency):
     title = data.get("title", "")
     title = title.strip()[:80] if isinstance(title, str) else ""
     title = title or "اتود " + mode["name"]
+    if metered:
+        numerator, denominator = (int(v) for v in meter.split("/"))
+        target_beats = 4 * numerator * 4 / denominator
+        elapsed_ticks = 0
+        notes = []
+        for pitch, item in zip(pitches, data["notes"]):
+            duration = item.get("duration")
+            rest = item.get("restBefore")
+            if (type(duration) not in (float, int) or type(rest) not in (float,int)
+                    or not math.isfinite(duration) or not math.isfinite(rest)
+                    or duration <= 0 or rest < 0):
+                raise ValueError("AI returned invalid note/rest values.")
+            # Each model value must be a genuine 1/32-note tick or finer
+            # dotted subdivision; the frontend's existing meterTimeline()
+            # remains the authoritative notation validator.
+            duration_ticks = round(duration * 960)
+            rest_ticks = round(rest * 960)
+            if (abs(duration*960-duration_ticks)>1e-4 or
+                    abs(rest*960-rest_ticks)>1e-4 or
+                    duration_ticks < 120 or duration_ticks%30 or
+                    rest_ticks%30):
+                raise ValueError("AI returned off-grid note/rest timing.")
+            elapsed_ticks += duration_ticks + rest_ticks
+            notes.append({"pitch":pitch,"duration":duration,"restBefore":rest,
+                          "frequency":frequency_for_pitch(pitch)})
+        if elapsed_ticks != round(target_beats*960):
+            raise ValueError("AI duration and rests do not fill four exact measures.")
+        # ABC is not authoritative. For metered music the browser engraves
+        # validated e.notes using one canonical meterTimeline; do not fabricate
+        # a misleading ABC representation with the wrong bar boundaries.
+        return {"title":title,"abcNotation":"","notes":notes}
     notes = [
         {"pitch": pitch, "duration": RHYTHM[i], "frequency": frequency_for_pitch(pitch)}
         for i, pitch in enumerate(pitches)
@@ -189,9 +225,11 @@ def make_western_mode(scale, tonic):
     }
 
 
-def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, tonic="C", tuning_cents=None):
+def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, tonic="C", tuning_cents=None, meter="none"):
     if music_system not in MUSIC_SYSTEMS:
         raise APIError(400, "Unsupported musical system.")
+    if meter not in METER_CHOICES:
+        raise APIError(400, "Unsupported time signature.")
     if goals is None: goals = []
     if not isinstance(goals, list) or len(goals) > 10 or any(not isinstance(g, str) or g not in PRACTICE_GOALS for g in goals):
         raise APIError(400, "Invalid practice goals.")
@@ -235,15 +273,32 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
 
     prompt = "\n".join([
         prompt_intro,
-        "Write 4 bars of 4/4, exactly 16 notes and four notes per bar.",
+        ("Write exactly four measures of " + meter + ". Compose 1 to 128 notes, "
+         "with durations and rests that fill exactly " +
+         str(4*int(meter.split("/")[0])*4/int(meter.split("/")[1])) +
+         " quarter-note beats (across all four measures). "
+         "Use duration and restBefore in quarter-note beat units; restBefore is "
+         "the silence before that note, 0 when there is no rest. "
+         "Use quarter, eighth, sixteenth, dotted or tied values expressible by "
+         "the notation; avoid irrational subdivisions or tuplets. "
+         "Ensure the final note ends exactly on the fourth barline.")
+        if meter != "none" else
+        "Compose a free-meter etude. For this existing beginner template use "
+        "16 notes with 16 quarter-note beats of total duration.",
         "Use only these exact pitch tokens: " + ", ".join(mode["pitches"]) + ".",
         "Start and end on the tonic " + mode["tonic"] + ".",
         "Use a clear motif, small melodic movement, and a final cadence.",
-        "Quarter-note durations by bar: [1,1,1,1] [0.5,0.5,1,2] [1,0.5,0.5,2] [1,1,1,1].",
+        ("Use meaningful rests (restBefore) and varied rhythmic note lengths "
+         "while respecting the exact measure capacity." if meter!="none" else
+         "Quarter-note durations by phrase: [1,1,1,1] [0.5,0.5,1,2] [1,0.5,0.5,2] [1,1,1,1]."),
         "In pitch tokens # is a sharp and b is a flat (one semitone).",
         "k means koron (-50 cents), s means sori (+50 cents) in Iranian repertoire only.",
         "Return JSON fields title, abcNotation, and notes with pitch, duration, and frequency.",
-        "For ABC use X:, T:, M:4/4, L:1/4, K:none; _/ means koron and ^/ means sori.",
+        ("This mode is engraved from the validated note timeline; abcNotation "
+         "may be an empty string because unverified ABC is not used."
+         if meter!="none" else
+         "ABC for this legacy free template may use M:4/4 internally; the Goosh "
+         "score is unmetered. _/ means koron and ^/ means sori."),
         "C4 is middle C. Keep the composition inside the supplied scale and pitch range.",
         "Iranian tuning in this application is simplified and not an authentic performance tuning.",
         "Return only the requested JSON.",
@@ -263,7 +318,7 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
             "json_schema": {
                 "name": "goosh_etude",
                 "strict": True,
-                "schema": response_schema(mode),
+                "schema": response_schema(mode,meter),
             },
         },
         "messages": [
@@ -271,8 +326,8 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
             {"role": "user", "content": prompt},
         ],
     }
-    if music_system == "iranian" and dastgah == "shur":
-        # Send the user's ABC-only 8-bar prompt unmodified. Convert its answer
+    if meter == "none" and music_system == "iranian" and dastgah == "shur":
+        # Preserve the historical ABC-only Shur prompt in FREE meter. Convert its answer
         # to the existing Studio JSON contract server-side (no second model).
         payload = {
             "model": model,
@@ -285,10 +340,10 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
 
     try:
         content = result["choices"][0]["message"]["content"]
-        if music_system == "iranian" and dastgah == "shur":
+        if meter=="none" and music_system == "iranian" and dastgah == "shur":
             return parse_abc_etude(content, frequency_for_pitch)
         parsed = json.loads(content)
-        return normalise_etude(parsed, mode, frequency_for_pitch)
+        return normalise_etude(parsed, mode, frequency_for_pitch, meter)
     except (KeyError, IndexError, TypeError, json.JSONDecodeError, ValueError) as error:
         raise APIError(502, "Invalid AI etude response: " + str(error)) from None
 
@@ -447,7 +502,8 @@ class GooshHandler(SimpleHTTPRequestHandler):
         try:
             result = (generate_etude(body.get("dastgah"), body.get("practiceGoals"),
                                      body.get("musicSystem", "iranian"),
-                                     body.get("scale"), body.get("tonic", "C"), body.get("tuningCents"))
+                                     body.get("scale"), body.get("tonic", "C"), body.get("tuningCents"),
+                                     body.get("meter", "none"))
                       if endpoint == "/api/generate-etude" else design_practice(body))
         except APIError as error:
             self.send_json(error.status, {"error": str(error)})
