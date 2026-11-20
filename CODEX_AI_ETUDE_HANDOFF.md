@@ -1860,3 +1860,18 @@ The current `mountEtudeComposer` source was evaluated with a simulated document,
 **Desktop acceptance:** Fetch branch, restart Python if necessary, hard-refresh `http://localhost:8081/etudes/<your-etude-id>`, verify the music selector is visible in Manual, select Shur or G Major and inspect the immediately changed staff and piano notes. Use **Edit Key Signature** to adjust a pitch's cents, return to Manual and then toggle AI; the edits should stay. Finally verify AI Primary Practice Goal and Generate appear only in AI, and existing exercises/notes are untouched by a mode selection.
 
 This section supersedes any earlier handoff wording that says the musical-system controls are **AI-only**. AI goal/generation controls remain AI-only; musical-system selection is explicitly shared.
+
+
+---
+
+## Unselected music-system switch must clear the key signature (2026-11-21)
+
+**Follow-up acceptance rule:** When the teacher switches between **Iranian Music** and **Western Music**, and the **destination** system has **no Dastgah / Scale / Mode selected**, the existing key signature must become completely empty immediately. Do not display or sound the source system's previous accidentals. The same rule applies if the user explicitly reselects the blank placeholder within the current system.
+
+**Implementation:** `web/src/studio-etude-generation.js` now handles the empty style in `applySelectedSignature()`: when the shared music catalog is ready but `state.styles[state.musicSystem]` is empty, call the existing `onSignatureChange({key:{}}, selectedContext())` instead of returning without change. The existing app callback applies the signature to the original Etude in-place via `applyMusicSignature()`, clearing `e.key` **and** `e.offset` so both displayed marks and pitch frequencies return to natural tuning, then saves and refreshes score/piano labels. The unselected `musicContext` with empty `dastgah` or `scale` persists the destination radio choice across reloads without claiming a mode was chosen; the existing optional context validator accepts empty strings. The radio controls remain disabled until the shared music catalog is loaded to avoid race conditions.
+
+**Preserved behavior:** Switching back to a system whose style was selected earlier in the current Studio session reapplies that chosen style. When both styles are unselected, both have empty key signatures. Choosing a new style immediately applies its signs. Manually edited cents are intentionally reset when a different preset (including a blank preset) is explicitly selected; ordinary page rendering does not reset saved adjustments. No note, practice step, score-editing tool, AI generation behavior or Manual/AI workflow is deleted or altered.
+
+**Verification:** Isolated tests against the actual GitHub composer source, actual `music-signature.js`, and `model.js` passed: Shur displays B-flat/E-flat/A-koron; switching to unselected Western produces empty `e.key`, empty `e.offset`, natural 440 Hz A4 and valid saved Western/blank metadata; choosing G Major produces F-sharp; returning to the earlier Shur restores its signs; selecting the blank Iranian placeholder clears its signs; returning to earlier G Major restores F-sharp; rerender retains the selected signature and existing notes/practice steps. JavaScript parsing passed. Real browser/audio end-to-end validation remains to be completed.
+
+**Cache:** Composer module import and `web/index.html` app entry are bumped to `clear-empty-music-1` for desktop browser reloads.
