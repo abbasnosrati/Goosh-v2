@@ -284,7 +284,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
         for(let l=59;l>=noteY;l-=9)positions.push(l)
         ledgers.forEach((line,i)=>{
           const active=i<positions.length
-          line.setAttribute('display',active?'':'none')
+          line.setAttribute('display',active?'inline':'none')
           if(active){
             line.setAttribute('x1',anchor-10)
             line.setAttribute('x2',anchor+10)
@@ -294,7 +294,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
         })
         hint.textContent=hints[placement.kind]
         hint.setAttribute('x',Math.max(43,Math.min(w-43,anchor)))
-        ghost.setAttribute('display','')
+        ghost.setAttribute('display','inline')
       }
       svg.onpointermove=showGhost
       svg.onpointerleave=()=>ghost.setAttribute('display','none')
