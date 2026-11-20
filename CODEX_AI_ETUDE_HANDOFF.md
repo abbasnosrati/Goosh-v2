@@ -2064,3 +2064,43 @@ Isolated source-backed JavaScript checks performed:
 ### Late safety addition: prevent stale AI output across meter changes
 
 The AI composer now captures `{...selectedContext(),meter:etude.meter||'none'}` at the instant Generate is pressed. `generateStudioEtude` sends that immutable selected meter in the Python request; when a response arrives it verifies that the current Etude still has the same meter **before** calling the existing converter or overwriting any notes. If the teacher changed 4/4 to 3/4 while OpenRouter was still generating, the earlier answer is rejected with an explicit message instead of being silently applied to an incompatible measure grid. This is a guard within the **same** existing AI generation pipeline, not another engine.
+
+
+---
+
+# Score piano timbre must match clicking Goosh's own piano keys (2026-11-21)
+
+**User's listening issue:** Pressing keys on the built-in Goosh piano gives a rich, attractive acoustic piano tone, while playing the same Etude from Score sounds dry/unnaturally MIDI-like. The report explicitly excludes clicks, crackle, noise and distortion. Do not solve by replacing the piano samples, synthesizing a different instrument, adding new reverb or changing tuning.
+
+## Identified cause (existing code)
+
+Both paths already use the **same existing `voice(hz,...)` sample player** and the same `web/piano` MP3 files. All 30 root samples expected by `web/src/audio.js` were verified present in the repository; Score did **not** intentionally use a different soundbank. However:
+- A quick keyboard tap below 180 ms in `piano()` released its sample after **2 seconds**, allowing its recorded piano body and natural decay to ring; normal Score playback called `release(n.d)` at the exact note's written length (often much less than 2 s), making it sound notably drier.
+- Score's end-of-transport timeout disconnected the dedicated output only about 220 ms after the last **notated note end**, cutting the last acoustic piano tail before its natural decay completed.
+- Score could start while MP3 samples were still loading and `voice()` would use its oscillator fallback rather than the sampled piano. The `ready` promise existed but had not been awaited by Score.
+- The live piano's `liveVoice()` damps a previous instance when the same key is re-struck. Previously Score only called `voice()`, so repeated same-pitch samples could overlap and sound less like direct key tapping.
+
+## Changes (only score transport presentation/sonority; no second engine)
+
+**`web/src/audio.js`:** Exported `PIANO_TAP_RING_SECONDS=2`, the *existing unchanged* short-tap envelope threshold. This is a shared constant; original `voice()`, MP3 mapping, pitch shifting, gain, compressor, attack, decay and `liveVoice()` implementations were NOT changed.
+
+**`web/src/app.js`:**
+1. The live keyboard's existing `off(d<.18 ? 2 : Math.min(6,d))` now references `PIANO_TAP_RING_SECONDS` instead of duplicating the literal 2, with no behavior change.
+2. Score keeps the same original `voice(n.hz,delay,output)`, sample data, `freq(e,m)`, written note positions, onsets, written durations, score marker timing, tempo, chords and rest scheduling. For an Etude note, its acoustic ring release is now `Math.min(6,Math.max(PIANO_TAP_RING_SECONDS,duration))` instead of immediate `release(duration)`, analogous to clicking a piano key briefly. The piano sample itself decays; this is **not a sustain pedal, new oscillator, new instrument or new audio engine**. Musical note time and acoustic ring-off are intentionally distinct.
+3. A per-note unity-gain gate connects to the existing Score output; when the *same frequency* occurs again, the previous sample's gate is damped with `setTargetAtTime(0,nextOnset,.012)`, analogous to the existing live piano's previous-string damping. Other pitches/chord tones are left ringing. The scheduling view is **sorted by note onset** (preserving original indices and canonical `e.notes`) because Pencil can append an earlier note at the end of the stored array.
+4. The Score transport's natural-completion timer waits for the **last scheduled audible piano tail** (at least 2 seconds after a short final note, plus sample release), instead of abruptly disconnecting output as soon as the last written duration expires. Pressing **Stop** or **Pause** still silences the output immediately; Stop cancels all scheduled output/tails. Note visual playback markers continue to follow original written durations, not the acoustic release tail.
+5. `startScorePlayback()` waits for the existing `ready` sample-load promise **after unlocking audio on the real click**. Loading state and a request token guard against duplicate play, cancellation, route changes or changing Etude while samples load. The Score play button acts as Stop during pending load; Pause is disabled until a transport actually starts. If any required root sample fails to load, Score displays a concise inline localized error rather than silently playing the brighter oscillator fallback. Users can reload the page to retry.
+6. `web/style.css` styles that error only if sample decoding failed, reusing the existing muted color and font size.
+7. `web/index.html` updates JS/CSS cache keys to `piano-score-same-tone-1`; the app's audio import uses `score-piano-sample-articulation-1`.
+
+**No changes** to the actual MP3 content/paths, piano keyboard samples, frequency and Iranian microtone mapping, metered vs Free mode, notes/Practice, AI, transport tempo, recorded note lengths, or note scoring. Existing Score playback's scheduled audio/bus remains in use.
+
+## Tests and limitations
+
+- Verified 30/30 root sample filenames exist under `web/piano`.
+- Source-backed isolated scheduling test: Score waits on `ready` before producing a voice; Stop during loading prevents scheduling; three short sample notes retain their exact original attack times/hz while each uses 2 s ring time; repeated same-pitch note damps the earlier gate at the next onset; the last tail determines when output is naturally disconnected (rather than last notated note-off); Pause and Stop clean up; failed sample load shows status and schedules NO oscillator voice.
+- Isolated mocked Web Audio run using the **existing actual `audio.js`** code: decoded all 30 samples; both `voice()` and `liveVoice()` created the same `AudioBufferSourceNode`-style sample playback, with no oscillator creation; verified the original sample envelope and two-second ring. (Mock AudioContext only, not an actual hearing/listening test.)
+- JavaScript syntax parsing passed for the edited app and the audio module after substituting `import.meta.url` in a non-module parser. Browsers support the unchanged `import.meta.url` natively.
+- **Not yet verified:** audible sound quality in the real desktop browser and on Android/iOS, actual MP3 decoding on each target system, high-note tone and high polyphony under load. User should compare the same pitched piano key clicked briefly against a Score note, especially at short durations, repeated pitches and the end of a phrase.
+
+**Acoustic / notation distinction:** The written `n.d` is still the source of truth for notation, learning feedback, metered bars and onset scheduling. The acoustic sample's quiet decay may continue after its notated end, exactly as a tapped piano key naturally rings. If users request hard staccato or strict damping for silent rests in the future, that should be a separate, explicitly specified articulation feature rather than undoing the sampled-piano consistency here.
