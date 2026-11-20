@@ -19,7 +19,7 @@ import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=koron-align-a4-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { generateStudioEtude } from './ai-etude.js?v=khara-free-phrases-3'
+import { generateStudioEtude } from './ai-etude.js?v=practice-sequence-1'
 import { renderStudioPractice } from './studio-practice.js'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),
