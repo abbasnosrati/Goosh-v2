@@ -62,3 +62,21 @@ changes. Previous notes stay untouched if generation fails or is cancelled.
 The dedicated API server at 127.0.0.1:8787 allows local CORS requests from
 localhost:8080 and 127.0.0.1:8080 only. Do not put the secret key in the web
 app; keep it only in poc/.env. Android and mobile UI are unaffected.
+
+## One-server Studio entrypoint (preferred)
+
+The POC server now serves the existing Goosh web app **without modifying its
+files**, as well as the OpenRouter API on the same origin.
+
+From the repository root, run `npm run start --prefix poc`, then open:
+
+http://127.0.0.1:8787/
+
+This redirects to the existing **Etude Studio list**, not the old isolated
+test page. Open or create an etude and click **Generate** in its editor.
+
+The previous standalone experiment remains at
+http://127.0.0.1:8787/test-etude if you need to compare its ABC display.
+
+You can still run the original Python web server on port 8080 in parallel,
+but it is **not required** for the integrated Studio workflow.

@@ -2,9 +2,39 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join } from 'node:path';
+import { join, extname } from 'node:path';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
+const WEB_ROOT = fileURLToPath(new URL('../web/', import.meta.url));
+const WEB_MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2'
+};
+
+// The separate POC server can serve existing Goosh files verbatim.
+// No editing, copying or bundling of the existing application is needed.
+function webAsset(pathname) {
+  let decoded;
+  try { decoded = decodeURIComponent(pathname); }
+  catch { return null; }
+  if (decoded.includes('\\') || decoded.includes('\0') || decoded.split('/').includes('..')) return null;
+  if (!/^\/(?:index\.html|style\.css|src\/[\w./-]+|brand\/[\w./-]+|piano\/[\w./-]+)$/.test(decoded)) return null;
+  const type = WEB_MIME[extname(decoded).toLowerCase()];
+  if (!type) return null;
+  return { file: join(WEB_ROOT, decoded.slice(1)), type };
+}
+
 if (existsSync(join(ROOT, '.env'))) process.loadEnvFile(join(ROOT, '.env'));
 
 const HOST = '127.0.0.1';
@@ -229,7 +259,7 @@ createServer(async (request, response) => {
       return;
     }
     if (request.method === 'GET' && path === '/') {
-      response.writeHead(302, { Location: '/test-etude' });
+      response.writeHead(302, { Location: '/index.html#studio' });
       response.end();
     } else if (request.method === 'GET' && path === '/test-etude') {
       await serve(response, join(ROOT, 'test-etude.html'), 'text/html; charset=utf-8');
@@ -243,6 +273,13 @@ createServer(async (request, response) => {
         throw Object.assign(new Error('Use application/json.'), { status: 415 });
       const body = await readBody(request);
       send(response, 200, await generate(body.dastgah));
+    } else if (request.method === 'GET' && webAsset(path)) {
+      const asset = webAsset(path);
+      if (!existsSync(asset.file)) {
+        send(response, 404, { error: 'File not found.' });
+      } else {
+        await serve(response, asset.file, asset.type);
+      }
     } else {
       send(response, 404, { error: 'Not found.' });
     }
@@ -251,6 +288,7 @@ createServer(async (request, response) => {
     if (!error.status) console.error('Etude POC:', error);
   }
 }).listen(PORT, HOST, () => {
-  console.log('Etude POC: http://' + HOST + ':' + PORT + '/test-etude');
+  console.log('Goosh Studio + OpenRouter: http://' + HOST + ':' + PORT + '/');
+  console.log('Legacy test page (optional): http://' + HOST + ':' + PORT + '/test-etude');
   if (!KEY) console.warn('No OPENROUTER_API_KEY configured in poc/.env');
 });
