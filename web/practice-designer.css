@@ -66,6 +66,19 @@
   color: var(--accent);
   box-shadow: var(--shadow);
 }
+/* Musical system and scale selection are shared by Manual and AI. */
+#app[data-page="studio"] .studio-compose-music {
+  margin-top: 12px;
+}
+#app[data-page="studio"] .studio-compose-music-hint {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: .8rem;
+}
+#app[data-page="studio"] .studio-compose-goal {
+  margin-top: 13px;
+  max-width: 420px;
+}
 #app[data-page="studio"] .studio-compose-ai[hidden]{ display: none; }
 #app[data-page="studio"] .studio-compose-description {
   margin: 13px 0 10px;
