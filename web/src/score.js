@@ -1,5 +1,6 @@
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
+import {orderedSignatureEntries} from './music-signature.js'
 
 const ns = 'http://www.w3.org/2000/svg',
   steps = [0,0,1,1,2,3,3,4,4,5,5,6]
@@ -64,9 +65,13 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
     for(let i=0;i<5;i++)line(4,104-9*i,w-4,104-9*i)
     draw('text',{x:7,y:103,'font-size':46,fill:'currentColor'},'𝄞')
     const sigMidi={0:72,2:74,4:76,5:77,7:79,9:69,11:71}
-    Object.entries(e.key).forEach(([pc,mark],i)=>{
+    orderedSignatureEntries(e.key).forEach(([pc,mark],i)=>{
       const x=40+17*i
-      const pitchStep=step(sigMidi[Number(pc)]??(60+Number(pc)))
+      const flatStaffMidi = {5:65,7:67};
+      const signMidi = mark === '♭' && Object.hasOwn(flatStaffMidi,Number(pc))
+        ? flatStaffMidi[Number(pc)]
+        : (sigMidi[Number(pc)] ?? (60+Number(pc)));
+      const pitchStep=step(signMidi)
       if(isPersianAccidental(mark)){
         // Anchor the meaningful corner of each vector symbol to the
         // actual staff pitch: Koron's triangle tip (y=46 in artwork),
