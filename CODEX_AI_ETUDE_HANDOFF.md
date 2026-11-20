@@ -1333,3 +1333,29 @@ Everything else in Studio remains unchanged: Key Signature Editor functions, tun
 
 ### Manual verification still required
 Normal Score view must show exactly one button with treble clef at the start and "Edit Key Signature" beside it. Clicking opens Key Signature Editor and makes the same button read "Back to Score" beside the staff-with-notes icon, **without filled accent background**. Clicking returns to the normal score. Confirm both languages, keyboard focus, responsive layout and themes. Source-level JavaScript parsing and static checks were performed, but there was no live browser/device visual testing.
+
+## Display current editor title below switch button (2026-11-20)
+
+**Branch:** `redesign` only. **User instruction:** Keep the existing **single icon-and-label toggle button** and insert a separate **current editor section title beneath that button, but above the Score toolbar (Play/Pause/Record/AI and score editing controls)**. When the switch button reads `Edit Key Signature`, the title beneath it must read **Score**. When the button reads `Back to Score`, the title beneath it must read **Key Signature Editor**.
+
+### Exact source changes
+
+1. **`web/src/app.js` / `studio()`:** After `const switchLabel = el('span', keyButton, signatureAction, 'signature-toggle-label'); switchLabel.dir = 'auto';`, inserted:
+   ```js
+   el('h2',panel,signatureMode
+     ? t('Key Signature Editor','تنظیم سرکلید')
+     : t('Score','خط حامل'),'score-title');
+   ```
+   This inserts the current-view title **after** the editor switch's heading container, and **before** `const scoreActions = row(panel)`. The title is informational, not another button. Existing switch button text, musical icon, transparent Back to Score background, view logic, and transport visibility are unchanged.
+2. **`web/style.css`:** Added a narrow, Studio-specific `#app[data-page="studio"] .score-heading + .score-title` style for compact spacing, a clear bold label, and no extra card. It leaves the other `.score-title` usages and print visibility unchanged.
+3. **`web/index.html`:** Bumped the app/style cache-busting query strings to `editor-title-under-switch-1`.
+4. **`CODEX_AI_ETUDE_HANDOFF.md`:** This note.
+
+### Expected visual order
+
+- **Normal Score:** single icon + `Edit Key Signature` button → **Score** text heading → regular Score action buttons including Play, Pause, Record, AI Generate.
+- **Key Signature Editor:** icon + `Back to Score` button (no filled active-state background) → **Key Signature Editor** text heading → Key Signature notation/editor content. Existing hiding of Score-only tools and Play/Pause/Record/AI in signature mode remains as before.
+- Preserve English/Persian translations, RTL behavior, original approved icons, tuning/audio and all unrelated features.
+
+### Manual checks still needed
+Open an etude in Studio, confirm the section title appears **between** the switch and the toolbar in both view modes and translations, with appropriate spacing and no duplicate title text in the button. Confirm score-only transport is hidden while editing key signature and returns in normal Score view. Validate mobile layout and printed PDF output. Static source syntax/structure were checked; no live browser or device QA was performed.
