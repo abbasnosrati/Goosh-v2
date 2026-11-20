@@ -55,10 +55,32 @@ const checkbox = (parent,label,value,onChange) => {
 };
 const pairOptions = (object,fa) => Object.entries(object).map(([id,text])=>[id,localized(text,fa)]);
 const hasMic = step => step.response.method === 'mic';
+
+// Freeze authoring while an empty AI Etude is waiting for its first score.
+// This is presentation-only: it never deletes existing practices or notes.
+export function setStudioPracticeLocked(host, locked, fa) {
+  const section = host.querySelector('.practice-designer');
+  if (!section) return;
+  let info = host.querySelector('.practice-frozen-message');
+  if (!info) {
+    info = document.createElement('p');
+    info.className = 'practice-frozen-message';
+    host.prepend(info);
+  }
+  info.textContent = fa
+    ? 'ابتدا در حالت هوش مصنوعی، هدف تمرین را انتخاب و اتود را تولید کنید. بعد از تولید، تنظیمات و افزودن تمرین اینجا فعال می‌شوند.'
+    : 'First select a practice goal and generate an AI etude. Practice settings and additional exercises will become available here.';
+  info.hidden = !locked;
+  section.inert = Boolean(locked);
+  section.classList.toggle('practice-frozen', Boolean(locked));
+  section.setAttribute('aria-hidden', String(Boolean(locked)));
+}
+
 export async function renderStudioPractice(host, etude, options) {
   const { fa, save } = options, tr = (en,ir)=>fa?ir:en;
   host.replaceChildren();
   const section = create('section', host, undefined, 'practice-designer');
+  setStudioPracticeLocked(host, Boolean(options.locked), fa);
   const head = create('div', section, undefined, 'practice-heading');
   const title = create('div', head);
   create('h2', title, tr('Practice Design','طراحی تمرین'));
@@ -74,70 +96,157 @@ export async function renderStudioPractice(host, etude, options) {
     if(!validatePracticeSequence(items,catalog))throw Error('Invalid practice step');
     const expanded=[...section.querySelectorAll('.practice-step[open]')].map(node=>node.dataset.stepId);
     if(preferredId)expanded.push(preferredId);
-    const expandedAdvanced=[...section.querySelectorAll('.practice-advanced[open]')].map(node=>node.parentElement?.dataset.stepId);
-    const aiOpen=aiPanel.open;
+    const expandedAdvanced=[...section.querySelectorAll('.practice-advanced[open]')]
+      .map(node=>node.parentElement?.dataset.stepId);
     save();
-    renderStudioPractice(host,etude,{...options,expanded,expandedAdvanced,aiOpen,
-      selectedGoal:picker.value,aiPrompt:prompt.value});
+    renderStudioPractice(host,etude,{...options,expanded,expandedAdvanced,
+      selectedGoal:picker.value});
   };
   const addRow=create('div',section,undefined,'practice-add-row');
-  const picker=create('select',addRow);
+  const goalField=create('label',addRow,undefined,'practice-field practice-goal-picker');
+  create('span',goalField,tr('Exercise goal','هدف تمرین'));
+  const picker=create('select',goalField);
   picker.setAttribute('aria-label',tr('Exercise goal','هدف تمرین'));
+  const blank=create('option',picker,tr('Select a practice goal…','ابتدا هدف تمرین را انتخاب کنید…'));
+  blank.value='';
   for(const group of catalog.categories) {
     const optgroup=create('optgroup',picker);
     optgroup.label=localized(group,fa);
     for(const def of catalog.goals.filter(g=>g.category===group.id)){
-      const option=create('option',optgroup,localized(def.label,fa));option.value=def.id;
+      const option=create('option',optgroup,localized(def.label,fa));
+      option.value=def.id;
     }
   }
-  button(addRow,tr('+ Add exercise','+ افزودن تمرین'),()=>{
-    const added=newPracticeStep(picker.value,catalog);items.push(added);change(added.id);
-  },'practice-add-button');
-  if(options.selectedGoal && catalog.goals.some(g=>g.id===options.selectedGoal))
-    picker.value=options.selectedGoal;
-  const aiPanel=create('details',section,undefined,'practice-ai');
-  aiPanel.open=Boolean(options.aiOpen);
-  create('summary',aiPanel,tr('AI: Design exercises','هوش مصنوعی: طراحی تمرین'));
-  create('p',aiPanel,tr('Choose a goal above and optionally describe your teaching preferences. AI proposes a new exercise without changing the score.',
-    'هدف را از بالا انتخاب کنید و در صورت نیاز توضیح دهید. AI تمرین جدید پیشنهاد می‌دهد و نت‌های اتود را تغییر نمی‌دهد.'));
-  const prompt=create('textarea',aiPanel);
-  prompt.rows=3;prompt.maxLength=2000;
-  prompt.value=options.aiPrompt || '';
-  prompt.placeholder=tr('e.g. Play reference once, then ask for a microphone answer with no tuner',
-    'مثلاً مرجع یک بار پخش شود و هنرجو با میکروفن و بدون تیونر پاسخ دهد');
-  const aiStatus=create('p',aiPanel,undefined,'practice-ai-status');
-  const aiBtn=button(aiPanel,tr('Generate exercise settings','تولید تنظیمات تمرین'),async()=>{
-    aiBtn.disabled=true;aiStatus.textContent=tr('Generating…','در حال تولید…');
-    try {
-      const response=await fetch('/api/design-practice',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          goal:picker.value,instruction:prompt.value,
-          etude:{ title:etude.title, bpm:etude.bpm, noteCount:etude.notes.length,
-            notes:etude.notes.slice(0,128).map(n=>({m:n.m,at:n.at,d:n.d})) }
-        })
-      });
-      const data=await response.json();
-      if(!host.isConnected)return;
-      if(!response.ok)throw Error(data.error||'AI failed');
-      const item=newPracticeStep(picker.value,catalog);
-      const spec=data.settings;
-      if(!spec || typeof spec!=='object')throw Error('Invalid AI settings');
-      item.content.scope=spec.scope;
-      item.content.groupSize=spec.groupSize;
-      item.response.method=spec.response;
-      item.reference.timing=spec.reference;
-      item.feedback.timing=spec.feedback;
-      item.assessment.tuner=spec.tuner;
-      item.assessment.toleranceCents=spec.toleranceCents;
-      item.assessment.responseSeconds=spec.responseSeconds;
-      item.assessment.attempts=spec.attempts;
-      item.flow.onIncorrect=spec.retry;
-      if(!validatePracticeSequence([...items,item],catalog))throw Error('AI settings are not valid for this goal');
-      items.push(item);change(item.id);
-    }catch(error){aiStatus.textContent=tr('Could not generate settings: ','ساخت تنظیمات ناموفق بود: ')+error.message;}
-    finally{aiBtn.disabled=false;}
-  },'practice-ai-button');
+  picker.value=(options.selectedGoal && catalog.goals.some(g=>g.id===options.selectedGoal))
+    ? options.selectedGoal : '';
+  const buttons=create('div',addRow,undefined,'practice-add-actions');
+
+  const addAction=(text,cls,handler)=>{
+    const wrapper=create('div',buttons,undefined,'practice-action-wrap');
+    wrapper.tabIndex=0;
+    const action=button(wrapper,text,handler,cls);
+    const tip=create('span',wrapper,tr('Select a practice goal first.','ابتدا هدف تمرین را انتخاب کنید.'),
+      'practice-goal-tooltip');
+    tip.setAttribute('role','tooltip');
+    action.title=''; // Only one tooltip, including keyboard and touch.
+    return {action,wrapper};
+  };
+
+  const add=addAction(tr('Add Exercise','افزودن تمرین'),'practice-add-button',()=>{
+    if(!picker.value || section.inert)return;
+    const added=newPracticeStep(picker.value,catalog);
+    items.push(added);
+    change(added.id);
+  });
+  const ai=addAction(tr('Design with AI','طراحی با AI'),'practice-ai-button',()=>{
+    if(!picker.value || section.inert)return;
+    openDesignDialog(picker.value);
+  });
+  const updateButtons=()=>{
+    const disabled=!picker.value;
+    for(const {action,wrapper} of [add,ai]){
+      action.disabled=disabled;
+      wrapper.classList.toggle('needs-goal',disabled);
+      wrapper.tabIndex=disabled?0:-1;
+      wrapper.setAttribute('aria-label',disabled
+        ? tr('Select a practice goal first.','ابتدا هدف تمرین را انتخاب کنید.')
+        : '');
+    }
+  };
+  picker.onchange=updateButtons;
+  updateButtons();
+
+  function openDesignDialog(goal) {
+    const definition=catalog.goals.find(entry=>entry.id===goal);
+    if(!definition)return;
+    const dialog=document.createElement('dialog');
+    dialog.className='etude-delete-dialog practice-ai-dialog';
+    dialog.setAttribute('aria-label',tr('Design an exercise with AI','طراحی تمرین با AI'));
+    create('h2',dialog,tr('Design with AI','طراحی با AI'));
+    const selected=create('p',dialog,undefined,'practice-ai-selected');
+    create('strong',selected,tr('Goal: ','هدف: '));
+    selected.append(localized(definition.label,fa));
+    create('p',dialog,tr(
+      'Optionally describe how the student should practice. The score will not change.',
+      'در صورت نیاز روش تمرین هنرجو را توضیح دهید. نت‌های اتود تغییر نمی‌کنند.'
+    ));
+    const prompt=create('textarea',dialog);
+    prompt.rows=3;prompt.maxLength=2000;
+    prompt.setAttribute('aria-label',tr('Teacher instructions (optional)','توضیحات استاد (اختیاری)'));
+    prompt.placeholder=tr(
+      'e.g. Play the reference once, then answer by microphone without a tuner',
+      'مثلاً مرجع یک بار پخش شود و هنرجو با میکروفن و بدون تیونر پاسخ دهد'
+    );
+    const status=create('p',dialog,undefined,'practice-ai-status');
+    status.setAttribute('role','status');
+    status.setAttribute('aria-live','polite');
+    const actions=create('div',dialog,undefined,'etude-delete-actions');
+    const cancel=button(actions,tr('Cancel','انصراف'),()=>dialog.close(),'etude-delete-cancel');
+    const controller=new AbortController();
+    let pending=false;
+    const generate=button(actions,tr('Generate Exercise','تولید تمرین'),async()=>{
+      if(pending)return;
+      pending=true;
+      generate.disabled=true;
+      cancel.disabled=true;
+      prompt.disabled=true;
+      showStudioMessage(status,tr('Designing exercise…','در حال طراحی تمرین…'));
+      try {
+        const response=await fetch('/api/design-practice',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          signal:controller.signal,
+          body:JSON.stringify({
+            goal,instruction:prompt.value,
+            etude:{title:etude.title,bpm:etude.bpm,noteCount:etude.notes.length,
+              notes:etude.notes.slice(0,128).map(n=>({m:n.m,at:n.at,d:n.d}))}
+          })
+        });
+        const data=await response.json();
+        if(controller.signal.aborted || !section.isConnected)return;
+        if(!response.ok)throw Error(data.error||'AI failed');
+        const item=newPracticeStep(goal,catalog);
+        const spec=data.settings;
+        if(!spec || typeof spec!=='object')throw Error('Invalid AI settings');
+        item.content.scope=spec.scope;
+        item.content.groupSize=spec.groupSize;
+        item.response.method=spec.response;
+        item.reference.timing=spec.reference;
+        item.feedback.timing=spec.feedback;
+        item.assessment.tuner=spec.tuner;
+        item.assessment.toleranceCents=spec.toleranceCents;
+        item.assessment.responseSeconds=spec.responseSeconds;
+        item.assessment.attempts=spec.attempts;
+        item.flow.onIncorrect=spec.retry;
+        if(!validatePracticeSequence([...items,item],catalog))
+          throw Error('AI settings are not valid for this goal');
+        dialog.close();
+        items.push(item);
+        change(item.id);
+      }catch(error){
+        if(error.name!=='AbortError' && dialog.isConnected)
+          showStudioMessage(status,tr('Could not design exercise: ','طراحی تمرین ناموفق بود: ')+error.message,'error');
+      }finally{
+        pending=false;
+        if(dialog.isConnected){
+          generate.disabled=false;
+          cancel.disabled=false;
+          prompt.disabled=false;
+        }
+      }
+    },'primary');
+    const closeOnRoute=()=>{if(dialog.open)dialog.close();};
+    window.addEventListener('popstate',closeOnRoute);
+    window.addEventListener('hashchange',closeOnRoute);
+    dialog.onclose=()=>{
+      controller.abort();
+      window.removeEventListener('popstate',closeOnRoute);
+      window.removeEventListener('hashchange',closeOnRoute);
+      dialog.remove();
+    };
+    document.body.append(dialog);
+    dialog.showModal();
+    prompt.focus();
+  }
 
   if(!items.length)create('p',section,tr('No exercises yet. Add the first goal to get started.',
     'هنوز تمرینی اضافه نشده؛ اولین هدف را انتخاب کنید.'),'practice-empty');
