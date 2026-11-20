@@ -128,7 +128,7 @@ html[lang="fa"] #app[data-page="studio"]:has(> .shelves) .shelves::before {
   background: var(--panel);
   pointer-events: none;
 }
-#app[data-page="studio"]:has(> .shelves) .etude-item:nth-of-type(3n+2) {
+#app[data-page="studio"]:has(> .shelves) .etude-card:nth-of-type(3n+2) > .etude-item {
   background-color: color-mix(in srgb, var(--accent) 5%, var(--panel));
 }
 #app[data-page="studio"]:has(> .shelves) .etude-item > strong,
@@ -333,9 +333,9 @@ html[lang="fa"] #etudes-design-controls .etudes-design-eyebrow { letter-spacing:
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-body:has(#etudes-mine:checked) #app[data-page="studio"] .shelves section:nth-child(2) > .etude-item,
+body:has(#etudes-mine:checked) #app[data-page="studio"] .shelves section:nth-child(2) > .etude-card,
 body:has(#etudes-mine:checked) #app[data-page="studio"] .shelves section:nth-child(2) > p,
-body:has(#etudes-imported:checked) #app[data-page="studio"] .shelves section:nth-child(1) > .etude-item,
+body:has(#etudes-imported:checked) #app[data-page="studio"] .shelves section:nth-child(1) > .etude-card,
 body:has(#etudes-imported:checked) #app[data-page="studio"] .shelves section:nth-child(1) > p {
   display: none;
 }
@@ -643,7 +643,7 @@ html[lang="fa"] #app[data-page="practice"]:has(> .shelves) .shelves::before {
   background: var(--panel);
   pointer-events: none;
 }
-#app[data-page="practice"]:has(> .shelves) .etude-item:nth-of-type(3n+2) {
+#app[data-page="practice"]:has(> .shelves) .etude-card:nth-of-type(3n+2) > .etude-item {
   background-color: color-mix(in srgb, var(--accent) 5%, var(--panel));
 }
 #app[data-page="practice"]:has(> .shelves) .etude-item > strong,
@@ -848,9 +848,9 @@ html[lang="fa"] #practice-design-controls .practice-design-eyebrow { letter-spac
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-body:has(#practice-mine:checked) #app[data-page="practice"] .shelves section:nth-child(2) > .etude-item,
+body:has(#practice-mine:checked) #app[data-page="practice"] .shelves section:nth-child(2) > .etude-card,
 body:has(#practice-mine:checked) #app[data-page="practice"] .shelves section:nth-child(2) > p,
-body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section:nth-child(1) > .etude-item,
+body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section:nth-child(1) > .etude-card,
 body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section:nth-child(1) > p {
   display: none;
 }
@@ -1005,5 +1005,48 @@ html[lang="fa"] #app[data-page="practice"]:has(> .shelves) .etude-item strong::a
     right: 2%;
     bottom: 6px;
     transform: rotate(-23deg);
+  }
+}
+
+/* Etude deletion: independent bottom-right action; keep the card-opening button intact. */
+#app[data-page="studio"] .etude-card,
+#app[data-page="practice"] .etude-card {
+  position: relative;
+  min-width: 0;
+}
+#app[data-page="studio"] .etude-card > .etude-item,
+#app[data-page="practice"] .etude-card > .etude-item {
+  padding-bottom: 62px;
+}
+#app[data-page="studio"] .etude-card > .etude-delete,
+#app[data-page="practice"] .etude-card > .etude-delete {
+  position: absolute;
+  right: 12px;
+  bottom: 11px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--panel);
+  color: var(--muted);
+}
+.etude-delete svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (hover:hover) {
+  .etude-delete:hover {
+    color: #b53340;
+    border-color: currentColor;
   }
 }
