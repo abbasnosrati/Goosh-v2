@@ -1014,15 +1014,14 @@ function studio() {
       refreshTake(take)
     }
   });
-  el('h2',panel,signatureMode
+  const scoreHeading = el('div', panel, undefined, 'score-heading');
+  el('h2',scoreHeading,signatureMode
     ? t('Key Signature Editor','تنظیم سرکلید')
     : t('Score','خط حامل'),'score-title');
-  const scoreActions = row(panel);
-  scoreActions.classList.add('score-actions');
   const signatureAction = signatureMode
     ? t('Return to score', 'بازگشت به خط حامل')
     : t('Edit key signature', 'ویرایش سرکلید');
-  const keyButton = btn(scoreActions, '', () => {
+  const keyButton = btn(scoreHeading, '', () => {
     stopSignaturePreview();
     if (!signatureMode) {
       stopScorePlayback();
@@ -1038,6 +1037,8 @@ function studio() {
   keyButton.setAttribute('aria-pressed', String(signatureMode));
   if (signatureMode) keyButton.classList.add('active');
   keyButton.append(signatureMode ? scoreReturnStaffIcon() : scoreSignatureIcon());
+  const scoreActions = row(panel);
+  scoreActions.classList.add('score-actions');
   for (const [mode, en, ir] of [
     ['select', 'Select', 'انتخاب'],
     ['pen', 'Pen', 'قلم'],
