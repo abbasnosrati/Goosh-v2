@@ -2154,3 +2154,10 @@ Both paths already use the **same existing `voice(hz,...)` sample player** and t
 - Both edited JS source files parse successfully. **Not yet run:** a full browser pointer/zoom/scroll test on actual devices or auditory listening test; verify with mouse and touch in the desktop and mobile layouts.
 
 **Acceptance:** In Studio, activate Select, drag a note diagonally to a different staff line and timeline slot. The note must follow the ghost's destination, the old per-note accidental must disappear, the destination's key signature must dictate its sound, no neighbor notes must move, and Ctrl/Cmd+Z must fully restore the prior notation. If a meter placement is invalid, reject it and leave the existing score untouched. Click-only still opens Note Settings; Pen and Eraser remain separate tools.
+
+
+### Final notation safeguards for note dragging
+
+- Staff-to-MIDI conversion was additionally corrected **below middle C**: descending through a staff step must resolve to the natural letter (e.g. A3, MIDI 57), not the enharmonic preceding black MIDI pitch (A#3, MIDI 58). This correction is within the one shared `pitchFromY()` used by **both Pen and Drag**. An isolated source-backed test from C4 down to C3 verified [60,59,57,55,53,52,50,48], all natural keys. Dragging to A3 in a signature containing A-Koron therefore uses the correct A3 staff MIDI and its canonical half-flat frequency, not a wrong accidental.
+- Metered Drag no longer silently clamps a dropped note to the last allowable position if it would overhang prepared bars. Instead, the application uses its existing `meterTimeline()` validation and presents the original bilingual invalid-placement message while retaining the old note unchanged.
+- Drag pointer capture is cleaned up on unexpected cancellation/loss. During active piano recording the optional `move` callback is omitted, so nonfunctional drag affordances do not appear.
