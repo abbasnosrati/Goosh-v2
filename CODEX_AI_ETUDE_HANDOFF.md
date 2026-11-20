@@ -1244,3 +1244,42 @@ The existing Score edit modes, key-signature switching, active transport behavio
 
 ### Manual verification
 Open Studio's normal Score view: the treble-clef switch button appears immediately after `Score` with appropriate spacing, not in the tools row. Click to enter Key Signature Editor: the title changes, and the switch becomes the existing staff-with-notes icon immediately after `Key Signature Editor`. Play/Pause/Record/AI remain hidden in this mode; return to Score and verify normal toolbar is restored. Check both RTL and LTR, narrow layouts, button focus/tooltip and printed PDF output. Only JavaScript syntax and source inspections are claimed, not live browser/device testing.
+
+
+## Correct editor-switch order and add bidirectional icon (2026-11-20)
+
+**Branch:** `redesign`. **User feedback:** The editor-switch button looked *before* the editor heading in Persian/RTL despite coming after it in the DOM. Make it visually follow the heading, and make its dual-editor action unmistakable.
+
+**Exact changes:**
+- `web/src/app.js`: Added `scoreEditorSwitchArrowsIcon()`, an 18px inline SVG pictogram of opposing horizontal arrows. The existing editor-switch button now renders its existing conditional musical icon—user-approved treble clef from `scoreSignatureIcon()` when viewing the score, or five-line staff with two notes from `scoreReturnStaffIcon()` when viewing signature editor—together with the new arrows. Original music artwork and actual toggle handlers were not modified.
+- `web/style.css`: Set `direction:ltr` specifically on `.score-heading` to keep the heading physically **before** the switch button in both document language directions; in RTL the heading text itself retains `direction:rtl`. Gave the combined icon button sufficient horizontal width (min 60px), appropriate gap, and separate size rules for `.score-switch-symbol` (30×24px) and `.score-switch-arrows` (18×18px). Existing theme and active styles remain.
+- `web/index.html`: Initially bumped CSS and JS query versions to `editor-switch-order-2`; the app version was subsequently bumped for additional requested changes.
+
+**Manual checks:** Compare both directions and themes; visual order must be title then icon button (physically to its right). Confirm different clef/staff art in the two modes with two-way arrows. Static checks were performed; browser rendering not verified.
+
+
+## Editor heading labels reflect the switch action (2026-11-20)
+
+**Branch:** `redesign`. **User request:** The text alongside the two-mode editor switch should read **Edit Key Signature** in the normal Score view and **Back to Score** while inside the Key Signature Editor.
+
+**Exact changes:**
+- `web/src/app.js` / `studio()`: Updated only the heading's dynamic localized text and the button's matching localized `title` / `aria-label`:
+  - `signatureMode === false`: `Edit Key Signature` / `ویرایش سرکلید`.
+  - `signatureMode === true`: `Back to Score` / `بازگشت به خط حامل`.
+- The existing `.score-heading` layout, two-way switch art, key signature toggle functionality and all controls remain unchanged.
+- `web/index.html`: Bumped the script version to `editor-switch-labels-1` (subsequently bumped again).
+
+**Manual checks:** Open a Studio etude and switch views; the heading and button accessible names should always match the action, in English and Persian. Confirm score and tuning behave normally.
+
+
+## Automatically return Pen/Eraser to Select after clicking outside score (2026-11-20)
+
+**Branch:** `redesign`. **User request:** In the normal Studio Score editor, when Pen or Eraser is selected, clicking anywhere **outside the score/staff surface** should restore the Mouse/Select tool.
+
+**Exact changes:**
+1. **`web/src/app.js`:** Added **one** document-level `pointerdown` event listener next to the other global browser listeners. It operates only if `page === 'studio'`, `activeId` is valid, `signatureMode` is false, and the active `scoreTool` is either `pen` or `eraser`. It returns early if a modal dialog is open, or if the pointer target is inside `.score` or the editing tool buttons `.score-actions [data-score-tool]`.
+2. An outside pointer click now sets `scoreTool = 'select'`, toggles the `.active` class and `aria-pressed` state on all Studio editing tool buttons so Select visibly becomes active, and calls `sheet()` once to remove the pen/eraser cursor and restore the standard score pointer. It does **not** call the full `render()`, so unrelated clicked controls (including input fields) are not replaced and lose neither focus nor interaction.
+3. Clicking within the score still keeps the currently selected tool (Pen/Eraser) so users can draw or erase multiple notes. Clicking the Pen or Eraser toolbar buttons remains a deliberate tool change, unaffected by the outside-click listener.
+4. **`web/index.html`:** Updated the app.js cache version to `outside-score-select-1`. **No CSS**, tuning behavior, note data, Score editing algorithms or other routes were changed.
+
+**Manual checks:** Select Pen, click inside score (should remain Pen), click elsewhere (should become Mouse/Select); repeat for Eraser. Check selecting Pen/Eraser by toolbar click still works. Check unrelated input focusing/clicks, modal dialogs, RTL/LTR and Practice/Home do not suffer side effects. No live browser QA was performed; this was checked by syntax and source inspection only.
