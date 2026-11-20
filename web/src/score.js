@@ -387,7 +387,8 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
           const dragged=pointer.dragged
           pointer=null
           ignoreClick=true
-          hit.releasePointerCapture?.(ev.pointerId)
+          if(hit.hasPointerCapture?.(ev.pointerId))
+            hit.releasePointerCapture(ev.pointerId)
           hit.style.cursor='grab'
           if(dragged){
             const target=dragDestination(ev,e.notes[index])
@@ -403,6 +404,12 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
           hit.style.cursor='grab'
           showDragPreview(null)
           ev.stopPropagation()
+        }
+        hit.onlostpointercapture=()=>{
+          if(!pointer)return
+          pointer=null
+          hit.style.cursor='grab'
+          showDragPreview(null)
         }
       }
       hit.onclick=ev=>{
