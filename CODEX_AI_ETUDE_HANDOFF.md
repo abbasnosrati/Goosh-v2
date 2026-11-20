@@ -1058,3 +1058,33 @@ The `signatureMode` toggle flow, selected key pitch, signature editing SVG, acci
 ### Explicit non-goals
 
 No changes to `web/src/key-signature.js`, `web/src/model.js`, `web/src/audio.js`, note data schemas, other tuning places, piano, Score playback sequencing, AI generation or Practice functions.
+
+## Studio key-signature tuner compact visual revision (2026-11-20)
+
+**Branch:** `redesign` only. This change is a refinement to the previously implemented tuner-inspired Tuning UI in the Studio Key Signature Editor, based on explicit user feedback that the new tuner was too large and unnecessarily boxed.
+
+### Requested changes, exact scope
+- Make the Tuning UI **significantly more compact**.
+- Remove the tuner-specific rounded rectangular card, border, background gradient, and shadow. Tuning should feel like an inline part of the existing Key Signature Editor, not a second nested panel.
+- Remove the duplicated **KEY SIGNATURE TUNING** eyebrow and **Tune C5**-style title entirely. The chosen pitch and key-signature context are already visible elsewhere in the editor; do not add replacement heading text.
+- Keep useful controls and information: cents reading, Hz frequency, fine-tuning slider/ticks, signed numeric input, ±1-cent step buttons, Reset, Play original and Play tuned.
+- Make no changes to the tuning formula, pitch data, note selection, audio previews, persistence, or unrelated layouts.
+
+### Source changes
+1. **`web/src/app.js` — `renderSignatureControls()`:** Removed the `div.signature-tuner-heading` DOM subtree including its `signature-tuner-eyebrow` (`KEY SIGNATURE TUNING`) and `signature-tuner-title` (`Tune <pitch>`) elements. Renamed the wrapper class from `signature-tuner-card` to `signature-tuner-inline` to reflect the new unboxed presentation; no separate dialog was introduced. All remaining readout, slider, numeric input, buttons and their handlers were retained verbatim.
+2. **`web/style.css`:** Replaced the previous oversized card-oriented block with scoped `#app[data-page="studio"]` CSS for `.signature-tuner-inline`: an unboxed, borderless, transparent three-column grid with zero shadow and very small padding. On desktop the readout, ticked slider and numeric ± controls fit on one row; small Reset/Original/Tuned preview controls align at the end of the following short row.
+   - Reduced the cents typography to **25–32px** (previously up to 54px), Hz to **12px**, slider tick spacing, slider thumb and numeric input heights to **38px**, and secondary action buttons to **38px**.
+   - Kept the existing Goosh accent, text, background and line design tokens; there are no new palette colors.
+   - Responsive rules at **920px**, **760px**, and **490px** stack/wrap only when necessary to prevent controls overlapping on smaller viewports.
+   - Removed now-unused styles for `signature-tuner-card`, `signature-tuner-heading`, `signature-tuner-eyebrow`, and `signature-tuner-title`. The pre-existing outer Key Signature Editor container and accidental selection row are unchanged; the inner redundant Tuning card is removed.
+   - The thumb, ticks, cents progress, numeric field accessibility, two audio preview buttons, and visual focus affordances are preserved.
+3. **`web/index.html`:** Incremented the CSS and app module cache-busting versions to `signature-tuner-compact-1` so the revised layout and removed headings appear reliably.
+4. **`CODEX_AI_ETUDE_HANDOFF.md`:** This implementation note records the exact work.
+
+### Verification checklist (not yet executed)
+- On `redesign`, open Studio → Key Signature Editor → Tuning and verify the duplicate eyebrow/title no longer appear anywhere in Tuning.
+- There must be **no inner card**, border, gradient or shadow around the Tuning area. Existing accidental controls and their outer editor section remain in their prior design.
+- At desktop widths, verify cents/Hz + slider + one-cent controls occupy a clean, compact row, with small Reset/Play-original/Play-tuned actions nearby; no overlap or unintentional overflow.
+- On mobile/tablet, controls should wrap without clipping in English and Persian, light and dark themes.
+- Move slider and confirm numeric value/Hz update, audio is auditioned, and final cents are saved. Check ± steps, Reset to accidental baseline, input validation and both original/tuned sounds.
+- No manual browser/device/audio QA was performed in this change; static source checks alone must not be reported as an end-to-end test pass.
