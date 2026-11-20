@@ -1047,12 +1047,13 @@ function studio() {
     onModeChange: locked => {
       if (practiceHost) setStudioPracticeLocked(practiceHost, locked, fa);
     },
-    onSignatureChange: signature => {
+    onSignatureChange: (signature, musicContext) => {
       if (page !== 'studio' || activeId !== composerId || e !== composerTarget) return;
       stopKeys();
       stopSignaturePreview();
       stopScorePlayback();
       applyMusicSignature(composerTarget, signature);
+      composerTarget.musicContext = {...musicContext};
       save();
       sheet(); // Repaint the staff and key-signature editor from e.key.
       // Key down uses freq(e,m) live; refresh the tooltip's cached frequency too.
