@@ -2161,3 +2161,22 @@ Both paths already use the **same existing `voice(hz,...)` sample player** and t
 - Staff-to-MIDI conversion was additionally corrected **below middle C**: descending through a staff step must resolve to the natural letter (e.g. A3, MIDI 57), not the enharmonic preceding black MIDI pitch (A#3, MIDI 58). This correction is within the one shared `pitchFromY()` used by **both Pen and Drag**. An isolated source-backed test from C4 down to C3 verified [60,59,57,55,53,52,50,48], all natural keys. Dragging to A3 in a signature containing A-Koron therefore uses the correct A3 staff MIDI and its canonical half-flat frequency, not a wrong accidental.
 - Metered Drag no longer silently clamps a dropped note to the last allowable position if it would overhang prepared bars. Instead, the application uses its existing `meterTimeline()` validation and presents the original bilingual invalid-placement message while retaining the old note unchanged.
 - Drag pointer capture is cleaned up on unexpected cancellation/loss. During active piano recording the optional `move` callback is omitted, so nonfunctional drag affordances do not appear.
+
+
+---
+
+## Final Meter Preset List and Persian Terminology (2026-11-21)
+
+The user explicitly changed the terminology: the Persian label formerly `کسر میزان` must be **`میزان‌نما`** everywhere in the Studio Score controls, Practice summary and validation/error messages. The musical/English term remains `Time signature`.
+
+**Supported selections are now exactly:**
+- Free — `none` (existing default, no enforced meter, retained from earlier user requirements)
+- `2/4`, `3/4`, `4/4`, `6/4`, `6/8`, `6/16`, `7/8`, `5/8`
+
+**Removed completely from the selection/validation allowlist:** `5/4`, `9/8`, `12/8`. No extra presets should be reintroduced without explicit user approval.
+
+Implementation: `web/src/model.js` exports the one canonical ordered `METER_PRESETS` list consumed by the existing Studio dropdown and canonical `meterInfo()/meterTimeline()`. The Python server's `METER_CHOICES` allowlist is updated to the same exact set so AI generation and AI Practice validation agree with the UI. `web/src/app.js` and `web/src/score.js` replaced all user-visible instances of `کسر میزان` with `میزان‌نما`. The app entry import cache key in `web/index.html` is `meter-presets-8-1`.
+
+Verification: JS source parses; all eight metered presets create four correctly-sized empty measures with a full-measure rest; `6/16` resolves to 1.5 quarter-note beats/1440 rhythmic ticks per measure; `5/8` resolves to 2.5 quarter-note beats/2400 ticks; all other numerators/denominators produce their exact values; simple valid notes in `6/16` and `5/8` are accepted. `none` remains Free. Python and JS preset sets agree, and the removed presets no longer occur in either supported allowlist. Actual desktop/browser/API end-to-end execution was not performed.
+
+**This later user decision supersedes the broader meter list described elsewhere in this handoff.** Retain the single shared original `e.notes` model, meter-aware Piano/Pencil/Eraser/AI/Practice behavior and Free mode; only the term and preset allowlist were changed.
