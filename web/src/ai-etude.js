@@ -17,7 +17,7 @@ function convertEtude(data, current, dastgah) {
   const isShurFreeMeter = dastgah === 'shur'
   if (typeof data?.title !== 'string' || !Array.isArray(data.notes) ||
       (isShurFreeMeter
-        ? (!Number.isInteger(data.bars) || data.bars < 4 || data.bars > 24 ||
+        ? (!Number.isInteger(data.bars) || data.bars < 4 || data.bars > 20 ||
            data.notes.length < 1 || data.notes.length > 256 ||
            !Number.isFinite(data.totalBeats) || data.totalBeats <= 0 ||
            data.totalBeats > 256)

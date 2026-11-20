@@ -92,7 +92,7 @@ For original output, the **Shur target key remains K:C _B _E _/A**
 (B-flat, E-flat, A-koron), with explicitly marked variable E-koron;
 the example's A-sori spelling is reference material, not a change to the
 required target key. The AI must create fresh **M:none** ABC with
-variable-length phrases (approximately 8–12); a numeric duration such
+variable-length phrases (approximately 4–20); a numeric duration such
 as G4 means four L:1/16 units, NOT octave 4.
 
 OpenRouter is still asked for **only an ABC code block**, not JSON.
@@ -105,7 +105,7 @@ native score/playback format. No second backend is involved.
 
 The parser accepts a bounded monophonic ABC subset, `M:none` for
 free-meter phrases, notes and rests with varied durations, signature
-and note accidentals, and simple tuplets. It allows **4–24 phrase
+and note accidentals, and simple tuplets. It allows **4–20 phrase
 divisions** for `M:none` without requiring each phrase to sum to
 the same number of beats. Fixed-meter ABC continues to receive its
 existing 8-bar validation. Pitch range and target key restrictions
@@ -116,3 +116,5 @@ This ABC parsing feature has not yet been exercised with a live OpenRouter
 response in this environment. Verify in the user's environment, and
 do not mistake simplified accidentals/tuning for fully authentic
 Persian classical music notation.
+
+**Latest Shur generation limit (2026-11-20):** A creative range of **4–20 free-meter phrases** is requested. Python and the AI frontend both accept that range; the score/audio engine is not affected. Future user-selectable counts may constrain the requested range (e.g. exactly four).

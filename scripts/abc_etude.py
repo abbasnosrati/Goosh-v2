@@ -20,7 +20,7 @@ Generate an original, soulful free-meter etude in Dastgah-e Shur
 
 Follow the etudeSettings and gushehData provided below.
 
-Compose exactly 6 expressive, variable-length phrases at intermediate
+Compose between 4 and 20 expressive, variable-length phrases at intermediate
 difficulty, with natural rubato-like phrasing and no fixed meter.
 
 STRICT RULES:
@@ -57,7 +57,7 @@ STRICT RULES:
    Q:1/4=60
    K:C _B _E _/A
 
-   Write exactly 6 expressive phrases separated by barlines.
+   Write between 4 and 20 expressive phrases separated by barlines.
    The phrases may have different durations.
 
    Under M:none, barlines represent expressive phrase divisions,
@@ -111,7 +111,7 @@ GUSHEH CONSTRAINTS & SETTINGS (JSON):
     "meter": "none",
     "unitNoteLength": "1/16",
     "tempo": "1/4=60",
-    "phraseCount": 6,
+    "phraseCountRange": { "min": 4, "max": 20 },
     "difficulty": "intermediate"
   },
   "gushehData": {
@@ -137,7 +137,7 @@ GUSHEH CONSTRAINTS & SETTINGS (JSON):
 OUTPUT REQUIREMENT:
 
 Return one complete ABC notation block containing exactly
-6 musical phrases.
+4 to 20 musical phrases.
 
 The final phrase must resolve to G4.
 
@@ -395,9 +395,11 @@ def parse_abc_etude(raw_text, get_frequency):
     # Updated phrase count for the Shur experiment.
 
     if free_meter:
-        if len(bars) != 6:
+        # A creative phrase-count RANGE is not a fixed number of bars.
+        # M:none groups may have unequal durations, including rests.
+        if not 4 <= len(bars) <= 20:
             raise ValueError(
-                "Expected exactly 6 free-meter phrases, "
+                "Expected 4–20 free-meter phrases, "
                 "received " + str(len(bars)) + "."
             )
 
