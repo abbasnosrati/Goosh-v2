@@ -1585,7 +1585,7 @@ The internal JS page name `studio` is retained for compatibility with the preexi
    - Added `GooshHandler._serve_app_route()` plus `do_GET()` and `do_HEAD()`.
    - For only the recognized path shapes `/etudes`, `/etudes/<local-id>`, `/practice`, `/practice/<local-id>` (optional trailing slash), rewrites the HTTP file request internally to `/index.html`. No HTTP redirect; the clean browser URL remains visible.
    - Asset requests (`.js`, `.css`, images, etc.), `/api/generate-etude`, `/api/design-practice` and unknown paths **are not** rewritten to the SPA entry point; missing assets should still report missing files.
-   - The ID shape for the Python rewrite is alphanumeric, underscore or hyphen, matching the application's generated UUID/local IDs. IDs with dots or encoded slashes are not part of this routing contract and can be unreliable in Capacitor's native local-serving environment.
+   - The Python rewrite accepts a single non-empty path segment without a literal dot or slash; this includes the application's UUID/local IDs and percent-encoded segments. Dotted path IDs remain intentionally unsupported by the native local-serving contract. The JavaScript router decodes valid percent encodings but will only find a saved etude when the decoded ID exists in the local collection.
    - Existing POST AI endpoints and the Python-only local backend architecture are unaffected.
 
 5. **`web/index.html` — root-relative asset resolution:**
@@ -1638,3 +1638,5 @@ The new URL structure does not create authenticated sharing, Universal Links, An
 7. Production hosting (if different from `goosh_server.py`) needs a separate route rewrite configuration and end-to-end deep-link smoke test.
 
 **Preserve:** Existing Etude Studio composition rules, key-signature editor, audio and AI logic; Practice runner logic and `e.rule`; canonical `etude.notes` plus multiple `practiceSequence` steps; the ten-goal catalog; existing design tokens; and all functionality outside navigation. No additional page component or second repository is required.
+
+- Final server rewrite refinement: the route fallback now also accepts percent-encoded single-segment IDs (e.g. `%20` in a URL path), while still excluding file extensions (literal `.`) and nested routes. This aligns the Python server more closely with `encodeURIComponent`-based URL generation. Automatically generated local etude IDs remain UUID-compatible and do not need escaping.
