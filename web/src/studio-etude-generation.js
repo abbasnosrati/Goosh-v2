@@ -51,12 +51,15 @@ export function mountEtudeComposer(host, {
   manual.type = ai.type = 'button';
   manual.className = ai.className = 'studio-compose-tab';
 
+  // A shared musical foundation: Manual and AI always use the same
+  // canonical Etude key signature, piano and score playback frequencies.
+  const sharedMusic = create('div', host, null, 'studio-compose-music');
   const content = create('div', host, null, 'studio-compose-ai');
   const intro = create('p', content, t(
     'Choose a learning goal before generating the notes. One score can then support multiple practices.',
     'قبل از تولید نت‌ها، هدف آموزشی را انتخاب کنید. سپس می‌توانید چند تمرین مختلف روی همان نت‌ها بسازید.'
   ), 'studio-compose-description');
-  const musicSystem = create('fieldset', content, null, 'studio-music-system');
+  const musicSystem = create('fieldset', sharedMusic, null, 'studio-music-system');
   create('legend', musicSystem, t('Musical system', 'سیستم موسیقایی'));
   const musicOptions = create('div', musicSystem, null, 'studio-music-choices');
   const radios = new Map();
@@ -80,7 +83,7 @@ export function mountEtudeComposer(host, {
       sync();
     };
   }
-  const fields = create('div', content, null, 'studio-compose-fields');
+  const fields = create('div', sharedMusic, null, 'studio-compose-fields');
   const styleLabel = create('label', fields, null, 'practice-field');
   const styleHeading = create('span', styleLabel);
   const styleInput = create('select', styleLabel);
@@ -97,7 +100,12 @@ export function mountEtudeComposer(host, {
     state.tonic = tonicInput.value;
     applySelectedSignature();
   };
-  const goalLabel = create('label', fields, null, 'practice-field');
+  create('p', sharedMusic, t(
+    'Selecting a mode sets the score and piano tuning. Use Edit Key Signature to fine-tune it.',
+    'با انتخاب دستگاه یا مد، سرکلید و کوک پیانو تنظیم می‌شود. برای تنظیم دقیق‌تر، از ویرایش سرکلید استفاده کنید.'
+  ), 'studio-compose-music-hint');
+  // Primary Practice Goal and Generate are AI-only, unlike the music selector.
+  const goalLabel = create('label', content, null, 'practice-field studio-compose-goal');
   create('span', goalLabel, t('Primary practice goal', 'هدف اصلی تمرین'));
   const goalInput = create('select', goalLabel);
   const placeholder = create('option', goalInput, t('Select a goal…', 'انتخاب هدف تمرین…'));
