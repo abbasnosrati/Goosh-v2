@@ -1,0 +1,15 @@
+{
+  "name": "goosh-persian-etude-poc",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "abcjs": "^6.6.0"
+  }
+}
