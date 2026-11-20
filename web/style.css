@@ -635,9 +635,10 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .signature-tuner-inline {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(90px, 118px) minmax(160px, 1fr) minmax(155px, 200px);
+  grid-template-columns: minmax(180px, 1fr) auto;
+  grid-template-areas: "readout adjust" "scale actions";
   align-items: center;
-  gap: 10px 16px;
+  gap: 9px 20px;
   width: 100%;
   min-width: 0;
   margin: 0;
@@ -649,6 +650,7 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   direction: ltr;
 }
 #app[data-page="studio"] .signature-tuner-readout {
+  grid-area: readout;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -666,12 +668,17 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   line-height: 1.15;
 }
 #app[data-page="studio"] .signature-tuner-frequency {
+  display: block;
+  margin-bottom: 10px;
   color: var(--muted);
   font-size: 12px;
+  text-align: center;
   white-space: nowrap;
 }
 #app[data-page="studio"] .signature-tuner-scale {
+  grid-area: scale;
   min-width: 0;
+  width: 100%;
   margin: 0 2px;
 }
 #app[data-page="studio"] .signature-tuning-slider {
@@ -733,13 +740,15 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .signature-tuner-ticks span:first-child { align-items: flex-start; }
 #app[data-page="studio"] .signature-tuner-ticks span:last-child { align-items: flex-end; }
 #app[data-page="studio"] .signature-tuner-adjust {
+  grid-area: adjust;
   display: grid;
   grid-template-columns: 38px minmax(64px, 1fr) 38px;
   align-items: center;
   gap: 6px;
   min-width: 0;
-  width: 100%;
+  width: min(100%, 235px);
   margin: 0;
+  justify-self: end;
 }
 #app[data-page="studio"] .signature-tuner-step {
   min-height: 38px;
@@ -768,8 +777,9 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   margin: 0;
 }
 #app[data-page="studio"] .signature-tuner-actions {
-  grid-column: 1 / -1;
+  grid-area: actions;
   display: flex;
+  align-self: center;
   justify-content: flex-end;
   flex-wrap: wrap;
   align-items: center;
@@ -801,15 +811,14 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   background: var(--accent);
   color: var(--panel);
 }
-@media (max-width: 920px) {
+@media (max-width: 700px) {
   #app[data-page="studio"] .signature-tuner-inline {
-    grid-template-columns: minmax(90px, 112px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "readout adjust" "scale scale" "actions actions";
     gap: 9px 12px;
   }
-  #app[data-page="studio"] .signature-tuner-adjust {
-    grid-column: 1 / -1;
-    justify-self: end;
-    width: min(100%, 235px);
+  #app[data-page="studio"] .signature-tuner-actions {
+    justify-content: center;
   }
 }
 @media (max-width: 760px) {
@@ -826,9 +835,12 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 }
 @media (max-width: 490px) {
   #app[data-page="studio"] .signature-tuner-inline {
-    grid-template-columns: minmax(80px, 100px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "readout" "adjust" "scale" "actions";
     gap: 9px;
   }
+  #app[data-page="studio"] .signature-tuner-readout { align-items: center; }
+  #app[data-page="studio"] .signature-tuner-adjust { justify-self: center; }
   #app[data-page="studio"] .signature-tuner-ticks { font-size: 9px; }
   #app[data-page="studio"] .signature-tuner-actions {
     justify-content: center;
