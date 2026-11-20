@@ -1631,6 +1631,20 @@ window.addEventListener('blur', stopKeys);
 window.addEventListener('resize', () => {
   if (page === 'studio') sheet()
 });
+// Leaving the score surface exits Pen/Eraser without disturbing the clicked control.
+document.addEventListener('pointerdown', ev => {
+  if (page !== 'studio' || !activeId || signatureMode ||
+      (scoreTool !== 'pen' && scoreTool !== 'eraser')) return;
+  if (document.querySelector('dialog[open]')) return;
+  if (ev.target.closest?.('.score, .score-actions [data-score-tool]')) return;
+  scoreTool = 'select';
+  document.querySelectorAll('#app[data-page="studio"] [data-score-tool]').forEach(button => {
+    const isSelected = button.dataset.scoreTool === 'select';
+    button.classList.toggle('active', isSelected);
+    button.setAttribute('aria-pressed', String(isSelected));
+  });
+  sheet();
+});
 document.onkeydown = ev => {
   if(document.querySelector('dialog[open]'))return;
   const typing = /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName) || ev.target.isContentEditable;
