@@ -4,6 +4,24 @@
 
 **User's screenshots and scope:** The Koron rendered in the dedicated key-signature editor was already approved: **do not touch it**. In the row of mark-choice buttons, Koron and Sori were disproportionately large compared with the existing ♭/♯ buttons; in the **regular etude score staff** the Koron was oversized and its triangle pointed near **C5** when the configured mark was actually **A4**. Correct only visual SVG sizing and positioning, keeping the existing meaning, data, piano, frequency, staff interaction and approved editor layout unchanged.
 
+### Source of the staff bug
+- `web/src/score.js` used a text-glyph baseline Y `106 - step(note)*4.5` as the origin of a separate SVG, then subtracted `19` from the nested SVG's top. The shared Koron artwork has a `120×160` viewBox with its relevant right-pointing triangle tip at source coordinate **(100,46)**. The previous nested SVG was `20×27`: effective scale `20/120`; letterbox padding `(27 - 160*(20/120))/2`; the tip fell roughly **11.2 SVG units above the intended pitch**, almost exactly the A4→C5 staff-position difference (two diatonic steps = 9 units). This was a display-coordinate bug, **not** incorrect musical pitch or tuning data.
+- In the normal score, the text glyph baseline adjustment is relevant only for flat/sharp. A vector accidental must instead use the note's actual geometric staff Y `104 - step(midi)*4.5`, exactly as noteheads do.
+
+### Exact patch
+1. `web/src/app.js`: Change only the SVG dimensions on the existing microtonal-selection buttons from `{width:24,height:30}` to `{width:18,height:22}`. Both marks use the same compact box and shared paths; the flat/sharp/natural buttons, CSS, selection callbacks, preview controls, tuning, click behavior and `e.key` data are unchanged.
+2. `web/src/score.js`: For configured key-signature Koron/Sori, use the pitch's real staff Y, with a smaller `16×22` inline vector. The Koron triangle tip is aligned to that Y with `glyphTop=6.5`. Sori's right-facing angle vertex (source y=98) is centered to that Y with `glyphTop=13.4`. Both are derived using the vector's `120×160` viewBox and its aspect-ratio-preserving fit, rather than adapting a font baseline. Keep original horizontal ordering of key signature entries and keep the flat/sharp/natural text glyph branch exactly as before.
+3. `web/src/score.js`: Apply the same compact, pitch-anchored positioning to explicit per-note Koron/Sori symbols (`n.staffAccidental`) so an AI-generated E-koron or any user-set accidental does not exhibit the old mismatch next to a note. The notehead, its `staffM`, playback marker, cursor, note time, and tuning semantics are preserved.
+4. `web/src/app.js` and `web/index.html`: Refresh only the score and app import-version strings so the browser loads the corrected UI instead of cached SVG-renderer modules.
+5. This Codex handoff section is committed **together with** the code. No changes to `web/src/key-signature.js`, `web/src/persian-accidentals.js` SVG paths, `web/style.css`, `web/src/model.js`, audio engine, AI parser, persistence format, and other UI.
+
+### Vector geometry and tests
+- With the score's `16×22` viewport and `viewBox 120×160`, the scale is `16/120 ≈ 0.13333` and the vertical meet-padding is `(22 - 160*0.13333)/2 ≈ 0.3333`. Koron's source tip y=46 maps to `0.3333 + 46*0.13333 ≈ 6.4667` from the SVG top. Placing the top at `staffY-6.5` aligns it within **0.04 SVG unit** of the intended pitch. For Sori, source y=98 maps to `0.3333 + 98*0.13333 = 13.4`; placing it at `staffY-13.4` aligns it exactly.
+- Test cases: key signature `{9:'کرن',4:'♭',5:'سری'}` places Koron's tip on A4 and Sori's vertex on F5; explicit `staffAccidental:'کرن'` is at the associated note's true staff Y; both glyphs use smaller `16×22` notation size. Buttons use `18×22`. Flat/sharp remain text symbols; clicking/editing and playback-marker nodes are preserved.
+- Source/synthetic SVG tests verify coordinate math and rendered attributes. **No live browser/device pixel QA was run.** User should visually verify the corrected placement and size at normal zoom.
+
+---
+
 ### 2026-11-20 — Studio editor-switch button first, with actual G-clef icon
 
 **Request:** Two narrowly scoped UI changes to the Studio Score toolbar: (1) place the existing toggle that switches between the normal note score and the key-signature editor at the very beginning, ahead of Mouse/Select; (2) replace the toggle's former multi-line staff/sharp/note illustration with the actual treble-clef symbol (𝄞). No new toggle or mode, and no transport or tuning changes.
