@@ -70,7 +70,7 @@ export function setStudioPracticeLocked(host, locked, fa) {
   }
   info.textContent = fa
     ? 'ابتدا در حالت هوش مصنوعی، هدف تمرین را انتخاب و اتود را تولید کنید. بعد از تولید، تنظیمات و افزودن تمرین اینجا فعال می‌شوند.'
-    : 'First select a practice goal and generate an AI etude. Practice settings and additional exercises will become available here.';
+    : 'First select a practice goal and generate an AI etude. Practice Design and additional exercises will become available here.';
   info.hidden = !locked;
   section.inert = Boolean(locked);
   section.classList.toggle('practice-frozen', Boolean(locked));
