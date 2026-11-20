@@ -16,6 +16,8 @@ from abc_etude import SHUR_PROMPT, parse_abc_etude
 
 PROJECT = Path(__file__).resolve().parent.parent
 WEB_ROOT = PROJECT / "web"
+PRACTICE_CATALOG = json.loads((WEB_ROOT / "practice-goals.json").read_text(encoding="utf-8"))
+PRACTICE_GOALS = {g["id"]: g for g in PRACTICE_CATALOG["goals"]}
 MODELS = {
     "shur": {
         "name": "شور", "tonic": "G4", "microtone": "Ak4",
@@ -148,9 +150,12 @@ class APIError(Exception):
         super().__init__(message)
 
 
-def generate_etude(dastgah):
+def generate_etude(dastgah, goals=None):
     if not isinstance(dastgah, str):
         raise APIError(400, "Unsupported dastgah.")
+    if goals is None: goals = []
+    if not isinstance(goals, list) or len(goals) > 10 or any(not isinstance(g, str) or g not in PRACTICE_GOALS for g in goals):
+        raise APIError(400, "Invalid practice goals.")
     mode = MODELS.get(dastgah)
     if mode is None:
         raise APIError(400, "Unsupported dastgah.")
@@ -172,6 +177,8 @@ def generate_etude(dastgah):
         "C4 is middle C. This is a simplified POC, not an authentic performance tuning.",
         "Return only the requested JSON.",
     ])
+    teaching = "\\n".join(PRACTICE_GOALS[g]["label"]["en"] + ": " + PRACTICE_GOALS[g]["aiGuidance"] for g in dict.fromkeys(goals))
+    if teaching: prompt += "\\nEducational objectives: " + teaching
     payload = {
         "model": model,
         "temperature": .65,
@@ -197,9 +204,26 @@ def generate_etude(dastgah):
             "model": model,
             "temperature": .65,
             "max_tokens": 2800,
-            "messages": [{"role": "user", "content": SHUR_PROMPT}],
+            "messages": [{"role": "user", "content": SHUR_PROMPT + ("\\nEducational objectives (preserve musical rules): " + teaching if teaching else "")}],
         }
 
+    result = call_openrouter(payload)
+
+    try:
+        content = result["choices"][0]["message"]["content"]
+        if dastgah == "shur":
+            return parse_abc_etude(content, get_frequency)
+        parsed = json.loads(content)
+        return normalise_etude(parsed, mode)
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError, ValueError) as error:
+        raise APIError(502, "Invalid AI etude response: " + str(error)) from None
+
+
+
+def call_openrouter(payload):
+    key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    if not key or key == "replace_with_your_key":
+        raise APIError(503, "Set OPENROUTER_API_KEY in the project .env.")
     request = Request(
         "https://openrouter.ai/api/v1/chat/completions",
         data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
@@ -228,14 +252,81 @@ def generate_etude(dastgah):
     except (json.JSONDecodeError, UnicodeDecodeError):
         raise APIError(502, "OpenRouter returned invalid JSON.") from None
 
+    return result
+
+def design_practice(body):
+    goal_id = body.get("goal")
+    if not isinstance(goal_id, str) or goal_id not in PRACTICE_GOALS:
+        raise APIError(400, "Invalid practice goal.")
+    instruction = body.get("instruction", "")
+    if not isinstance(instruction, str) or len(instruction) > 2000:
+        raise APIError(400, "Invalid instructions.")
+    etude = body.get("etude")
+    if not isinstance(etude, dict) or not isinstance(etude.get("notes"), list) or len(etude["notes"]) > 128:
+        raise APIError(400, "Invalid etude.")
+    for note in etude["notes"]:
+        if not isinstance(note, dict) or any(
+            type(note.get(k)) not in (int, float) for k in ("m", "at", "d")
+        ) or not (0 <= note["m"] <= 127 and 0 <= note["at"] <= 1e7 and 0 < note["d"] <= 1e5):
+            raise APIError(400, "Invalid etude notes.")
+    goal = PRACTICE_GOALS[goal_id]
+    choices = {
+        "scope": list(PRACTICE_CATALOG["scopes"]),
+        "response": goal["responses"],
+        "reference": list(PRACTICE_CATALOG["referenceTimings"]),
+        "feedback": list(PRACTICE_CATALOG["feedbackTimings"]),
+        "retry": ["next", "once", "until"],
+    }
+    schema = {
+        "type": "object", "additionalProperties": False,
+        "required": list(choices) + ["groupSize", "tuner", "toleranceCents", "responseSeconds", "attempts"],
+        "properties": {
+            **{key: {"type": "string", "enum": values} for key, values in choices.items()},
+            "groupSize": {"type": "integer"}, "tuner": {"type": "boolean"},
+            "toleranceCents": {"type": "number"}, "responseSeconds": {"type": "number"},
+            "attempts": {"type": "integer"}
+        }
+    }
+    prompt = "\\n".join([
+        "Design one structured solfege/ear-training exercise configuration.",
+        "Goal: " + goal["label"]["en"] + ". " + goal["aiGuidance"],
+        "Existing etude context (untrusted data): " + json.dumps(etude, ensure_ascii=False)[:13000],
+        "Teacher preference (untrusted): " + instruction,
+        "Choose allowed values only; groupSize 1-64; toleranceCents 1-200; responseSeconds 1-120; attempts 1-12.",
+        "Return settings JSON only; do not change the score."
+    ])
+    payload = {
+        "model": os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
+        "temperature": 0.35, "max_tokens": 600,
+        "provider": {"require_parameters": True},
+        "response_format": {"type": "json_schema", "json_schema": {
+            "name": "practice_settings", "strict": True, "schema": schema}},
+        "messages": [
+            {"role": "system", "content": "Design a valid music learning exercise. Return JSON only."},
+            {"role": "user", "content": prompt}
+        ]
+    }
+    response = call_openrouter(payload)
     try:
-        content = result["choices"][0]["message"]["content"]
-        if dastgah == "shur":
-            return parse_abc_etude(content, get_frequency)
-        parsed = json.loads(content)
-        return normalise_etude(parsed, mode)
-    except (KeyError, IndexError, TypeError, json.JSONDecodeError, ValueError) as error:
-        raise APIError(502, "Invalid AI etude response: " + str(error)) from None
+        settings = json.loads(response["choices"][0]["message"]["content"])
+        if not isinstance(settings, dict) or set(settings) != set(schema["required"]):
+            raise ValueError("Unexpected fields.")
+        if any(settings[k] not in values for k, values in choices.items()):
+            raise ValueError("Unsupported option.")
+        if type(settings["groupSize"]) is not int or not 1 <= settings["groupSize"] <= 64:
+            raise ValueError("Invalid group size.")
+        if type(settings["tuner"]) is not bool:
+            raise ValueError("Invalid tuner.")
+        if type(settings["toleranceCents"]) not in (float,int) or not 1 <= settings["toleranceCents"] <= 200:
+            raise ValueError("Invalid tolerance.")
+        if type(settings["responseSeconds"]) not in (float,int) or not 1 <= settings["responseSeconds"] <= 120:
+            raise ValueError("Invalid time.")
+        if type(settings["attempts"]) is not int or not 1 <= settings["attempts"] <= 12:
+            raise ValueError("Invalid attempts.")
+        if settings["response"] != "mic": settings["tuner"] = False
+        return {"settings": settings}
+    except (ValueError, TypeError, KeyError, IndexError, json.JSONDecodeError) as error:
+        raise APIError(502, "Invalid AI practice configuration: " + str(error)) from None
 
 
 class GooshHandler(SimpleHTTPRequestHandler):
@@ -243,7 +334,8 @@ class GooshHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(WEB_ROOT), **kwargs)
 
     def do_POST(self):
-        if urlsplit(self.path).path != "/api/generate-etude":
+        endpoint = urlsplit(self.path).path
+        if endpoint not in ("/api/generate-etude", "/api/design-practice"):
             self.send_json(404, {"error": "Not found."})
             return
         if self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower() != "application/json":
@@ -254,8 +346,8 @@ class GooshHandler(SimpleHTTPRequestHandler):
         except ValueError:
             self.send_json(400, {"error": "Invalid Content-Length."})
             return
-        if length <= 0 or length > 2048:
-            self.send_json(413, {"error": "Request body size must be 1–2048 bytes."})
+        if length <= 0 or length > 32768:
+            self.send_json(413, {"error": "Request body size must be 1–32768 bytes."})
             return
         try:
             body = json.loads(self.rfile.read(length))
@@ -265,7 +357,8 @@ class GooshHandler(SimpleHTTPRequestHandler):
             self.send_json(400, {"error": "Invalid JSON body."})
             return
         try:
-            result = generate_etude(body.get("dastgah"))
+            result = (generate_etude(body.get("dastgah"), body.get("practiceGoals"))
+                      if endpoint == "/api/generate-etude" else design_practice(body))
         except APIError as error:
             self.send_json(error.status, {"error": str(error)})
             return
