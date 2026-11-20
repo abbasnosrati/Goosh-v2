@@ -139,6 +139,10 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
     let midi=60
     while(midi<108&&step(midi)<staffStep)midi++
     while(midi>24&&step(midi)>staffStep)midi--
+    // Descending across a staff step can land on its enharmonic black
+    // MIDI key (e.g. A#3 instead of A3). A staff position must always
+    // mean the NATURAL letter; e.key supplies its accidental afterward.
+    if([1,3,6,8,10].includes(midi%12))midi--
     return midi
   }
   // The SELECT tool can move the existing note object, not produce a second
