@@ -1470,3 +1470,16 @@ The array order is the intended future learner sequence; exercises do **not** ne
 
 Implementation changes are committed to the feature branch, not `redesign` or `main`. Repository contents and changed files were inspected through the connected GitHub integration. The container runtime has no network access to GitHub and no live browser/app session was attached; therefore **no claim of successful end-to-end browser, Android, or OpenRouter execution is made**. Follow up with `node --check` on the changed ES modules, `python3 -m py_compile scripts/goosh_server.py`, local Studio manual save/reload/export/import validation, both themes and languages, and real OpenRouter responses. Confirm the original Practice page behavior remains unchanged.
 
+
+
+### Final incremental hardening (same feature branch, 2026-11-20)
+
+- Added `retryPolicies` to the canonical `web/practice-goals.json`. The editor and Python AI schema now derive retry choices from that catalog; the frontend structural model checks legal options against catalog when available rather than keeping a second vocabulary table.
+- The Studio editor retains its selected goal, draft AI instruction, open AI panel, open exercise sections and open advanced sections across ordinary save/rerender operations. A new generated or manually added step opens automatically for configuration. An AI response arriving after the Studio host was removed is ignored.
+- Adjusted the Studio `app.js` and `ai-etude.js` cache-busting module import keys in `web/index.html` and `web/src/app.js`, so browsers do not reuse an obsolete bundled script after this change.
+- Performed **JavaScript parse-only checks** against the connected GitHub source content of `web/src/practice-model.js`, `web/src/studio-practice.js`, `web/src/model.js`, `web/src/ai-etude.js` and `web/src/app.js`: all parsed successfully after removing module-import/export declarations for the syntax check. This is not browser integration testing. No Python compile or real OpenRouter request was executed; validate those in a local checkout before deployment.
+- A Github compare of `redesign...feature/practice-sequence-studio` confirmed the branch is ahead only and all modifications are limited to the ten documented files. No existing Practice-route implementation file was separately rewritten; `practice()` in `app.js` remains the original legacy flow.
+
+### Important practical setup detail
+
+For local browser AI functionality run the existing Python-backed `npm run web` command and configure `OPENROUTER_API_KEY` in a local uncommitted `.env`. Merely serving the `web/` folder as static files allows manual editing, but does not provide the new AI endpoint. The catalog JSON file must be deployed beside the other `web/` assets; it is fetched at runtime by the Studio module.
