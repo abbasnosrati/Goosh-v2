@@ -420,6 +420,52 @@ details[open]>summary{margin-bottom:12px}
 *::-webkit-scrollbar{display:none}
 .board button{flex-direction:column;justify-content:flex-end;align-items:center;gap:1px;line-height:1.3}
 .board small{font:inherit;font-size:10px;opacity:.82;pointer-events:none}
+
+/* Key-signature-aware piano labels; the same frequency already powers audio.
+   Keep the real buttons and their touch/pointer handlers in place. */
+.board button .piano-key-note {
+  display: inline-flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  line-height: 1.1;
+  pointer-events: none;
+}
+.board button .piano-key-altered {font-weight: 700;}
+.board button .piano-key-accidental:not(svg) {
+  font-size: 15px;
+  line-height: .9;
+}
+.board button svg.piano-key-accidental {
+  width: 11px;
+  height: 17px;
+  display: block;
+  flex: 0 0 auto;
+  color: inherit;
+}
+.board button .piano-key-octave {font-size: 10px;}
+.board button .piano-key-frequency {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 9px;
+  line-height: 1.12;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.25px;
+  white-space: nowrap;
+  opacity: 1;
+}
+.board button .piano-key-frequency::after {
+  content: 'Hz';
+  font-size: 8px;
+  opacity: .8;
+}
+.board button.piano-key-tuned .piano-key-syllable {opacity:.75;}
+.board button.black .piano-key-note {font-weight: 400;}
+
 .keys{padding-bottom:0}
 .octave-rail{min-width:calc(var(--whites)*38px);display:flex;direction:ltr;touch-action:pan-x;user-select:none}
 .octave-rail span{flex:1;text-align:center;border-inline-start:1px solid var(--line);font:600 11px/30px system-ui;color:var(--muted)}
