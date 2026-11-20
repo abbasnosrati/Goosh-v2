@@ -1535,3 +1535,106 @@ The following workflows must be distinguishable:
 - The local Python OpenRouter backend continues to accept the selected goal ID as `practiceGoals`, as implemented previously. Goal-aware **music-quality validation** is still a future requirement: the current server adds musical guidance to prompts but does not guarantee perfect adherence for all ten educational goals.
 - Further changes should preserve the two-workspace product architecture: **author in Etude Studio, execute in Practice**. Keep a single notes model, a single goals catalog and a single ordered practice sequence.
 
+
+
+---
+
+# Clean path routing across Web, Android and iOS (2026-11-20)
+
+**Branch:** `feature/practice-sequence-studio` (the same feature branch; this routing work follows the Practice Sequence and goal-first AI work). **User request:** Replace the browser's `/#studio` and `/#practice` hash URLs with actual readable paths, account for desktop web, Android APK (Capacitor) and iOS, keep other features intact, and document the change comprehensively. Do not add a second independent platform router.
+
+## Final canonical URL contract
+
+| View | Clean application URL | Historical form |
+| --- | --- | --- |
+| Home | `/` | `/` |
+| Etude collection / Studio entry | `/etudes` | `/#studio` |
+| One etude in Studio | `/etudes/:id` | `/#studio/:id` |
+| Practice collection | `/practice` | `/#practice` |
+| Practice for a selected etude | `/practice/:id` | `/#practice/:id` |
+
+The internal JS page name `studio` is retained for compatibility with the preexisting render, data selection and CSS logic. Its public URL segment is now `etudes`; do not rename internal page state or modify Practice execution merely to match URL terminology. The `:id` value is a local etude ID, encoded with `encodeURIComponent` in URL construction and decoded when reading the route. Route parsing remains independent of the etude's saved data model. **A localStorage-backed etude path is not a public share URL or server-hosted etude record.** A foreign browser/device will not have the corresponding saved etude without a separate import/sync mechanism.
+
+## File-by-file changes
+
+1. **New `web/src/router.js` — the one canonical route module:**
+   - Contains `PATHS` and mapping from URL segment `etudes` to existing internal page `studio`; recognizes `practice` and `home`.
+   - `routePath(page,id?)` generates clean application URLs. `readRoute()` maps `location.pathname` to `{page,id}`; it understands `/index.html` as native/startup Home.
+   - `navigateTo(page,id?,{replace?})` updates history with `history.pushState` (or `replaceState`) and notifies the registered navigation handler without a reload. It will not add a duplicate entry for the exact same path.
+   - `listenToRoutes(callback)` handles the browser's `popstate` (Back/Forward) and legacy `hashchange` migration, routing both into the same callback.
+   - `upgradeLegacyHash()` upgrades existing links `/#studio[/id]` and `/#practice[/id]` (also `/index.html#...`) into clean paths by `history.replaceState`. This is intentional compatibility support, *not* a second hash router. It preserves the existing query string without adding a history entry. Unknown fragments are not treated as routes.
+   - Route lookup, route creation and navigation notifications MUST continue to live in this file. Do not reintroduce `location.hash = ...` in separate UI components.
+
+2. **`web/src/app.js` — use the router without changing page behavior:**
+   - Imports `readRoute`, `navigateTo`, `listenToRoutes`, `upgradeLegacyHash`, and `installAndroidBackNavigation`.
+   - Converts a legacy hash *before* reading initial page state, so opening an old link loads the correct Etude/Practice rather than Home.
+   - `page` initialization and `loadRoute()` obtain page/id from the new parser rather than `routeFromHash()` or `location.hash`.
+   - Replaces the hashchange-only navigation handler with `listenToRoutes`, preserving the existing `cancel()`, `loadRoute()`, `render()`, and top-scroll behavior. These are triggered by internal navigation and Back/Forward.
+   - Nav buttons, footer buttons, Studio new-etude action, collection etude selection, Home's create-etude callback and imported-file destination all use `navigateTo(page,id?)`.
+   - Passes a `navigate(page,id?)` callback into the Home module; the Home module has no direct browser route logic.
+   - Registers the optional Android Back listener once at startup after the initial render.
+   - Keeps `page === 'studio'/'practice'` checks, CSS selectors, Studio editor, Practice learner function, audio, score, recording, AI generation, file validation and data storage unchanged.
+
+3. **`web/src/home.js` — remove hidden hash navigation paths:**
+   - Removed `navigateToEtude()` that previously set `location.hash`.
+   - The desktop hero cards already received a navigation callback and continue to use it.
+   - The dashboard now receives that same callback and uses it for recent Etudes, View All Etudes, Start Practicing and individual Practice shortcuts. This prevents unintentional reintroduction of `/#studio` from the Home dashboard.
+   - The Home module remains presentation-focused. A source-level search of the entire `web/src/` directory found no live `location.hash = ...` assignments outside the centralized router's legacy link parser (the remaining `hashchange` in `studio-dialog.js` is only for closing a dialog on old-link navigation).
+
+4. **`scripts/goosh_server.py` — web server deep-link and refresh fallback:**
+   - Added `GooshHandler._serve_app_route()` plus `do_GET()` and `do_HEAD()`.
+   - For only the recognized path shapes `/etudes`, `/etudes/<local-id>`, `/practice`, `/practice/<local-id>` (optional trailing slash), rewrites the HTTP file request internally to `/index.html`. No HTTP redirect; the clean browser URL remains visible.
+   - Asset requests (`.js`, `.css`, images, etc.), `/api/generate-etude`, `/api/design-practice` and unknown paths **are not** rewritten to the SPA entry point; missing assets should still report missing files.
+   - The ID shape for the Python rewrite is alphanumeric, underscore or hyphen, matching the application's generated UUID/local IDs. IDs with dots or encoded slashes are not part of this routing contract and can be unreliable in Capacitor's native local-serving environment.
+   - Existing POST AI endpoints and the Python-only local backend architecture are unaffected.
+
+5. **`web/index.html` — root-relative asset resolution:**
+   - Added `<base href="/">` ahead of stylesheets and scripts. Since a direct visit to `/etudes/abc` loads `index.html`, this prevents `style.css`, `./src/app.js`, `./practice-goals.json` and brand images from being incorrectly requested under `/etudes/` or `/practice/`. This base also resolves to the native WebView app root on `https://localhost` (Android Capacitor) and `capacitor://localhost` (iOS Capacitor).
+   - Bumped `app.js` module import cache key to `clean-routes-1` so browsers load the changed routing logic.
+   - This application now assumes **root deployment** at `/`; deployment under a subdirectory such as `/goosh/` needs deliberate base-path and rewrite changes instead of silently relying on relative assets.
+
+6. **New `web/src/native-navigation.js` — Android Back interaction using the same Router:**
+   - Detects `window.Capacitor.getPlatform() === 'android'` and subscribes to the official Capacitor App plugin's `backButton` event. It does not install listeners on plain web or iOS.
+   - When a native Back event arrives: (a) close an open native-HTML `<dialog>` first; (b) otherwise call `history.back()` if the WebView reports `canGoBack` (the shared `popstate` callback renders the previous route); (c) if there is no WebView history and the current route is not Home, replace the route with Home; (d) only at Home with no history, call `App.exitApp()`.
+   - There is no second route table, no separate Android page state, and no new platform UI. The iOS app uses the shared `pushState`/`popstate` route navigation plus the existing in-app Back-to-list control. iOS navigation gestures were **not** enabled or confirmed on a real device.
+   - The handler uses the Capacitor native-injected `window.Capacitor.Plugins.App` bridge, matching the existing application's native bridge usage; it does not import a package into the static ESM web bundle.
+
+7. **`package.json` — add only the required compatible official plugin:**
+   - Confirmed the preexisting dependencies were `@capacitor/core`, `@capacitor/android`, and `@capacitor/ios` at `7.4.3`, with no `@capacitor/app`.
+   - Added `"@capacitor/app": "7.1.0"` (official Capacitor 7 major) to handle Android native Back. No router library or UI framework introduced.
+   - This GitHub integration updates source files but **does not run `npm install`, `npx cap sync`, Gradle, or Xcode**. A local build must fetch the dependency and sync native projects first:
+     ```sh
+     npm install
+     npx cap sync android
+     npx cap sync ios
+     ```
+     For a first-time platform setup, run the existing `npm run android:init` or `npm run ios:init` before the relevant sync. No native `android/` or `ios/` folders are tracked in this repository, and they were not fabricated.
+
+8. **`web/src/studio-dialog.js` — modal lifecycle compatibility:**
+   - Existing route-close listener based on `hashchange` alone was insufficient for History API browser Back.
+   - Also listens to `popstate` while a confirmation dialog is open and cleans up both handlers on close. A Back action will not leave an orphaned confirmation modal behind. Existing dialog styling and business rules remain unchanged.
+
+## Web hosting requirements
+
+The checked-in `scripts/goosh_server.py` handles direct requests and reload on the new routes. On any **other** production web server or static hosting service, supply an equivalent SPA rewrite for `/etudes[/id]` and `/practice[/id]` to serve `/index.html` (HTTP 200 without changing the URL). Do NOT rewrite `/api/` requests or all missing JS/CSS assets to HTML. The server's current API-key storage and AI endpoints are separate from front-end routing. If hosted at root, any CDN/reverse-proxy/hosting config must resolve `/src/`, `/brand/`, `/style.css`, `/practice-goals.json` and other bundled assets at the root.
+
+The new URL structure does not create authenticated sharing, Universal Links, Android App Links, or server-side etude sync. Those capabilities require separate product decisions and explicit authorization.
+
+## Validation and regression checklist
+
+**Completed via connected-source inspection and executable JS harness:**
+- JavaScript syntax parse passed for `router.js`, `native-navigation.js`, `home.js`, `app.js`, `studio-dialog.js`, `studio-practice.js`, and `studio-etude-generation.js`.
+- Mock History API scenarios passed: legacy `/#studio/:id` and `/#practice/:id` migrations, `/index.html#studio` migration, direct `/etudes/:id` route parsing, `/practice` route parsing, encoded IDs, clean history pushes, navigation change notification and ignoring redundant same-path pushes. New navigation produces no hashes.
+- Confirmed the `<base href="/">` element precedes stylesheets and the app import, and verified package versions and Python source presence of both `do_GET` and `do_HEAD` fallback methods.
+- Inspected every JS file under `web/src/` for old `location.hash` navigation assignments; only compatibility parsing/cleanup retains hash references.
+
+**Not executable in this GitHub-only session; must be tested locally before release:**
+1. `npm install`, then `npm run web`. Verify `/`, `/etudes`, `/etudes/<real locally saved UUID>`, `/practice` and `/practice/<UUID>`; verify direct address-bar entry and Refresh both show the correct view and every stylesheet, script, sample, and image loads.
+2. Browser Back/Forward across Home, library, detail, Practice, and imported etude. Test switching languages/themes and editing an etude after navigation; data should persist in the same localStorage collection.
+3. Visit legacy `/#studio/<UUID>` and `/#practice/<UUID>` bookmarks; verify `replaceState` upgrades them without adding an extra Back step.
+4. Android: after dependency install and `npx cap sync android`, build/run a fresh APK; verify navigating between views, native hardware Back from detail -> library -> Home, closing an open dialog on Back, then exiting only from root with no history. Also check reload/resume while on nested path and that `https://localhost` assets resolve correctly.
+5. iOS: after dependency install and `npx cap sync ios`, build/run in Xcode on Simulator/device; verify the same local navigation, the in-app Back-to-list action, state restoration and `capacitor://localhost` asset resolution; check whether swipe history navigation is enabled by that platform configuration.
+6. Verify new paths are not treated as filesystem assets, missing JS/CSS remain 404, and both `/api/` endpoints retain their original JSON responses. Current Python GET fallback was reviewed but a live web-server regression test and Python compilation were **not** executed in this session.
+7. Production hosting (if different from `goosh_server.py`) needs a separate route rewrite configuration and end-to-end deep-link smoke test.
+
+**Preserve:** Existing Etude Studio composition rules, key-signature editor, audio and AI logic; Practice runner logic and `e.rule`; canonical `etude.notes` plus multiple `practiceSequence` steps; the ten-goal catalog; existing design tokens; and all functionality outside navigation. No additional page component or second repository is required.
