@@ -3,7 +3,10 @@ import {
   names,
   label,
   freq,
-  valid
+  valid,
+  meterInfo,
+  meterTimeline,
+  METER_PRESETS
 } from './model.js'
 import {
   unlock,
@@ -49,7 +52,8 @@ let fa = localStorage.lang !== 'en',
   playback = null,
   scoreTransport = null,
   scoreUndoStack = [],
-  practiceToExpand = null
+  practiceToExpand = null,
+  penQuarterBeats = 1
 const collection = new Map();
 const prefix = 'goosh.etude.';
 for(let i=0;i<localStorage.length;i++){
@@ -552,6 +556,15 @@ function renderSignatureControls(){
 
 }
 
+function measuredEditAllowed(notes) {
+  return !meterInfo(e) || !meterTimeline({...e,notes}).issues.length;
+}
+function meterMessage(en,ir) {
+  const status=document.querySelector('#app[data-page="studio"] .score-meter-status');
+  if(!status)return;
+  status.textContent=t(en,ir);
+  status.hidden=!status.textContent;
+}
 function sheet() {
   const h = $('.score');
   if (!h) return;
@@ -581,7 +594,15 @@ function sheet() {
       if (scoreTool === 'eraser') {
         if (i < 0 || i >= e.notes.length) return;
         stopScorePlayback();
+        const updated=e.notes.filter((_,index)=>index!==i);
+        if(!measuredEditAllowed(updated)){
+          meterMessage('This deletion would create an invalid measure.',
+            'حذف این نت باعث نامعتبر شدن میزان می‌شود.');
+          return;
+        }
         const [removed] = e.notes.splice(i, 1);
+        // Erasing a note leaves its exact temporal space as a rest.
+        // The shared meter timeline derives the rest and any barlines.
         rememberScoreEdit({kind:'erase', note:removed, index:i});
         sel.clear();
         save();
@@ -599,17 +620,32 @@ function sheet() {
       // At the notehead's X we deliberately join its onset (a chord).
       // Everywhere else we insert BEFORE the following onset, shifting
       // all following notes/chords by the new quarter-note duration.
-      const duration=60/e.bpm;
+      const duration=60/e.bpm*(meterInfo(e)?penQuarterBeats:1);
       const chord=placement.kind==='chord';
       const at=placement.at;
       if(!Number.isFinite(at)||at<0||at>1e7) return;
-      const shifted=chord||placement.kind==='after'?[]:e.notes
+      const shifted=chord||placement.kind==='after'||placement.kind==='rest'?[]:e.notes
         .filter(n=>n.at>=at-1e-7)
         .map(note=>({note,at:note.at}));
       if(shifted.some(({note})=>note.at+duration>1e7))return;
+      const inserted={m,at,d:duration};
+      if(placement.kind==='rest' && duration>placement.available+1e-7){
+        meterMessage('This note is longer than the available rest. Choose a shorter value.',
+          'کشش نت از سکوت موجود بیشتر است. کشش کوتاه‌تری انتخاب کنید.');
+        return;
+      }
+      const candidate=e.notes.map(n=>({
+        ...n,at:n.at+(shifted.some(entry=>entry.note===n)?duration:0)
+      }));
+      candidate.push(inserted);
+      if(!measuredEditAllowed(candidate)){
+        meterMessage('This note cannot be placed on the current rhythmic grid.',
+          'این نت با شبکهٔ ریتمی میزان قابل ثبت نیست.');
+        return;
+      }
       stopScorePlayback();
       for(const {note} of shifted)note.at+=duration;
-      const inserted={m,at,d:duration};
+      meterMessage('','');
       e.notes.push(inserted);
       rememberScoreEdit({kind:'pen',note:inserted,shifted});
       sel.clear();
@@ -634,10 +670,14 @@ function retimeNote(note, newDuration, newRest, restChanged) {
     at: n.at + (n.at >= onset ? restShift : 0) +
       (n.at > onset ? durationShift : 0)
   }));
-  // An earlier overlapping note can make a large shortening invalid.
-  // Reject it rather than silently moving notes to negative time.
+  // Preserve exact rhythmic positions. Never silently round a duration or
+  // rest to make it appear valid in the selected time signature.
   if (proposed.some(({at}) => !Number.isFinite(at) || at < 0 || at > 1e7))
     return false;
+  const candidate=proposed.map(({note:n,at})=>({
+    ...n,at,d:n===note?newDuration:n.d
+  }));
+  if(!measuredEditAllowed(candidate))return false;
   stopScorePlayback();
   for (const {note: n, at} of proposed) n.at = at;
   note.d = newDuration;
@@ -674,8 +714,17 @@ function noteSettings(note) {
   const dialog = el('dialog', document.body);
   const heading = el('h2',dialog,t('Note settings','تنظیمات نت')+' · '+(note.displayPitch || label(note.m)));
   dialog.setAttribute('aria-label',heading.textContent);
-  const duration = field(dialog,t('Duration (s)','کشش (ثانیه)'),+note.d.toFixed(3),()=>{},null,[.001,100000,'any']);
-  const silence = field(dialog,t('Rest before note (s)','سکوت پیش از نت (ثانیه)'),+rest.toFixed(3),()=>{},null,[0,100000,'any']);
+  const measured=Boolean(meterInfo(e)),quarter=60/e.bpm;
+  const duration = field(dialog,measured
+      ? t('Duration (quarter-note beats)','کشش (برحسب نت سیاه)')
+      : t('Duration (s)','کشش (ثانیه)'),
+    measured?+(note.d/quarter).toFixed(5):+note.d.toFixed(3),
+    ()=>{},null,[measured?.125:.001,100000,'any']);
+  const silence = field(dialog,measured
+      ? t('Rest before note (quarter-note beats)','سکوت پیش از نت (برحسب سیاه)')
+      : t('Rest before note (s)','سکوت پیش از نت (ثانیه)'),
+    measured?+(rest/quarter).toFixed(5):+rest.toFixed(3),
+    ()=>{},null,[0,100000,'any']);
   const initialRest = silence.value;
   el('p', dialog, t(
     'Changing a note’s duration moves later notes, preserving the existing gaps.',
@@ -684,13 +733,14 @@ function noteSettings(note) {
   const actions = row(dialog);
   btn(actions,t('Save','ذخیره'),()=>{
     if (!duration.reportValidity() || !silence.reportValidity()) return;
-    const length = Number(duration.value), before = Number(silence.value);
+    const length = Number(duration.value)*(measured?quarter:1);
+    const before = Number(silence.value)*(measured?quarter:1);
     if (!Number.isFinite(length) || length < .001 || length > 1e5 ||
         !Number.isFinite(before) || before < 0 || before > 1e5) return;
     if (!retimeNote(note, length, before, silence.value !== initialRest)) {
       duration.setCustomValidity(t(
-        'This change would place a note before the beginning of the etude.',
-        'این تغییر باعث می‌شود نتی قبل از ابتدای قطعه قرار بگیرد.'
+        'This timing cannot be written exactly in the selected meter.',
+        'این زمان‌بندی در کسر میزان انتخابی به‌طور دقیق قابل نت‌نویسی نیست.'
       ));
       duration.reportValidity();
       duration.setCustomValidity('');
