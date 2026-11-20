@@ -392,18 +392,10 @@ def parse_abc_etude(raw_text, get_frequency):
         if part.strip()
     ]
 
-    # Updated phrase count for the Shur experiment.
-
-    if free_meter:
-        # A creative phrase-count RANGE is not a fixed number of bars.
-        # M:none groups may have unequal durations, including rests.
-        if not 4 <= len(bars) <= 20:
-            raise ValueError(
-                "Expected 4–20 free-meter phrases, "
-                "received " + str(len(bars)) + "."
-            )
-
-    elif len(bars) != 8:
+    # Phrase-count requests are composition guidance, not score validity.
+    # Accept free-meter ABC with any number of divisions (including none).
+    # The existing note/duration bounds below limit resource consumption.
+    if not free_meter and len(bars) != 8:
         raise ValueError(
             "Expected exactly 8 ABC measures, "
             "received " + str(len(bars)) + "."

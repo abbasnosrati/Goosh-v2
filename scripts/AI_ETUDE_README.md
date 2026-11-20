@@ -118,3 +118,5 @@ do not mistake simplified accidentals/tuning for fully authentic
 Persian classical music notation.
 
 **Latest Shur generation limit (2026-11-20):** A creative range of **4–20 free-meter phrases** is requested. Python and the AI frontend both accept that range; the score/audio engine is not affected. Future user-selectable counts may constrain the requested range (e.g. exactly four).
+
+**Phrase-count handling (2026-11-20):** For Shur, the 4–20 phrase range is a creative instruction to OpenRouter, not a hard validity check. Free-meter ABC with a different number of phrase divisions (or no barlines) is accepted when pitches and timing are otherwise valid; the API reports the actual count. The score renderer and audio engine are unchanged.
