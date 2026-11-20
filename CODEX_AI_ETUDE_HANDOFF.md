@@ -1483,3 +1483,5 @@ Implementation changes are committed to the feature branch, not `redesign` or `m
 ### Important practical setup detail
 
 For local browser AI functionality run the existing Python-backed `npm run web` command and configure `OPENROUTER_API_KEY` in a local uncommitted `.env`. Merely serving the `web/` folder as static files allows manual editing, but does not provide the new AI endpoint. The catalog JSON file must be deployed beside the other `web/` assets; it is fetched at runtime by the Studio module.
+
+- Final single-source-of-truth cleanup: the legacy AI etude handler no longer duplicates its OpenRouter API-key precheck; the shared `call_openrouter(payload)` now exclusively owns credential validation for both etude and practice AI requests.
