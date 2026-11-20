@@ -19,7 +19,7 @@ import {
 } from './audio.js?v=score-piano-sample-articulation-1'
 import {
   score
-} from './score.js?v=select-note-drag-1'
+} from './score.js?v=select-note-drag-2'
 import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=koron-align-a4-1'
 import {isPersianAccidental, appendPersianAccidental}
