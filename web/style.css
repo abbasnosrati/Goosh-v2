@@ -424,6 +424,32 @@ details[open]>summary{margin-bottom:12px}
 .octave-rail{min-width:calc(var(--whites)*38px);display:flex;direction:ltr;touch-action:pan-x;user-select:none}
 .octave-rail span{flex:1;text-align:center;border-inline-start:1px solid var(--line);font:600 11px/30px system-ui;color:var(--muted)}
 .score-title{font-size:1rem;margin:20px 0 0}
+/* Keep the editor switch beside the currently active view heading. */
+#app[data-page="studio"] .score-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 20px 0 9px;
+}
+#app[data-page="studio"] .score-heading .score-title {
+  margin: 0;
+}
+#app[data-page="studio"] .score-heading .signature-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  min-height: 44px;
+  padding: 8px;
+}
+#app[data-page="studio"] .score-heading .signature-toggle.active {
+  border-color: var(--accent);
+}
+@media print {
+  #app[data-page="studio"] .score-heading { display: none !important; }
+}
 [data-page=studio] section:has(.instrument){border-top:3px solid var(--accent)}
 [data-page=studio] .score{border:1px solid var(--line);background:linear-gradient(var(--panel),var(--bg))}
 .shelves{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px;align-items:start}
@@ -526,7 +552,7 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score-actions .score-tool-button.active {
   border-color: var(--accent);
 }
-#app[data-page="studio"] .score-actions .signature-toggle svg {
+#app[data-page="studio"] .score-heading .signature-toggle svg {
   width: 30px;
   height: 23px;
   flex-shrink: 0;
