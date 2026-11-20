@@ -295,5 +295,19 @@
       "scope": "whole",
       "aiGuidance": "Use discernible harmonic sonorities rather than monophonic-only material; flag if harmony support is unavailable."
     }
-  ]
+  ],
+  "retryPolicies": {
+    "next": {
+      "en": "Continue",
+      "fa": "ادامه"
+    },
+    "once": {
+      "en": "Retry once",
+      "fa": "یک‌بار تلاش مجدد"
+    },
+    "until": {
+      "en": "Repeat until correct",
+      "fa": "تکرار تا پاسخ صحیح"
+    }
+  }
 }
