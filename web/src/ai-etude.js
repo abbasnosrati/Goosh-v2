@@ -3,7 +3,6 @@
 import { freq, valid } from './model.js'
 
 const API = '/api/generate-etude'
-const ALLOWED_MODES = new Set(['shur', 'segah', 'mahur', 'homayun'])
 const SEMITONES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }
 const ACCIDENTALS = {
   '': { mark: '', cents: 0 },
@@ -13,8 +12,8 @@ const ACCIDENTALS = {
   s: { mark: 'سری', cents: 50 }
 }
 
-function convertEtude(data, current, dastgah) {
-  const isShurFreeMeter = dastgah === 'shur'
+function convertEtude(data, current, context) {
+  const isShurFreeMeter = context.musicSystem === 'iranian' && context.dastgah === 'shur'
   if (typeof data?.title !== 'string' || !Array.isArray(data.notes) ||
       (isShurFreeMeter
         ? (!Number.isInteger(data.bars) || data.bars < 1 ||
@@ -119,19 +118,22 @@ function convertEtude(data, current, dastgah) {
   return result
 }
 
-export async function generateStudioEtude(dastgah, current, signal, practiceGoals = []) {
-  if (!ALLOWED_MODES.has(dastgah)) throw new Error('Invalid dastgah.')
+export async function generateStudioEtude(context, current, signal, practiceGoals = []) {
+  if (!context || !['iranian','western'].includes(context.musicSystem)) {
+    throw new Error('Invalid musical system.');
+  }
+  const {musicSystem, dastgah, scale, tonic} = context;
   let response
   try {
     response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dastgah, practiceGoals }),
+      body: JSON.stringify({musicSystem, dastgah, scale, tonic, practiceGoals}),
       signal
     })
   } catch (error) {
     if (error.name === 'AbortError') throw error
-    throw new Error('Cannot reach the Python API. Start Goosh with: npm run web')
+    throw new Error('Cannot reach the Python API. Start Goosh with: python3 scripts/goosh_server.py 8081 --bind 0.0.0.0')
   }
 
   let payload
@@ -141,5 +143,5 @@ export async function generateStudioEtude(dastgah, current, signal, practiceGoal
     throw new Error('Invalid API response.')
   }
   if (!response.ok) throw new Error(payload.error || 'AI generation failed.')
-  return convertEtude(payload, current, dastgah)
+  return convertEtude(payload, current, context)
 }
