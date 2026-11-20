@@ -411,3 +411,190 @@ export function planScoreNoteReorder(etude, sourceIndex, target) {
   if(result.ok)result.kind='transfer';
   return result;
 }
+
+
+// RESTs are audible silence derived from the SAME e.notes onset/duration
+// model, not a second persistent collection. Edit their real rhythmic slots
+// by reflowing the affected notes. A Free rest may be removed/reinserted
+// anywhere before the final note; a metered bar must always retain its
+// exact capacity (so internal rests move to the end when erased).
+export function planScoreRestEdit(etude, source, target = null) {
+  const EPS=1e-7,notes=etude.notes,meter=meterInfo(etude);
+  const invalid=reason=>({ok:false,reason,moves:[]});
+  const unchanged=()=>({ok:true,kind:'same',moves:[]});
+  if(!source||!Number.isFinite(source.at)||
+     !Number.isFinite(source.duration)||source.duration<=0)
+    return invalid('missing-rest');
+  const movedPositions=(positions,kind,measureCount=etude.measureCount)=>{
+    const moves=[...positions].filter(([index,at])=>
+      Math.abs(notes[index].at-at)>EPS).map(([index,at])=>({index,at}));
+    if(moves.some(({index,at})=>
+      !Number.isFinite(at)||at<0||at+notes[index].d>1e7))
+      return invalid('out-of-range');
+    if(meter){
+      const proposed=notes.map((note,index)=>{
+        const entry=moves.find(x=>x.index===index);
+        return entry?{...note,at:entry.at}:note;
+      });
+      const next={...etude,measureCount,notes:proposed};
+      const timeline=meterTimeline(next);
+      if(timeline.issues.length||timeline.bars.length>(measureCount||4))
+        return invalid('invalid-meter');
+    }
+    return {ok:true,kind,moves,measureCount};
+  };
+  // Free: derive complete musical tokens (including RESTS). The visible
+  // rest, not its neighboring note, owns this event's silence duration.
+  if(!meter){
+    const groups=[];
+    const sorted=notes.map((note,index)=>({note,index}))
+      .sort((a,b)=>a.note.at-b.note.at||a.index-b.index);
+    for(const item of sorted){
+      const last=groups[groups.length-1];
+      if(last&&Math.abs(item.note.at-last.at)<EPS){
+        if(Math.abs(item.note.d-last.duration)>EPS)
+          return invalid('polyphony');
+        last.indices.push(item.index);
+      }else groups.push({kind:'note',at:item.note.at,
+        duration:item.note.d,indices:[item.index]});
+    }
+    const blocks=[],positions=new Map();
+    let cursor=0;
+    for(const group of groups){
+      if(group.at<cursor-EPS)return invalid('polyphony');
+      if(group.at>cursor+EPS)
+        blocks.push({kind:'rest',at:cursor,duration:group.at-cursor});
+      blocks.push(group);
+      cursor=group.at+group.duration;
+    }
+    const src=blocks.find(block=>block.kind==='rest'&&
+      Math.abs(block.at-source.at)<EPS &&
+      Math.abs(block.duration-source.duration)<EPS);
+    if(!src)return invalid('missing-rest');
+    const sourceIndex=blocks.indexOf(src);
+    const order=blocks.slice();
+    order.splice(sourceIndex,1);
+    if(target){
+      if(target.type!=='note'&&target.type!=='rest')
+        return invalid('missing-slot');
+      const dest=blocks.find(block=>block.kind===target.type&&
+        Math.abs(block.at-target.at)<EPS);
+      if(!dest)return invalid('missing-slot');
+      if(dest===src)return unchanged();
+      const destinationIndex=order.indexOf(dest);
+      order.splice(destinationIndex+(target.position==='after'?1:0),0,src);
+      // Canonical Free e.notes has no time after the last sounding note.
+      // Never claim to have moved a rest when it could not be saved there.
+      if(order.at(-1)?.kind==='rest')return invalid('trailing-rest');
+    }
+    let at=0;
+    for(const block of order){
+      if(block.kind==='note')
+        for(const index of block.indices)positions.set(index,at);
+      at+=block.duration;
+    }
+    const result=movedPositions(positions,target?'move-rest':'delete-rest');
+    if(result.ok&&!result.moves.length)return unchanged();
+    return result;
+  }
+
+  const timeline=meterTimeline(etude);
+  if(timeline.issues.length)return invalid('invalid-meter');
+  const barLength=meter.barQuarterBeats*meter.quarterSeconds;
+  const barIndex=source.barIndex;
+  if(!Number.isInteger(barIndex)||barIndex<0||
+     barIndex>=timeline.bars.length)return invalid('missing-rest');
+  const barEvents=index=>{
+    const bar=timeline.bars[index],start=index*barLength,end=start+barLength;
+    if(!bar)return null;
+    const result=[];
+    let cursor=start;
+    for(const event of bar.events.filter(ev=>
+      ev.type==='notes'||ev.type==='rest')){
+      if(Math.abs(event.at-cursor)>EPS)return null;
+      if(event.type==='rest'){
+        result.push({kind:'rest',at:event.at,duration:event.duration,
+          wholeMeasure:!!event.wholeMeasure});
+      }else{
+        // A note crossing a barline, tied within a measure, or unrelated
+        // overlapping voices cannot safely be reordered as one slot.
+        if(!event.entries?.length||event.entries.some(entry=>
+          !notes[entry.index]||
+          Math.abs(notes[entry.index].at-event.at)>EPS||
+          Math.abs(notes[entry.index].d-event.duration)>EPS))
+          return null;
+        result.push({kind:'note',at:event.at,duration:event.duration,
+          indices:event.entries.map(entry=>entry.index)});
+      }
+      cursor+=event.duration;
+    }
+    return Math.abs(cursor-end)<1e-6?result:null;
+  };
+  const original=barEvents(barIndex);
+  if(!original)return invalid('polyphony');
+  const src=original.find(item=>item.kind==='rest'&&
+    Math.abs(item.at-source.at)<EPS&&
+    Math.abs(item.duration-source.duration)<EPS);
+  if(!src)return invalid('missing-rest');
+  const positions=new Map();
+  const reflow=(order,index)=>{
+    let at=index*barLength;
+    for(const block of order){
+      if(block.kind==='note')
+        for(const noteIndex of block.indices)positions.set(noteIndex,at);
+      at+=block.duration;
+    }
+    return Math.abs(at-(index+1)*barLength)<1e-6;
+  };
+  if(!target){
+    const remaining=original.filter(item=>item!==src);
+    if(!remaining.length){
+      // Erasing the whole-measure rest removes that EMPTY MEASURE. Keeping
+      // the measure would simply regenerate the same rest glyph.
+      const count=etude.measureCount||timeline.bars.length;
+      if(count<=1)return invalid('last-measure');
+      const end=(barIndex+1)*barLength;
+      for(const [index,note] of notes.entries()){
+        if(note.at>=end-EPS)positions.set(index,note.at-barLength);
+      }
+      return movedPositions(positions,'delete-empty-bar',count-1);
+    }
+    // A metered bar cannot become shorter. Erase an internal rest by
+    // closing the gap and leaving its duration as the final bar rest.
+    const next=[...remaining,src];
+    if(!reflow(next,barIndex))return invalid('invalid-meter');
+    const result=movedPositions(positions,'delete-rest');
+    return result.moves.length?result:invalid('required-rest');
+  }
+
+  if(target.type!=='note'&&target.type!=='rest')
+    return invalid('missing-slot');
+  const targetBar=target.barIndex;
+  if(!Number.isInteger(targetBar)||targetBar<0||
+     targetBar>=timeline.bars.length)return invalid('missing-slot');
+  const destination=targetBar===barIndex?original:barEvents(targetBar);
+  if(!destination)return invalid('polyphony');
+  const dest=destination.find(item=>item.kind===target.type&&
+    Math.abs(item.at-target.at)<EPS);
+  if(!dest)return invalid('missing-slot');
+  if(src===dest)return unchanged();
+  if(targetBar===barIndex){
+    const next=original.filter(item=>item!==src);
+    const index=next.indexOf(dest);
+    next.splice(index+(target.position==='after'?1:0),0,src);
+    if(!reflow(next,barIndex))return invalid('invalid-meter');
+    const result=movedPositions(positions,'move-rest');
+    return result.moves.length?result:unchanged();
+  }
+  // Moving silence across fixed measures must preserve both totals.
+  // Exchange with an exactly equal-length sounding note (or rest).
+  if(Math.abs(src.duration-dest.duration)>EPS)
+    return invalid('different-length');
+  if(dest.kind==='rest')return unchanged();
+  const nextSource=original.map(item=>item===src?dest:item);
+  const nextDest=destination.map(item=>item===dest?src:item);
+  if(!reflow(nextSource,barIndex)||!reflow(nextDest,targetBar))
+    return invalid('invalid-meter');
+  const result=movedPositions(positions,'move-rest');
+  return result.moves.length?result:unchanged();
+}
