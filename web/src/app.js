@@ -1129,7 +1129,13 @@ function studio() {
 
   function toggle() {
     stopKeys();
-    if (rec) { save(); rec = null; }
+    if (rec) {
+      const completed=meterInfo(e)?meterTimeline(e):null;
+      if(completed&&!completed.issues.length)
+        e.measureCount=Math.max(e.measureCount||1,completed.bars.length);
+      save();
+      rec = null;
+    }
     else {
       stopScorePlayback();
       unlock();
@@ -1395,8 +1401,8 @@ function studio() {
   meterStatus.setAttribute('role','status');
   meterStatus.hidden=true;
   const recordingHint=el('p',scoreBelowActions,t(
-    'Metered piano recording snaps timing to a 1/32-note grid. Free preserves natural timing.',
-    'ضبط پیانو در حالت میزان‌دار روی شبکهٔ سه‌لاچنگ منطبق می‌شود؛ حالت آزاد زمان‌بندی طبیعی را حفظ می‌کند.'
+    'Metered recording snaps to a 1/32-note grid and adds measures when needed. Free preserves natural timing.',
+    'ضبط میزان‌دار روی شبکهٔ سه‌لاچنگ منطبق می‌شود و در صورت نیاز میزان اضافه می‌کند؛ حالت آزاد زمان‌بندی طبیعی را حفظ می‌کند.'
   ),'score-meter-record-hint');
   recordingHint.hidden=!meterInfo(e);
 
