@@ -32,7 +32,8 @@ let fa = localStorage.lang !== 'en',
   held = new Map(),
   session = null,
   playback = null,
-  scoreTransport = null
+  scoreTransport = null,
+  scoreUndoStack = []
 const collection = new Map();
 const prefix = 'goosh.etude.';
 for(let i=0;i<localStorage.length;i++){
@@ -62,6 +63,7 @@ function loadRoute(){
   e=activeId?collection.get(activeId).data:fresh();
   sel.clear();
   scoreTool='select';
+  scoreUndoStack.length=0;
 }
 loadRoute();
 const t = (en, ir) => fa ? ir : en,
@@ -273,6 +275,37 @@ function advancePlaybackMarker() {
   }
 }
 
+// Studio-only undo history for Pen insertion and Eraser deletion.
+// Keep references to the edited notes array to avoid reverting a replaced etude.
+function rememberScoreEdit(action) {
+  scoreUndoStack.push({...action, etudeId:activeId, notes:e.notes});
+  if (scoreUndoStack.length > 100) scoreUndoStack.shift();
+}
+
+function undoScoreEdit() {
+  if (page!=='studio' || !activeId || rec || !scoreUndoStack.length) return false;
+  const action=scoreUndoStack[scoreUndoStack.length-1];
+  if (action.etudeId!==activeId || action.notes!==e.notes) {
+    scoreUndoStack.length=0;
+    return false;
+  }
+  if (action.kind==='pen') {
+    const i=e.notes.indexOf(action.note);
+    if (i<0) {scoreUndoStack.pop();return false;}
+    stopScorePlayback();
+    e.notes.splice(i,1);
+  } else if (action.kind==='erase') {
+    if (e.notes.includes(action.note)) {scoreUndoStack.pop();return false;}
+    stopScorePlayback();
+    e.notes.splice(Math.min(action.index,e.notes.length),0,action.note);
+  } else return false;
+  scoreUndoStack.pop();
+  sel.clear();
+  save();
+  sheet();
+  return true;
+}
+
 function sheet() {
   const h = $('.score');
   if (!h) return;
@@ -287,8 +320,10 @@ function sheet() {
     pick: (i, multi) => {
       if (rec) return;
       if (scoreTool === 'eraser') {
+        if (i < 0 || i >= e.notes.length) return;
         stopScorePlayback();
-        e.notes.splice(i, 1);
+        const [removed] = e.notes.splice(i, 1);
+        rememberScoreEdit({kind:'erase', note:removed, index:i});
         sel.clear();
         save();
         sheet();
@@ -302,11 +337,9 @@ function sheet() {
     },
     insert: (m, at) => {
       if (scoreTool === 'pen') {
-        e.notes.push({
-          m,
-          at,
-          d: 60 / e.bpm
-        });
+        const note = {m, at, d:60 / e.bpm};
+        e.notes.push(note);
+        rememberScoreEdit({kind:'pen', note});
         save();
         sheet();
       }
@@ -1285,7 +1318,13 @@ window.addEventListener('resize', () => {
 });
 document.onkeydown = ev => {
   if(document.querySelector('dialog[open]'))return;
-  if (ev.repeat || ev.ctrlKey || ev.altKey || ev.metaKey || /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)) return;
+  const typing = /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName) || ev.target.isContentEditable;
+  if (page==='studio' && activeId && !rec && !typing && !ev.repeat &&
+      ev.code==='KeyZ' && (ev.ctrlKey || ev.metaKey) && !ev.shiftKey && !ev.altKey) {
+    if (undoScoreEdit()) ev.preventDefault();
+    return;
+  }
+  if (ev.repeat || ev.ctrlKey || ev.altKey || ev.metaKey || typing) return;
   const key = document.querySelector('[data-shortcut="' + ev.code + '"]');
   if (key) {
     ev.preventDefault();
