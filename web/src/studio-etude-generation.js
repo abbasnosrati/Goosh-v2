@@ -118,7 +118,7 @@ export function mountEtudeComposer(host, {
     editSignature.append(editIcon);
   }
   create('span', editSignature, t('Edit Key Signature','ویرایش سرکلید'), 'signature-toggle-label');
-  editSignature.onclick = () => onEditKeySignature?.();
+  editSignature.onclick = () => { if (!busy) onEditKeySignature?.(); };
   // Primary Practice Goal and Generate are AI-only, unlike the music selector.
   const goalLabel = create('label', content, null, 'practice-field studio-compose-goal');
   create('span', goalLabel, t('Primary practice goal', 'هدف اصلی تمرین'));
@@ -191,6 +191,7 @@ export function mountEtudeComposer(host, {
       entry.radio.checked = state.musicSystem === id;
       entry.radio.disabled = busy || !musicCatalog;
     }
+    editSignature.disabled = busy;
     styleInput.disabled = busy || !musicCatalog;
     tonicInput.disabled = busy || !musicCatalog;
     tonicLabel.hidden = state.musicSystem !== 'western';
