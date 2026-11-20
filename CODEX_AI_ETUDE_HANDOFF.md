@@ -542,3 +542,13 @@ Do not fix or extend these issues speculatively. Ask for or follow a **specific 
 - This is a CSS-only layout adjustment. No card creation, delete logic, modal actions, audio, practice behavior, or etude data was changed. The existing trash icon stays pinned to the bottom-right of each card.
 - Updated `web/index.html` to use `etudes.css?v=design-8` so clients do not retain the stale card layout.
 - Manual browser/device visual testing is still required; do not claim it was performed.
+
+### Studio score toolbar placement (2026-11-20)
+
+- Branch: `redesign`.
+- User requested moving the five Studio tools **Pen, Play, Zoom out (−), Zoom in (+), and Wrap staff** away from the top recording row.
+- **Final requested position:** immediately beneath the **Score** heading and directly **above** the staff/score element; not beneath the staff.
+- The **Record** button remains in the original top row above the piano.
+- Only the location of the existing controls within `studio()` in `web/src/app.js` was changed; the original event handlers, active state, and functional behavior are preserved.
+- Bumped the JavaScript import query in `web/index.html` to invalidate cached scripts. No CSS/audio/practice/AI logic changes.
+- Source layout inspected; live browser/device visual verification not performed.
