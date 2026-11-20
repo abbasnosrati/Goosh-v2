@@ -14,7 +14,7 @@ import {
 } from './audio.js?v=score-transport-1'
 import {
   score
-} from './score.js?v=key-signature-sync-1'
+} from './score.js?v=score-pencil-placement-1'
 import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=koron-align-a4-1'
 import {isPersianAccidental, appendPersianAccidental}
