@@ -76,7 +76,8 @@ export async function renderStudioPractice(host, etude, options) {
     const expandedAdvanced=[...section.querySelectorAll('.practice-advanced[open]')].map(node=>node.parentElement?.dataset.stepId);
     const aiOpen=aiPanel.open;
     save();
-    renderStudioPractice(host,etude,{...options,expanded,expandedAdvanced,aiOpen});
+    renderStudioPractice(host,etude,{...options,expanded,expandedAdvanced,aiOpen,
+      selectedGoal:picker.value,aiPrompt:prompt.value});
   };
   const addRow=create('div',section,undefined,'practice-add-row');
   const picker=create('select',addRow);
@@ -91,6 +92,8 @@ export async function renderStudioPractice(host, etude, options) {
   button(addRow,tr('+ Add exercise','+ افزودن تمرین'),()=>{
     const added=newPracticeStep(picker.value,catalog);items.push(added);change(added.id);
   },'practice-add-button');
+  if(options.selectedGoal && catalog.goals.some(g=>g.id===options.selectedGoal))
+    picker.value=options.selectedGoal;
   const aiPanel=create('details',section,undefined,'practice-ai');
   aiPanel.open=Boolean(options.aiOpen);
   create('summary',aiPanel,tr('AI: Design exercises','هوش مصنوعی: طراحی تمرین'));
@@ -98,6 +101,7 @@ export async function renderStudioPractice(host, etude, options) {
     'هدف را از بالا انتخاب کنید و در صورت نیاز توضیح دهید. AI تمرین جدید پیشنهاد می‌دهد و نت‌های اتود را تغییر نمی‌دهد.'));
   const prompt=create('textarea',aiPanel);
   prompt.rows=3;prompt.maxLength=2000;
+  prompt.value=options.aiPrompt || '';
   prompt.placeholder=tr('e.g. Play reference once, then ask for a microphone answer with no tuner',
     'مثلاً مرجع یک بار پخش شود و هنرجو با میکروفن و بدون تیونر پاسخ دهد');
   const aiStatus=create('p',aiPanel,undefined,'practice-ai-status');
@@ -113,6 +117,7 @@ export async function renderStudioPractice(host, etude, options) {
         })
       });
       const data=await response.json();
+      if(!host.isConnected)return;
       if(!response.ok)throw Error(data.error||'AI failed');
       const item=newPracticeStep(picker.value,catalog);
       const spec=data.settings;
@@ -221,9 +226,8 @@ export async function renderStudioPractice(host, etude, options) {
         step.assessment.toleranceCents,1,200,1,
         value=>update(()=>{step.assessment.toleranceCents=value;}));
     }
-    select(more,tr('After incorrect answer','بعد از پاسخ اشتباه'),step.flow.onIncorrect,[
-      ['next',tr('Continue','ادامه')],['once',tr('Retry once','یک‌بار تلاش مجدد')],
-      ['until',tr('Repeat until correct','تکرار تا پاسخ صحیح')]],
+    select(more,tr('After incorrect answer','بعد از پاسخ اشتباه'),step.flow.onIncorrect,
+      pairOptions(catalog.retryPolicies,fa),
       value=>update(()=>{step.flow.onIncorrect=value;}));
     const warning=assessPracticeContent(etude,step);
     if(warning)create('p',card,({
