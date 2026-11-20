@@ -644,6 +644,43 @@ function scoreSignatureIcon() {
   return svg;
 }
 
+// Return-to-score icon: five staff lines with noteheads and stems.
+// The existing treble-clef icon for opening the key-signature editor stays untouched.
+function scoreReturnStaffIcon() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 32 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  const path = (d, width = 1.25) => {
+    const p = document.createElementNS(ns, 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('stroke-width', String(width));
+    svg.append(p);
+  };
+  path('M1 4.5H31 M1 8.25H31 M1 12H31 M1 15.75H31 M1 19.5H31', 0.9);
+  const head = (cx, cy) => {
+    const n = document.createElementNS(ns, 'ellipse');
+    n.setAttribute('cx', String(cx));
+    n.setAttribute('cy', String(cy));
+    n.setAttribute('rx', '3.1');
+    n.setAttribute('ry', '2.2');
+    n.setAttribute('transform', 'rotate(-22 ' + cx + ' ' + cy + ')');
+    n.setAttribute('fill', 'currentColor');
+    n.setAttribute('stroke', 'none');
+    svg.append(n);
+  };
+  head(11, 15.75);
+  path('M14 15.75V4.5', 1.45);
+  head(23, 12);
+  path('M26 12V2.5', 1.45);
+  return svg;
+}
+
 function studioFileIcon(type) {
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
@@ -999,7 +1036,7 @@ function studio() {
   keyButton.setAttribute('aria-label', signatureAction);
   keyButton.setAttribute('aria-pressed', String(signatureMode));
   if (signatureMode) keyButton.classList.add('active');
-  keyButton.append(scoreSignatureIcon());
+  keyButton.append(signatureMode ? scoreReturnStaffIcon() : scoreSignatureIcon());
   for (const [mode, en, ir] of [
     ['select', 'Select', 'انتخاب'],
     ['pen', 'Pen', 'قلم'],
