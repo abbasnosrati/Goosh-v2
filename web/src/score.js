@@ -16,7 +16,7 @@ function symbol(beats) {
     Math.abs(Math.log(beats/a.value))?b:a)
   return {...best,exact:Math.abs(beats-best.value)<Math.max(.005,best.value*.012)}
 }
-export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={}) {
+export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,tool='select',fa=false}={}) {
   host.replaceChildren()
   const second=60/(e.bpm||90),width=Math.max(240,host.clientWidth||700)
   const margin=64+Object.keys(e.key).length*17
@@ -49,7 +49,54 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
     ev.x=cursor;ev.span=span;items.push(ev);cursor+=span
   }
   rows.push({items,extent:cursor})
-  for(const row of rows){
+  const allGroups=rows.flatMap(row=>row.items.filter(ev=>ev.type==='notes'))
+  const final=e.notes.reduce((end,n)=>Math.max(end,n.at+n.d),0)
+  const CHORD_ZONE=11
+  // Preview and click MUST use this same planner. A narrow horizontal
+  // band centered on an existing note means simultaneous chord insertion;
+  // the space before/between/after notes means sequential insertion.
+  function planPlacement(rowIndex,x,forceChord=false) {
+    const row=rows[rowIndex]
+    const rowGroups=row.items.filter(ev=>ev.type==='notes')
+    if(!allGroups.length)return {kind:'after',at:0,x:row.items[0]?.x??margin+16}
+    const closest=rowGroups.reduce((best,g)=>!best||Math.abs(g.x-x)<Math.abs(best.x-x)?g:best,null)
+    if(closest&&(forceChord||Math.abs(closest.x-x)<=CHORD_ZONE))
+      return {kind:'chord',at:closest.at,x:closest.x}
+    const next=rowGroups.find(g=>g.x>x)
+    if(next) {
+      const prevIndex=rowGroups.indexOf(next)-1
+      const prev=rowGroups[prevIndex]
+      const first=allGroups[0]
+      return {
+        kind:next===first?'before':'between',
+        at:next.at,
+        x:prev?Math.max(prev.x+13,(prev.x+next.x)/2):next.x-17
+      }
+    }
+    // A click to the right of a wrapped row inserts before the first
+    // event in the following row; only the actual final row appends.
+    const nextGroup=rows.slice(rowIndex+1).flatMap(r=>r.items)
+      .find(ev=>ev.type==='notes')
+    if(nextGroup)return {
+      kind:'between',at:nextGroup.at,
+      x:rowGroups.length?Math.min(row.extent-8,rowGroups[rowGroups.length-1].x+22):row.extent-12
+    }
+    if(!rowGroups.length){
+      // Initial rests before the first note still need a proper slot.
+      const first=allGroups[0]
+      return {kind:'before',at:first.at,x:row.items[0]?.x??margin+16}
+    }
+    const last=rowGroups[rowGroups.length-1]
+    return {kind:'after',at:final,x:Math.min(last.x+Math.max(19,last.span*.55),Math.max(last.x+19,row.extent-8))}
+  }
+  function pitchFromY(y){
+    const staffStep=Math.round((104-Math.max(8,Math.min(161,y)))/4.5)
+    let midi=60
+    while(midi<108&&step(midi)<staffStep)midi++
+    while(midi>24&&step(midi)>staffStep)midi--
+    return midi
+  }
+  for(const [rowIndex,row] of rows.entries()){
     const svg=document.createElementNS(ns,'svg')
     const w=wrap?width:Math.max(width,row.extent+16)
     svg.setAttribute('width',w);svg.setAttribute('height',165);host.append(svg)
@@ -63,6 +110,13 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
       x1,y1,x2,y2,stroke:'currentColor',...extra
     })
     for(let i=0;i<5;i++)line(4,104-9*i,w-4,104-9*i)
+    if(tool==='pen'){
+      // The inactive ledger guides are deliberately much fainter than the
+      // five real staff lines; only visible while the pencil is selected.
+      for(const y of [14,23,32,41,50,59,113,122,131,140,149,158])
+        line(4,y,w-4,y,{'stroke-width':.7,'stroke-opacity':.13,
+          'stroke-dasharray':'2 8','pointer-events':'none'})
+    }
     draw('text',{x:7,y:103,'font-size':46,fill:'currentColor'},'𝄞')
     const sigMidi={0:72,2:74,4:76,5:77,7:79,9:69,11:71}
     orderedSignatureEntries(e.key).forEach(([pc,mark],i)=>{
@@ -164,6 +218,9 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
         'pointer-events':'none','data-playback-note':index
       })
       draw('circle',{cx:x,cy:y,r:10,fill:'transparent'}).onclick=ev=>{
+        // In Pen mode this bubbles to the shared placement planner. Clicking
+        // the notehead's exact X is a chord, not a selection or overwrite.
+        if(tool==='pen')return
         ev.stopPropagation();pick?.(index,ev.shiftKey||ev.ctrlKey||ev.metaKey)
       }
     }
@@ -171,17 +228,83 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
       if(ev.type==='rest')rest(ev)
       else if(ev.type==='notes')ev.entries.forEach(entry=>note(entry,ev.x))
     }
+    if(tool==='pen'){
+      // A ghost note communicates BOTH the exact snapped pitch and which
+      // temporal insertion zone will be used when the user clicks.
+      const ghost=document.createElementNS(ns,'g')
+      ghost.setAttribute('pointer-events','none')
+      ghost.setAttribute('aria-hidden','true')
+      ghost.setAttribute('display','none')
+      svg.append(ghost)
+      const preview=(tag,attrs)=>{
+        const element=document.createElementNS(ns,tag)
+        for(const [key,value] of Object.entries(attrs))element.setAttribute(key,value)
+        ghost.append(element)
+        return element
+      }
+      const guide=preview('line',{
+        stroke:'var(--accent)','stroke-width':1,'stroke-opacity':.34,
+        'stroke-dasharray':'3 4'
+      })
+      const ledgers=[...Array(8)].map(()=>preview('line',{
+        stroke:'var(--accent)','stroke-opacity':.55,'stroke-width':1.1
+      }))
+      const head=preview('ellipse',{
+        rx:6.8,ry:4.8,fill:'var(--accent)','fill-opacity':.26,
+        stroke:'var(--accent)','stroke-opacity':.66,'stroke-width':1.2
+      })
+      const hint=preview('text',{
+        y:11,'font-size':10,'font-weight':600,
+        fill:'var(--accent)','fill-opacity':.86,'text-anchor':'middle'
+      })
+      const hints=fa
+        ? {chord:'هم‌زمان',before:'قبل از نت',between:'بین نت‌ها',after:'بعد از نت'}
+        : {chord:'Chord',before:'Before',between:'Between',after:'After'}
+      function showGhost(ev) {
+        const rect=svg.getBoundingClientRect()
+        const x=ev.clientX-rect.left,y=ev.clientY-rect.top
+        if(x<4||x>w-4||y<4||y>161){
+          ghost.setAttribute('display','none')
+          return
+        }
+        const placement=planPlacement(rowIndex,x,ev.shiftKey)
+        const midi=pitchFromY(y),noteY=104-step(midi)*4.5
+        const anchor=Math.max(margin-12,Math.min(w-15,placement.x))
+        guide.setAttribute('x1',anchor)
+        guide.setAttribute('x2',anchor)
+        guide.setAttribute('y1',22)
+        guide.setAttribute('y2',153)
+        guide.setAttribute('stroke-opacity',placement.kind==='chord'?.12:.34)
+        head.setAttribute('cx',anchor)
+        head.setAttribute('cy',noteY)
+        head.setAttribute('transform','rotate(-20 '+anchor+' '+noteY+')')
+        const positions=[]
+        for(let l=113;l<=noteY;l+=9)positions.push(l)
+        for(let l=59;l>=noteY;l-=9)positions.push(l)
+        ledgers.forEach((line,i)=>{
+          const active=i<positions.length
+          line.setAttribute('display',active?'':'none')
+          if(active){
+            line.setAttribute('x1',anchor-10)
+            line.setAttribute('x2',anchor+10)
+            line.setAttribute('y1',positions[i])
+            line.setAttribute('y2',positions[i])
+          }
+        })
+        hint.textContent=hints[placement.kind]
+        hint.setAttribute('x',Math.max(43,Math.min(w-43,anchor)))
+        ghost.setAttribute('display','')
+      }
+      svg.onpointermove=showGhost
+      svg.onpointerleave=()=>ghost.setAttribute('display','none')
+    }
     svg.onclick=ev=>{
-      const box=svg.getBoundingClientRect()
-      const s=Math.round((104-(ev.clientY-box.top))/4.5)
-      let midi=60
-      while(midi<108&&step(midi)<s)midi++
-      while(midi>24&&step(midi)>s)midi--
-      const x=ev.clientX-box.left
-      const near=row.items.reduce((a,b)=>Math.abs(a.x-x)<=Math.abs(b.x-x)?a:b)
-      const last=row.items[row.items.length-1]
-      const final=e.notes.reduce((t,n)=>Math.max(t,n.at+n.d),0)
-      insert?.(midi,x>last.x+last.span*.55?final:near.at)
+      if(tool!=='pen')return
+      const rect=svg.getBoundingClientRect()
+      const x=ev.clientX-rect.left,y=ev.clientY-rect.top
+      if(y<4||y>161)return
+      const placement=planPlacement(rowIndex,x,ev.shiftKey)
+      insert?.(pitchFromY(y),placement)
     }
   }
 }
