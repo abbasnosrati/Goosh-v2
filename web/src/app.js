@@ -21,7 +21,7 @@ import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
 import { mountEtudeComposer } from './studio-etude-generation.js?v=goal-first-1'
 import { renderStudioPractice } from './studio-practice.js?v=goal-first-1'
-import { renderHome } from './home.js?v=hub-iranian-features-2';
+import { renderHome } from './home.js?v=clean-routes-1';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
 
 // Canonicalize older /#studio and /#practice links before state initialization.
@@ -1521,7 +1521,7 @@ function render() {
   const nav = $('#nav');
   nav.replaceChildren();
   const routes = [['home',t('Home','خانه')],['studio',t('Etude studio','استودیوی اتود')],['practice',t('Practice','تمرین')]];
-  const navigate = key => navigateTo(key);
+  const navigate = (key,id=null) => navigateTo(key,id);
   const footer=$('#footer') || el('footer',document.body);
   footer.id='footer';
   footer.replaceChildren();
