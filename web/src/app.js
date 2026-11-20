@@ -694,24 +694,6 @@ function scoreReturnStaffIcon() {
 }
 
 // Clear two-way editor switch affordance, paired with the existing clef/staff icon.
-function scoreEditorSwitchArrowsIcon() {
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.classList.add('score-switch-arrows');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('focusable', 'false');
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-width', '2');
-  svg.setAttribute('stroke-linecap', 'round');
-  svg.setAttribute('stroke-linejoin', 'round');
-  const path = document.createElementNS(ns, 'path');
-  path.setAttribute('d', 'M4 8h15m0 0-4-4m4 4-4 4M20 16H5m0 0 4-4m-4 4 4 4');
-  svg.append(path);
-  return svg;
-}
-
 function studioFileIcon(type) {
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
@@ -1045,9 +1027,6 @@ function studio() {
     }
   });
   const scoreHeading = el('div', panel, undefined, 'score-heading');
-  el('h2',scoreHeading,signatureMode
-    ? t('Back to Score','بازگشت به خط حامل')
-    : t('Edit Key Signature','ویرایش سرکلید'),'score-title');
   const signatureAction = signatureMode
     ? t('Back to Score', 'بازگشت به خط حامل')
     : t('Edit Key Signature', 'ویرایش سرکلید');
@@ -1065,10 +1044,11 @@ function studio() {
   keyButton.dataset.signatureToggle = '';
   keyButton.setAttribute('aria-label', signatureAction);
   keyButton.setAttribute('aria-pressed', String(signatureMode));
-  if (signatureMode) keyButton.classList.add('active');
   const signatureSymbol = signatureMode ? scoreReturnStaffIcon() : scoreSignatureIcon();
   signatureSymbol.classList.add('score-switch-symbol');
-  keyButton.append(signatureSymbol, scoreEditorSwitchArrowsIcon());
+  keyButton.append(signatureSymbol);
+  const switchLabel = el('span', keyButton, signatureAction, 'signature-toggle-label');
+  switchLabel.dir = 'auto';
   const scoreActions = row(panel);
   scoreActions.classList.add('score-actions');
   for (const [mode, en, ir] of [
