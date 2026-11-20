@@ -273,7 +273,7 @@ def call_openrouter(payload):
         headers={
             "Authorization": "Bearer " + key,
             "Content-Type": "application/json",
-            "X-Title": "Goosh Persian Etude",
+            "X-Title": "Goosh Etude",
         },
         method="POST",
     )
