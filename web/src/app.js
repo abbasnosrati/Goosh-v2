@@ -1124,26 +1124,33 @@ function studio() {
     else {
       stopScorePlayback();
       unlock();
+      const meter=meterInfo(e);
       rec = {
         start: unlock().currentTime,
-        base: Math.max(0, ...e.notes.map(n => n.at + n.d))
+        base: Math.max(0, ...e.notes.map(n => n.at + n.d)),
+        step:meter?meter.quarterSeconds/8:0
       }
     }
     render()
   }
   piano(panel, (m, at) => {
     if (!rec) return;
+    const rawAt=rec.base+Math.max(0,at-rec.start);
+    // Metered piano recording uses an explicit rhythmic 1/32-note grid;
+    // free mode retains every original, unquantized performance timestamp.
+    const snap=value=>rec.step
+      ?Math.round(value/rec.step)*rec.step:value;
     const n = {
       m,
-      at: rec.base + Math.max(0, at - rec.start),
-      d: .001
+      at: snap(rawAt),
+      d: rec.step||.001
     };
     const take = rec;
     e.notes.push(n);
     refreshTake(take);
     return d => {
       if (rec !== take) return;
-      n.d = d;
+      n.d = take.step?Math.max(take.step,snap(d)):d;
       refreshTake(take)
     }
   });
@@ -1292,6 +1299,61 @@ function studio() {
   const scoreBelowActions = row(panel);
   scoreBelowActions.classList.add('score-below-actions');
   scoreBelowActions.hidden=signatureMode;
+
+  const meterWrap=el('label',scoreBelowActions,undefined,'score-meter-control');
+  el('span',meterWrap,t('Time signature','کسر میزان'));
+  const meterSelect=el('select',meterWrap);
+  meterSelect.setAttribute('aria-label',t('Time signature','کسر میزان'));
+  for(const meter of METER_PRESETS){
+    const name=meter==='none'?t('Free (no meter)','آزاد (بدون میزان)'):meter;
+    const option=el('option',meterSelect,name);
+    option.value=meter;
+  }
+  meterSelect.value=e.meter||'none';
+  meterSelect.onchange=()=>{
+    const selected=meterSelect.value;
+    const proposed={...e,meter:selected};
+    if(meterTimeline(proposed).issues.length){
+      meterMessage(
+        'This etude contains timing that cannot be written exactly in '+selected+'. Adjust note/rest durations first or use Free.',
+        'زمان‌بندی این اتود در کسر میزان '+selected+' قابل نت‌نویسی دقیق نیست. ابتدا کشش نت‌ها و سکوت‌ها را اصلاح کنید یا حالت آزاد را نگه دارید.'
+      );
+      meterSelect.value=e.meter||'none';
+      return;
+    }
+    stopScorePlayback();
+    e.meter=selected;
+    meterMessage('','');
+    save();
+    render();
+  };
+  const penValue=el('label',scoreBelowActions,undefined,'score-pen-length');
+  penValue.hidden=!meterInfo(e);
+  el('span',penValue,t('Pen note value','کشش نت با مداد'));
+  const penSelect=el('select',penValue);
+  const values=[
+    [4,'Whole / گرد'],[3,'Dotted half / سفید نقطه‌دار'],
+    [2,'Half / سفید'],[1.5,'Dotted quarter / سیاه نقطه‌دار'],
+    [1,'Quarter / سیاه'],[.75,'Dotted eighth / چنگ نقطه‌دار'],
+    [.5,'Eighth / چنگ'],[.375,'Dotted sixteenth / دولاچنگ نقطه‌دار'],
+    [.25,'Sixteenth / دولاچنگ'],[.125,'Thirty-second / سه‌لاچنگ']
+  ];
+  for(const [beats,display] of values){
+    const option=el('option',penSelect,display);
+    option.value=String(beats);
+  }
+  if(!values.some(([value])=>value===penQuarterBeats))penQuarterBeats=1;
+  penSelect.value=String(penQuarterBeats);
+  penSelect.onchange=()=>{penQuarterBeats=Number(penSelect.value)};
+  const meterStatus=el('p',scoreBelowActions,undefined,'score-meter-status');
+  meterStatus.setAttribute('role','status');
+  meterStatus.hidden=true;
+  if(meterInfo(e)){
+    const recHint=el('p',scoreBelowActions,t(
+      'Metered piano recording snaps timing to a 1/32-note grid. Free preserves natural timing.',
+      'ضبط پیانو در حالت میزان‌دار روی شبکهٔ سه‌لاچنگ منطبق می‌شود؛ حالت آزاد زمان‌بندی طبیعی را حفظ می‌کند.'
+    ),'score-meter-record-hint');
+  }
 
   // Tempo remains a global time-scale edit; only numeric input is shown.
   const tempoControl = el('div', scoreBelowActions, undefined, 'score-tempo');
