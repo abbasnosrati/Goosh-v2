@@ -1,0 +1,35 @@
+
+/* Practice Sequence editor — Studio only. Theme tokens come from style.css. */
+#app[data-page="studio"] .practice-designer{margin-block:18px;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:clamp(14px,2.4vw,24px)}
+#app[data-page="studio"] .practice-heading{display:flex;justify-content:space-between;align-items:center}
+#app[data-page="studio"] .practice-heading h2{font-size:1.28rem;margin:0}
+#app[data-page="studio"] .practice-heading p{margin:.25rem 0 1rem;color:var(--muted,var(--ink));font-size:.91rem;opacity:.83}
+#app[data-page="studio"] .practice-add-row{display:flex;gap:.65rem;align-items:center;flex-wrap:wrap}
+#app[data-page="studio"] .practice-add-row select{flex:1;min-width:min(100%,210px)}
+#app[data-page="studio"] .practice-add-button{background:var(--accent);color:var(--panel);font-weight:650}
+#app[data-page="studio"] .practice-ai{padding:12px 14px;margin:12px 0;background:transparent}
+#app[data-page="studio"] .practice-ai>summary{font-weight:600}
+#app[data-page="studio"] .practice-ai p{margin:10px 0;color:var(--muted,var(--ink));font-size:.88rem}
+#app[data-page="studio"] .practice-ai textarea{display:block;width:100%;min-height:82px;resize:vertical;border:1px solid var(--line);border-radius:9px;padding:12px;background:var(--panel);color:var(--ink);font:inherit}
+#app[data-page="studio"] .practice-ai-button{margin-top:10px;border-color:var(--accent);color:var(--accent)}
+#app[data-page="studio"] .practice-step-list{display:grid;gap:10px}
+#app[data-page="studio"] .practice-step{margin:0;padding:14px;border-radius:12px}
+#app[data-page="studio"] .practice-step>summary{display:flex;align-items:center;gap:12px;min-height:44px}
+#app[data-page="studio"] .practice-step-index{color:var(--accent);font-weight:750;min-width:24px;font-variant-numeric:tabular-nums}
+#app[data-page="studio"] .practice-step-identity{display:grid;gap:0}
+#app[data-page="studio"] .practice-step-identity small{opacity:.7;font-size:.8rem}
+#app[data-page="studio"] .practice-inactive{font-size:.72rem;opacity:.65}
+#app[data-page="studio"] .practice-step-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+#app[data-page="studio"] .practice-step-actions button{font-size:.88rem}
+#app[data-page="studio"] .practice-step-actions .practice-icon{width:40px;padding:6px}
+#app[data-page="studio"] .practice-step-actions .practice-delete{margin-inline-start:auto}
+#app[data-page="studio"] .practice-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px 16px;margin:12px 0}
+#app[data-page="studio"] .practice-field{display:flex;flex-direction:column;align-items:stretch;margin:0;gap:4px;font-size:.87rem}
+#app[data-page="studio"] .practice-field select,#app[data-page="studio"] .practice-field input{width:100%;max-width:100%}
+#app[data-page="studio"] .practice-check{display:flex;align-items:center;gap:9px;margin:0;min-height:44px;font-size:.88rem}
+#app[data-page="studio"] .practice-check input{width:18px;height:18px;min-height:18px;flex-shrink:0}
+#app[data-page="studio"] .practice-advanced{grid-column:1/-1;background:transparent;padding:10px 12px;margin:12px 0 0}
+#app[data-page="studio"] .practice-advanced>summary{font-weight:600}
+#app[data-page="studio"] .practice-warning{padding:9px 12px;border-inline-start:3px solid var(--accent);background:var(--bg);border-radius:6px;font-size:.85rem}
+#app[data-page="studio"] .practice-footnote,#app[data-page="studio"] .practice-empty{opacity:.7;font-size:.82rem;margin:12px 0 0}
+@media(max-width:560px){#app[data-page="studio"] .practice-add-row button{width:100%}#app[data-page="studio"] .practice-fields{grid-template-columns:1fr}#app[data-page="studio"] .practice-step{padding:11px}#app[data-page="studio"] .practice-step-actions button{min-height:40px}}
