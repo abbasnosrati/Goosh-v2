@@ -1217,3 +1217,30 @@ No changes to `web/src/key-signature.js`, `web/src/model.js`, `web/src/audio.js`
 - Enter the Key Signature Editor and verify accidentals, cents slider, numeric steps, tuning persistence and playback previews work unchanged.
 - Verify the `Practice settings` section is still present, with unaffected controls, and the normal Studio Score loads properly.
 - Static JavaScript syntax/source checks have been performed; browser/device QA was not performed.
+
+
+## Hide Score transport and AI actions in Key Signature Editor (2026-11-20)
+
+**Branch:** `redesign` only. **User request:** When the Studio is switched to the in-place **Key Signature Editor** (`signatureMode === true`), remove **Play/Stop, Pause/Resume, Record/Stop, Generate AI** from the visible toolbar. When returning to the normal Score view, all those controls must reappear with their original handlers and states.
+
+### Exact changes
+1. **`web/src/app.js` / `studio()`:** Added `transportActions.hidden = signatureMode;` immediately after constructing `div.score-transport-actions`. The group already contains Play/Stop, Pause/Resume, Record/Stop, and the desktop-only Generate AI button. Hiding the entire group rather than each child keeps the group in its original order and avoids altering or cloning any callbacks.
+2. **`web/style.css`:** Extended the existing key-signature hidden-control override with `#app[data-page="studio"] .score-actions .score-transport-actions[hidden]` so its `display:flex` does not override the native `hidden` attribute. It stays hidden in Key Signature view and returns automatically when `render()` reconstructs the normal Score view.
+3. **`web/index.html`:** Updated CSS and JS query-string versions as part of the subsequent combined layout update.
+
+### Preservation and tests
+The existing Score edit modes, key-signature switching, active transport behavior, recording/AI callbacks, audio engine, document model, and Practice page remain unchanged. The earlier hiding of note-edit buttons/Zoom/Tempo in signature view stays intact. Manually test both views in English/Persian and mobile/desktop: in signature view only the mode-switching control relevant to Score should remain available, while Play, Pause, Record and Generate are absent; they must return after toggling back. No browser/device QA was run.
+
+
+## Move Key Signature Editor switch beside the active Score heading (2026-11-20)
+
+**Branch:** `redesign` only. **User request:** Move the existing editor-switch button out of the Score tools row and position it **directly after the heading** `Score` or `Key Signature Editor`, with a natural gap, in both modes. Preserve the user-customized treble-clef icon for entering key-signature editing and the existing five-line staff-with-notes icon for returning to Score.
+
+### Exact changes
+1. **`web/src/app.js` / `studio()`:** Wrapped the already-dynamic `h2.score-title` in a `div.score-heading`, created the existing `button.score-tool-button.signature-toggle` inside **that heading container** rather than `scoreActions`, and only then created the ordinary `div.score-actions` toolbar. The new visual/DOM order is: **Score heading text → editor switch icon**; underneath, the appropriate editing tools (Select/Pen/Eraser/Wrap/Zoom in Score mode) and transport actions. In Key Signature view, the title switches to `Key Signature Editor` and the toggle remains beside the heading to return to Score.
+2. Preserved the toggle's exact `signatureMode = !signatureMode; render()` action, `stopSignaturePreview()` and `stopScorePlayback()` conditions, `signaturePitch` selection logic, `data-signature-toggle`, `aria-label`/tooltip/pressed/active state, and conditional `signatureMode ? scoreReturnStaffIcon() : scoreSignatureIcon()`. All other toolbar handlers remain unchanged.
+3. **`web/style.css`:** Added a narrowly scoped `#app[data-page="studio"] .score-heading` flex row with `14px` gap, wrap and compact vertical spacing; reset the nested `h2.score-title` margin; sized the adjacent toggle as an accessible 44px target, and retained active-state border. Switched the 30×23px SVG sizing rule from `.score-actions .signature-toggle svg` to `.score-heading .signature-toggle svg` because the button has moved. Added a print-only rule to hide the whole interactive heading (the separate `print-title` remains the intended printed heading).
+4. **`web/index.html`:** Updated both CSS and JS query versions to `editor-heading-toggle-1` for correct cache invalidation.
+
+### Manual verification
+Open Studio's normal Score view: the treble-clef switch button appears immediately after `Score` with appropriate spacing, not in the tools row. Click to enter Key Signature Editor: the title changes, and the switch becomes the existing staff-with-notes icon immediately after `Key Signature Editor`. Play/Pause/Record/AI remain hidden in this mode; return to Score and verify normal toolbar is restored. Check both RTL and LTR, narrow layouts, button focus/tooltip and printed PDF output. Only JavaScript syntax and source inspections are claimed, not live browser/device testing.
