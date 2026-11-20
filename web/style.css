@@ -330,6 +330,43 @@ footer strong{margin-inline-end:auto;color:var(--muted)}
 .project-actions{padding-block:12px;gap:8px}
 .project-actions label{margin-inline-end:auto}
 .project-actions input{width:min(220px,54vw)}
+
+/* Open Studio: unboxed editable etude title and compact file actions. */
+#app[data-page="studio"]:not(:has(> .shelves)) .project-actions .etude-title-input {
+  flex: 1 1 260px;
+  width: auto;
+  min-width: 160px;
+  max-width: 100%;
+  margin-inline-end: auto;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink);
+  font-size: clamp(16px, 1.5vw, 20px);
+  font-weight: 700;
+  line-height: 1.4;
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .project-actions .etude-title-input:focus-visible {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .project-actions .studio-file-action {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 9px;
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .project-actions .studio-file-action svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
 [data-page=studio] section>.row:first-child{padding-bottom:14px;border-bottom:1px solid var(--line)}
 [data-page=studio] .score{background:var(--panel);border-radius:12px}
 [data-page=studio] details{box-shadow:none}
