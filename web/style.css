@@ -596,25 +596,6 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .signature-editor-mark.signature-microtonal {
   font-family:"Noto Music","Bravura","Segoe UI Symbol",serif;
 }
-#app[data-page="studio"] .signature-editor-tuning {
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  margin:0;
-  white-space:nowrap;
-}
-#app[data-page="studio"] .signature-editor-tuning input {
-  width:76px;
-  padding:7px;
-  text-align:center;
-  font-variant-numeric:tabular-nums;
-}
-#app[data-page="studio"] .signature-editor-listen {
-  min-width:42px;
-  min-height:42px;
-  font-size:23px;
-  line-height:1;
-}
 #app[data-page="studio"] .score[data-view="signature"] svg {
   cursor:default;
 }
@@ -650,48 +631,194 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
-#app[data-page="studio"] .signature-editor-tuning {
-  display: grid;
-  grid-template-columns: auto minmax(90px, 1fr) 76px auto;
-  align-items: center;
-  gap: 10px;
+/* The key-signature tuner is a centered, focused panel — not a modal. */
+#app[data-page="studio"] .signature-tuner-card {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(100%, 550px);
   min-width: 0;
-  width: 100%;
+  padding: clamp(19px, 3vw, 29px);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: 21px;
+  background: linear-gradient(145deg,
+    color-mix(in srgb, var(--accent) 7%, var(--panel)),
+    var(--panel) 65%);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--bg) 45%, transparent);
+  direction: ltr;
+}
+#app[data-page="studio"] .signature-tuner-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+#app[data-page="studio"] .signature-tuner-eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+#app[data-page="studio"] .signature-tuner-title {
   margin: 0;
+  color: var(--ink);
+  font-size: clamp(20px, 3vw, 25px);
+  font-weight: 730;
+  line-height: 1.35;
+}
+#app[data-page="studio"] .signature-tuner-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 24px 0 19px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+#app[data-page="studio"] .signature-tuner-value {
+  color: var(--accent);
+  font-size: clamp(40px, 6vw, 54px);
+  font-weight: 750;
+  letter-spacing: -.045em;
+  line-height: 1.18;
+}
+#app[data-page="studio"] .signature-tuner-frequency {
+  color: var(--muted);
+  font-size: 14px;
+  letter-spacing: .02em;
+}
+#app[data-page="studio"] .signature-tuner-scale {
+  margin: 28px 3px 20px;
+  min-width: 0;
 }
 #app[data-page="studio"] .signature-tuning-slider {
+  display: block;
+  appearance: none;
+  -webkit-appearance: none;
   width: 100%;
-  min-width: 90px;
-  height: 28px;
+  height: 7px;
   padding: 0;
+  margin: 0;
   border: 0;
-  background: transparent;
-  accent-color: var(--accent);
+  border-radius: 999px;
+  outline-offset: 7px;
+  background: linear-gradient(to right,
+    var(--accent) 0%,
+    var(--accent) var(--tuning-progress, 50%),
+    var(--line) var(--tuning-progress, 50%),
+    var(--line) 100%);
   cursor: ew-resize;
   touch-action: pan-x;
 }
+#app[data-page="studio"] .signature-tuning-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 17px;
+  height: 26px;
+  border: 2px solid color-mix(in srgb, var(--accent) 25%, var(--line));
+  border-radius: 9px;
+  background: var(--ink);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 25%, transparent);
+}
+#app[data-page="studio"] .signature-tuning-slider::-moz-range-thumb {
+  width: 15px;
+  height: 24px;
+  border: 2px solid color-mix(in srgb, var(--accent) 25%, var(--line));
+  border-radius: 9px;
+  background: var(--ink);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 25%, transparent);
+}
+#app[data-page="studio"] .signature-tuner-ticks {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 15px;
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+#app[data-page="studio"] .signature-tuner-ticks span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+#app[data-page="studio"] .signature-tuner-ticks span::before {
+  content: '';
+  display: block;
+  height: 7px;
+  width: 1px;
+  background: var(--line);
+}
+#app[data-page="studio"] .signature-tuner-ticks span:first-child {align-items:flex-start}
+#app[data-page="studio"] .signature-tuner-ticks span:last-child {align-items:flex-end}
+#app[data-page="studio"] .signature-tuner-adjust {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  gap: 10px;
+  width: min(100%, 350px);
+  margin: 0 auto 21px;
+}
+#app[data-page="studio"] .signature-tuner-step {
+  min-height: 49px;
+  padding: 8px;
+  border-radius: 12px;
+  font-size: 21px;
+}
 #app[data-page="studio"] .signature-tuning-number {
-  width: 76px;
-  min-height: 40px;
-  padding: 7px 5px;
+  appearance: textfield;
+  -moz-appearance: textfield;
+  width: 100%;
+  min-width: 0;
+  min-height: 49px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 21px;
+  font-weight: 650;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
-#app[data-page="studio"] .signature-editor-previews {
-  display: flex;
-  flex-wrap: wrap;
+#app[data-page="studio"] .signature-tuning-number::-webkit-inner-spin-button,
+#app[data-page="studio"] .signature-tuning-number::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+#app[data-page="studio"] .signature-tuner-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+#app[data-page="studio"] .signature-tuner-actions > button {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 47px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
 }
-#app[data-page="studio"] .signature-editor-previews .signature-editor-listen {
-  min-height: 42px;
-  padding: 8px 12px;
-  font-size: .86rem;
-  font-weight: 600;
-  white-space: nowrap;
+#app[data-page="studio"] .signature-tuner-actions .signature-editor-listen svg {
+  display: block;
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
 }
-#app[data-page="studio"] .signature-editor-tuned {
+#app[data-page="studio"] .signature-tuner-actions .signature-editor-tuned {
   border-color: var(--accent);
+  background: var(--accent);
+  color: var(--panel);
+}
+#app[data-page="studio"] .signature-tuner-actions .signature-editor-tuned:hover {
+  filter: brightness(.94);
 }
 @media (max-width: 760px) {
   #app[data-page="studio"] .signature-editor-controls:not([hidden]) {
@@ -701,15 +828,13 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   }
   #app[data-page="studio"] .signature-editor-selected,
   #app[data-page="studio"] .signature-editor-marks,
-  #app[data-page="studio"] .signature-editor-tuning,
-  #app[data-page="studio"] .signature-editor-previews {
+  #app[data-page="studio"] .signature-tuner-card {
     grid-column: 1;
   }
-  #app[data-page="studio"] .signature-editor-tuning {
-    grid-template-columns: auto minmax(70px, 1fr) 70px auto;
-    gap: 6px;
-  }
-  #app[data-page="studio"] .signature-tuning-number {
-    width: 70px;
-  }
+}
+@media (max-width: 490px) {
+  #app[data-page="studio"] .signature-tuner-card {padding: 19px 14px;}
+  #app[data-page="studio"] .signature-tuner-ticks {font-size: 10px;}
+  #app[data-page="studio"] .signature-tuner-actions {grid-template-columns: repeat(2, minmax(0, 1fr));}
+  #app[data-page="studio"] .signature-tuner-reset {grid-column: 1 / -1;}
 }
