@@ -17,28 +17,76 @@
           "label": {
             "en": "Shur",
             "fa": "شور"
-          }
+          },
+          "tonic": "G4",
+          "microtone": "Ak4",
+          "pitches": [
+            "G4",
+            "Ak4",
+            "Bb4",
+            "C5",
+            "D5",
+            "Eb5",
+            "F5",
+            "G5"
+          ]
         },
         {
           "id": "segah",
           "label": {
             "en": "Segah",
             "fa": "سه‌گاه"
-          }
+          },
+          "tonic": "Ek4",
+          "microtone": "Ek4",
+          "pitches": [
+            "Ek4",
+            "F4",
+            "G4",
+            "Ak4",
+            "B4",
+            "C5",
+            "D5",
+            "Ek5"
+          ]
         },
         {
           "id": "mahur",
           "label": {
             "en": "Mahur",
             "fa": "ماهور"
-          }
+          },
+          "tonic": "C4",
+          "microtone": null,
+          "pitches": [
+            "C4",
+            "D4",
+            "E4",
+            "F4",
+            "G4",
+            "A4",
+            "B4",
+            "C5"
+          ]
         },
         {
           "id": "homayun",
           "label": {
             "en": "Homayun",
             "fa": "همایون"
-          }
+          },
+          "tonic": "G4",
+          "microtone": "Ak4",
+          "pitches": [
+            "G4",
+            "Ak4",
+            "B4",
+            "C5",
+            "D5",
+            "Ek5",
+            "F5",
+            "G5"
+          ]
         }
       ]
     },
