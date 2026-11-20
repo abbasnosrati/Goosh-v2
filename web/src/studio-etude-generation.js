@@ -1,4 +1,4 @@
-import { loadPracticeCatalog } from './studio-practice.js';
+import { loadPracticeCatalog } from './studio-practice.js?v=goal-first-1';
 import { newPracticeStep, localized } from './practice-model.js';
 import { generateStudioEtude } from './ai-etude.js?v=practice-goal-flow-1';
 import { confirmStudioAction, showStudioMessage } from './studio-dialog.js';
