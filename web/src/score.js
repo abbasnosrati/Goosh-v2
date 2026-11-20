@@ -51,7 +51,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
     const note=document.createElement('p')
     note.className='score-meter-warning'
     note.textContent=fa
-      ? 'این زمان‌بندی با کسر میزان انتخاب‌شده قابل نت‌نویسی دقیق نیست. کشش‌ها را اصلاح کنید یا حالت آزاد را انتخاب کنید.'
+      ? 'این زمان‌بندی با میزان‌نما انتخاب‌شده قابل نت‌نویسی دقیق نیست. کشش‌ها را اصلاح کنید یا حالت آزاد را انتخاب کنید.'
       : 'The current timing cannot be engraved exactly in this meter. Correct the durations or switch to Free meter.'
     host.append(note)
   }
