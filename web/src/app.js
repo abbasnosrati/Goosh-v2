@@ -1325,7 +1325,9 @@ function studio() {
     e.meter=selected;
     meterMessage('','');
     save();
-    render();
+    penValue.hidden=!meterInfo(e);
+    recordingHint.hidden=!meterInfo(e);
+    sheet();
   };
   const penValue=el('label',scoreBelowActions,undefined,'score-pen-length');
   penValue.hidden=!meterInfo(e);
@@ -1348,12 +1350,11 @@ function studio() {
   const meterStatus=el('p',scoreBelowActions,undefined,'score-meter-status');
   meterStatus.setAttribute('role','status');
   meterStatus.hidden=true;
-  if(meterInfo(e)){
-    const recHint=el('p',scoreBelowActions,t(
-      'Metered piano recording snaps timing to a 1/32-note grid. Free preserves natural timing.',
-      'ضبط پیانو در حالت میزان‌دار روی شبکهٔ سه‌لاچنگ منطبق می‌شود؛ حالت آزاد زمان‌بندی طبیعی را حفظ می‌کند.'
-    ),'score-meter-record-hint');
-  }
+  const recordingHint=el('p',scoreBelowActions,t(
+    'Metered piano recording snaps timing to a 1/32-note grid. Free preserves natural timing.',
+    'ضبط پیانو در حالت میزان‌دار روی شبکهٔ سه‌لاچنگ منطبق می‌شود؛ حالت آزاد زمان‌بندی طبیعی را حفظ می‌کند.'
+  ),'score-meter-record-hint');
+  recordingHint.hidden=!meterInfo(e);
 
   // Tempo remains a global time-scale edit; only numeric input is shown.
   const tempoControl = el('div', scoreBelowActions, undefined, 'score-tempo');
