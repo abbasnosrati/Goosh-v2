@@ -4,6 +4,31 @@
 
 **User request:** Add one toggle button immediately after the Mouse/Select score tool. In that view, replace the normal note-staff surface with an editable key signature staff where the user can place accidentals and tune each pitch. The effect must be global to the etude and piano.
 
+### Implementation detail (commit 898aa050)
+
+1. **Toolbar button:** `web/src/app.js` adds the new key-signature icon immediately after the Mouse/Select tool. The toggle switches between the existing notes display and a key-signature editor. When active, Select/Pen/Eraser are not visually active; clicking another drawing tool returns to normal note view. Transport, tempo, zoom, pen, eraser, record and the user's later toolbar arrangements are intentionally preserved.
+2. **View lifecycle:** `signatureMode` and `signaturePitch` exist only as temporary Studio UI state, resetting on etude navigation. `sheet()` replaces the contents of the SAME `.score` element with the signature staff or the original `score()` view; no parallel instrument, second model or permanent data duplication. Toggling into signature mode stops current score playback so already-scheduled audio cannot be mistaken for the newly tuned sound.
+3. **Staff renderer:** New file `web/src/key-signature.js` draws a five-line treble staff with clickable, keyboard-accessible positions C, D, E, F, G, A and B. Each column has a musical position, small identifying note letter, existing accidental glyph if selected, and a faint plus marker when empty. The staff uses the existing horizontal scroll on narrower screens.
+4. **Available accidentals:** The editor buttons support natural (♮), flat (♭), sharp (♯), koron (𝇪) and sori (𝇫). They write to the existing `e.key[pc]`, not a visual-only flag. Changing the sign resets that pitch class's prior fine-tuning offset so it starts at the selected symbol's current default in `e.marks`. Removing a sign clears that same pitch class's key and offset, leaving other pitches untouched.
+5. **Fine tuning in cents:** The numeric input displays the EFFECTIVE signed cent alteration of the selected pitch: `(e.marks[e.key[pc]] || 0) + (e.offset[pc] || 0)`. Saving an input target computes `delta = targetCents - e.marks[e.key[pc]]` and stores only that delta in `e.offset[pc]` (or removes a zero delta). Input validation respects the existing valid range. Example: A koron at -50¢ adjusted to -70¢ stores `e.key[9] = 'کرن'`, `e.offset[9] = -20`. The existing E-flat `e.key[4]` remains unchanged.
+6. **Global playback behavior:** Goosh's existing `freq(e,m)` uses `e.key`, `e.marks` and `e.offset` by MIDI pitch class; the change therefore applies to all octaves of that pitch in the piano, Studio playback and future played notes. The existing preview button uses this same frequency and the unchanged piano voice. Already-scheduled score playback is stopped before changing a sign or cents to prevent stale frequencies.
+7. **Normal score display:** `web/src/score.js` renders the same `e.key` values as conventional Unicode accidental glyphs at their respective treble staff positions rather than writing the Persian accidental name as a word. Original note shapes, timing, selection and playback arrow remain intact.
+8. **Files and styling:** `web/style.css` only adds scoped classes for the key editor within Studio using the existing color tokens. `web/index.html` only refreshes the module-import version. No edits to `audio.js`, `model.js`, AI prompts, ABC parsing, practice activities, or persisted etude schema.
+
+### Tested behavior
+
+- The signature SVG module and the app/score JavaScript all passed syntax checks; a mock SVG test verified seven clickable pitch-class targets, the selected-state attribute, E-flat and A-koron glyphs, and both click and keyboard selection.
+- A direct UI/controller test started with A koron -60¢, changed it to -70¢, verified the stored A offset became -20¢, and confirmed E-flat pitch frequency did not change. Switching the selected A marking to sharp reset the offset and left E-flat unchanged. Saves and transport stops were called for both changes.
+- Changes were committed with an update to this Codex handoff. This paragraph expands the original concise summary in a docs-only follow-up, without changing the executable feature.
+
+### Boundaries and known limitations
+
+- Goosh represents the key signature and cent offset by 12 MIDI pitch classes; this view exposes the seven natural note-letter positions relevant to conventional key signatures. It is not an enharmonic or independently octave-specific key signature notation engine.
+- Existing AI-specific note metadata such as explicit E-koron spelling on an enharmonic D# note is not rewritten when the E key signature changes; intentionally preserve explicit single-note accidentals.
+- The legacy Tuning & Key Signature detail panel remains for compatibility, accessing the same stored data rather than creating two tuning systems. No live browser, Android, or paid OpenRouter end-to-end test has been performed for this editor.
+
+---
+
 ### 2026-11-20 — Studio tempo control and note-duration propagation
 
 **User-reported bug and requirements:** The user changed the duration of an AI-generated note from 1 second to 4 seconds. The audible note tail extended but the next note still began at its old timestamp. They also requested a prominently visible overall piece-speed control that genuinely slows the composition. **Important musical direction:** preserve the natural acoustic envelope and decay of piano samples; do NOT invent artificial sustain, a held pedal, or change piano timbre to force long notes to remain audible.
