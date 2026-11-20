@@ -1735,3 +1735,83 @@ This is **functional AI generation**, not merely radio-button mockups or a text 
 7. On this Python backend, an API request that fails because no OpenRouter key is configured should present the error in context without erasing the Etude. No npm install is required to run the **desktop web** server.
 
 **Do not** reinterpret “Western Music” as all global music traditions, reintroduce a second Goal in the AI modal, unfreeze the first-AI workflow on incidental note edits, create multiple scores per etude, or change the legacy learner runtime without explicit user authorization.
+
+
+---
+
+# Real-time musical key-signature and pitch synchronization across AI/score/playback (2026-11-21)
+
+**Repository:** `abbasnosrati/Goosh-v2`, **branch:** `feature/practice-sequence-studio`. This section records the follow-up request: selecting *any* supported Iranian dastgah, Western Major/Natural Minor, mode, or Western tonic in the AI composer must immediately apply the appropriate signature accidentals to the existing score everywhere they are used, affect actual piano/playback/Practice frequencies, and be conveyed to AI. After selection, a teacher can further adjust signs and cents in the existing **Edit Key Signature** editor. Do NOT just decorate the AI dropdown or add a second sound model.
+
+## Canonical design and invariants
+
+1. **The authoritative pitch model is still `e.key`, `e.offset`, `e.marks` and `freq(e,m)`.** The Etude has exactly one canonical `e.notes` array, shared by any number of Practice Steps. A musical preset is only a *way to populate* the existing signature, not a parallel source for notes, audio, or playback. Key editor, score, piano/live voices, score transport, old Practice playback and export all read the existing Etude model.
+2. **Selecting a Dastgah/Scale/Mode immediately applies the preset** before AI music generation: e.g. Iranian Shur -> B-flat, E-flat, A-koron; G Major -> F-sharp; A Natural Minor -> no key signs; E Phrygian -> the corresponding flat degrees. Changing Western tonic reapplies the newly selected mode's accidentals. On a previously chosen system, switching back from the other radio option restores and reapplies that system's selected preset. No notes are generated or deleted by choosing a musical mode.
+3. **Preset selection is an intentional retune of the canonical Etude.** It replaces `e.key` with the selected signature and resets previous `e.offset` fine-tunings; accidentals' default cent values are normalized to standard `♯:+100`, `♭:-100`, `Koron:-50`, `Sori:+50`. The teacher can then open Edit Key Signature to change a mark or make fine adjustments. Those manual changes are saved and immediately affect all existing `freq(e,m)` consumers (including the piano and score playback). The next AI generation sends those currently effective cents. Switching to a *different* musical preset deliberately resets the custom edits to that preset's defaults.
+4. **Do not silently retune on an ordinary page render.** Musical-style selects initially use an unselected placeholder on a brand-new Etude. Merely entering AI mode must not overwrite the signature of an already-authored Etude, and loading its saved `musicContext` must not reapply the preset over the teacher's custom tuning. Only an *actual user selection/change* of a style, tonic or a radio switch to a previously chosen style applies a preset.
+5. **Existing compatibility:** imported / old Etudes without `musicContext` remain valid, retain their original notes and tuning, and do not trigger any automatic migration. Older AI-generated Etudes may contain the earlier MIDI-accidental representation; this change fixes **new** AI conversions but does not silently rewrite older files. If older notes sound wrong, they require a separate explicit and safely validated migration or regeneration.
+
+## Code changes and responsibilities
+
+**New `web/src/music-signature.js`:**
+- Pure functions `westernPitchTokens(catalog,style,tonic)`, `signatureForMusic(catalog,context)`, `applyMusicSignature(etude,signature)`, `effectiveTuningCents(etude)`, and `orderedSignatureEntries(key)`.
+- Derives the seven diatonic degree spellings (plus octave) from the existing `web/music-systems.json` tonic spellings and chromatic interval formulas. Prefers a valid enharmonic spelling with only naturals and single sharps/flats, compatible with the current Studio model. Iranian key-signature pitch tokens come from the existing catalog: Shur's three marked pitches and the supported Segah/Homayun koron sets, etc. No new hardcoded mode lists were added.
+- Converts tokens to the **natural-letter pitch class** keys used by `e.key`, e.g. F-sharp changes `e.key[5]='♯'`, not `e.key[6]`. E-koron uses `e.key[4]='کرن'`. Reapplying a preset resets `e.offset` so stale cents from a previous scale do not leak. Never clone or store a second music score.
+- `effectiveTuningCents` serializes **all seven natural pitch classes**, including 0 cents, into a JSON-friendly object, calculated from the *current* `e.key`, `e.offset` and `e.marks`. Including zero-valued entries ensures that a teacher manually removing a preset accidental remains unambiguously natural in the Python AI response.
+- `orderedSignatureEntries` orders sharps by **F, C, G, D, A, E, B** and flats by **B, E, A, D, G, C, F** for conventional key-signature engraving. Mixed Iranian signatures still use the current `e.key` values and renderer.
+
+**Modified `web/src/studio-etude-generation.js`:**
+- Loads and uses `signatureForMusic` on explicit Dastgah/Scale/Mode select changes, Western Tonic changes, and switching radio systems when a style has already been chosen in that system. Calls the `onSignatureChange(signature,context)` callback immediately. Only the existing shared music-system catalog supplies mode definitions.
+- Style selects now have an explicit blank `Select a Dastgah…` / `Select a scale or mode…` placeholder; Generate still requires the style and the primary practice goal. This avoids accidentally retuning an existing Etude just by entering AI.
+- Initializes the UI's selected musical system, style and tonic from `etude.musicContext` if available. **Crucially it does not call the preset callback on initial load**, preserving edits the teacher previously made from the key editor.
+- The previous Manual/AI toggle, Practice Design freeze and Regenerate confirmation remain intact.
+
+**Modified `web/src/app.js`:**
+- Passes `onSignatureChange` to the existing Studio composer. On change, checks route/Etude identity, stops held notes, transport and signature preview, applies `applyMusicSignature` to **the current `e` object in-place**, writes `e.musicContext`, saves the same localStorage Etude, then calls `sheet()` to refresh the main score **or** the Key Signature Editor. Piano key tooltip frequencies are recalculated in place, while actual piano notes always use the current `freq(e,m)` on each key press.
+- No full Studio rerender is needed merely for a musical-mode selection. The score/piano/recording engine, old Practice runtime and routing flow are not rewritten. Existing manual signature editing uses the same `e.key` and `e.offset`, so its changes are immediately heard and included in future AI tuning requests.
+- Bumped score/composer module version keys to ensure desktop reloads do not keep using the old adapter code.
+
+**Modified `web/src/model.js`:**
+- New Etudes have optional `musicContext: null`. When a user selects a mode, the compact context is persisted, e.g. `{musicSystem:'western',scale:'major',tonic:'G'}` or `{musicSystem:'iranian',dastgah:'shur'}`.
+- `valid(e)` accepts legacy files missing this property, validates the optional known-shape data, and does not change any note, pitch offset, audio or practice step representation. **This context is descriptive metadata; `e.key` remains the only authoritative sounding signature.**
+
+**Modified `web/src/score.js`:**
+- Renders key marks via `orderedSignatureEntries(e.key)` rather than numeric object-key sorting; this shows a conventional order for Western key signatures. Adjusts the common G-flat / F-flat staff positions to the usual flat register. Remains wired to the same score and `e.key` used by the Key Signature Editor. No duplicate accidental state.
+
+**Modified `web/src/ai-etude.js`:**
+- **Critical tuning bug fix for new AI Etudes:** previously the adapter decoded e.g. `F#4` as *MIDI F#* and also inserted a sharp into the key. Then `freq(e,m)` could apply an alteration to an already altered pitch (or attach the sign to the wrong letter). The converter now always stores the **natural written letter's MIDI** (e.g. F4, MIDI 65), while the signature `e.key[5]='♯'` performs the single +100-cent alteration. For B-flat, store B-natural MIDI 71 and let `e.key[11]='♭'` perform -100 cents. For E-koron in Segah, store E-natural MIDI 64 and let `e.key[4]='کرن'` perform -50 cents.
+- The historical special Shur `Ek4` versus `Eb4` coexistence case remains explicitly supported through a separate D-sharp +50-cent encoding with `staffM=E` and an explicit koron mark, since the score's per-letter signature cannot hold both E-flat and E-koron simultaneously. This isolated exception is not generalized into a second note model.
+- `convertEtude` preserves the **currently selected and optionally manually tuned** `current.key` and `current.offset` rather than deriving a second signature from AI output. It still verifies all returned note frequencies against `freq()` and validates the saved Etude format.
+- `generateStudioEtude` sends the selected music system/style/tonic **and** the canonical `tuningCents` dictionary to the same `/api/generate-etude` Python endpoint. No new API endpoint, package or player was added.
+
+**Modified `scripts/goosh_server.py`:**
+- The existing `generate_etude` accepts optional `tuning_cents`, and its POST handler extracts `body['tuningCents']` without changing the established endpoint names. It validates exactly seven natural pitch-class keys and numeric, finite cents between -1200 and +1200.
+- Sends the active tuning to OpenRouter as part of the AI musical guidance, alongside the chosen Iranian/Western mode and its allowed pitch tokens, so the prompt knows the correct active pitch environment.
+- Normalizes **the server's own resulting pitch frequency values** from the supplied effective tuning after AI generation; it does not trust the model's arbitrary frequency guesses. Both the generic 16-note JSON mode and the existing special Shur ABC parser use a `frequency_for_pitch` callback. If no new tuning is supplied (legacy callers), the original standard `get_frequency` logic remains.
+- For the special Shur `Ek4` explicit accident, the callback retains E half-flat (-50 cents) even though `e.key[E]` may be E-flat, matching the client's isolated D-sharp-plus-50-cent encoding.
+- The Python server remains **standard-library only**. Run the desktop version using `python3 scripts/goosh_server.py 8081 --bind 0.0.0.0`, not npm. Restart after updating code because music catalogs are read on startup.
+
+**Modified `web/index.html`:** the app entry module version was bumped to `key-signature-sync-1`. No page layout, new library, new routing scheme or platform-specific alternative was introduced.
+
+## Verified behavior and limitations
+
+**Source-level / isolated JS verification completed on this branch:**
+- Passed syntax parsing for `web/src/app.js`, `score.js`, `model.js`, `ai-etude.js`, `studio-etude-generation.js`, `music-signature.js` and the unchanged `studio-practice.js`.
+- Verified all **88 preset selections** (4 Iranian + 7 Western scales × 12 tonic classes) with exact signed-cent frequency comparisons. All **84 Western** synthetic sixteen-note AI responses passed the updated `convertEtude` musical-note encoding, frequency tolerance and `valid(e)`.
+- Verified the Shur exception permits E-koron alongside E-flat at their distinct correct frequencies and score spellings.
+- Verified the D Major F-sharp signature plus a manual +15-cent override results in +115 effective cents passed to AI.
+- Verified conventional E-major signature order `F#, C#, G#, D#` (by staff letter).
+- Verified the source-backed composer UI behavior with a simulated DOM: explicit Shur selection applies B-flat/E-flat/A-koron; initial composer load does not change the signature; a remount restores its Dastgah and preserves manual edits; choosing Western then C Major resets marks, and choosing G tonic applies F-sharp; another remount preserves Western context and manual +22-cent tuning.
+
+**Not verified in a real browser, live Python/OpenRouter server or native device:** audio quality, visual accidental alignment, end-to-end HTTP response, Python source compilation and production persistence after a complete process restart should be manually smoke-tested. The new key encoder is verified through simulated AI responses but actual OpenRouter-generated output can still violate musical/pedagogical constraints.
+
+**Desktop acceptance steps:**
+1. Get the latest branch code, restart the Python server at port 8081 and hard-refresh the browser. Open a new Etude, switch to AI.
+2. Choose Iranian Shur: inspect Score and Edit Key Signature for B-flat, E-flat and A-koron *before* pressing Generate. Press/preview the matching natural piano pitches and verify the altered frequencies. Switch to Segah/Homayun for their E/A koron signs and Mahur for the natural signature.
+3. Switch to Western, select C Major (natural signature), G Major (F-sharp), D Major (F-sharp/C-sharp), and a modal such as E Phrygian (flats). Change the tonic, verifying both key-signature display and piano/score notes update immediately. No additional practice should appear until explicit Generate.
+4. Open Edit Key Signature, change one mark or fine-tune cents, return to the score; the frequency changes should persist. Refresh the page; the saved music-system selection should return **without overwriting your manually tuned pitch**.
+5. Generate an AI Etude with valid credentials. The generated notes must follow the selected signature and sound in that tuning, with no doubled sharps/flats; further changes in Edit Key Signature should affect playback. For Shur, verify the special E-koron/E-flat alternate handling.
+6. Add a second Practice Step; neither the musical signature nor notes should regenerate. Return to Practice and check that its existing player reads the updated canonical frequency values. Test existing/imported Etudes for backwards-compatible loading.
+7. If switching to another mode intentionally, expect manual tuning overrides to reset to the newly selected mode's canonical accidental values. This is the only automatic reset; ordinary screen mounts should never do it.
+
+**Avoid follow-on scope creep:** Do not rewrite the Practice runtime, do not create a new staff/key editor, do not migrate historical AI notes silently, do not create one score per Practice Step, and do not change mobile/audio engines or shared color/design without explicit authorization.
