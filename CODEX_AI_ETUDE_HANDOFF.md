@@ -763,3 +763,20 @@ Manual checks: Play→Stop→Play returns to note 1; Play→Pause→Resume conti
 - Check responsive layouts and light/dark theme. The bottom toolbar must not overlap the staff or Edit notes & timing, and no unrelated editor/transport behavior should change.
 
 **Testing status:** Source-level JavaScript syntax and code placement checked; no live browser/device visual or audio tests have been run.
+
+## Studio: remove Edit notes & timing section (2026-11-20)
+
+**Requested change:** Remove the entire **Edit notes & timing** expandable section from the Studio interface; do not replace it with another panel or relocate its controls.
+
+**Branch:** `redesign` only.
+
+**Changes made:**
+- In `web/src/app.js` inside `studio()`, removed the `details.controls` element with the localized `Edit notes & timing` summary and all of its associated controls/handlers: `Select all`, the section's `Delete` button, `Duration (s)`, `Rest (s)`, and `Apply timing`.
+- Removed the `document.onkeydown` branch that clicked `[data-del]` on the Delete key because it targeted the now-removed section button. Other keyboard handling, including Ctrl/Cmd+Z for Pen/Eraser and `R` for recording, was not touched.
+- Did **not** remove or modify `noteSettings()`, the existing per-note editor, the Score selection/pen/eraser interactions, Undo, the Tempo numeric input, zoom buttons below the staff, playback controls, or any other unrelated functions.
+- Updated the app.js query-string cache version in `web/index.html` to `remove-edit-notes-timing-1` to prevent an old cached UI from reappearing.
+- No CSS changes were required.
+
+**Post-change layout:** Score title → editing/playback toolbar → staff → numeric Tempo and zoom controls → the remaining Studio content; there is no `Edit notes & timing` accordion between them.
+
+**Manual verification still needed:** Open Studio in desktop and mobile layouts and both languages; confirm the accordion and its controls are gone while Note settings opened by clicking a note, Pen/Eraser, Undo, Tempo, Zoom, Record, Play/Pause/Stop and remaining Studio sections continue to work. Only static syntax and source checks were performed; no browser/device verification is claimed.
