@@ -69,7 +69,15 @@ export async function renderStudioPractice(host, etude, options) {
   });
   if (!catalog || !section.isConnected) return;
   const items=practicePlan(etude);
-  const change=()=>{if(!validatePracticeSequence(items,catalog))throw Error('Invalid practice step');save();renderStudioPractice(host,etude,options);};
+  const change=(preferredId=null)=>{
+    if(!validatePracticeSequence(items,catalog))throw Error('Invalid practice step');
+    const expanded=[...section.querySelectorAll('.practice-step[open]')].map(node=>node.dataset.stepId);
+    if(preferredId)expanded.push(preferredId);
+    const expandedAdvanced=[...section.querySelectorAll('.practice-advanced[open]')].map(node=>node.parentElement?.dataset.stepId);
+    const aiOpen=aiPanel.open;
+    save();
+    renderStudioPractice(host,etude,{...options,expanded,expandedAdvanced,aiOpen});
+  };
   const addRow=create('div',section,undefined,'practice-add-row');
   const picker=create('select',addRow);
   picker.setAttribute('aria-label',tr('Exercise goal','هدف تمرین'));
@@ -81,9 +89,10 @@ export async function renderStudioPractice(host, etude, options) {
     }
   }
   button(addRow,tr('+ Add exercise','+ افزودن تمرین'),()=>{
-    items.push(newPracticeStep(picker.value,catalog));change();
+    const added=newPracticeStep(picker.value,catalog);items.push(added);change(added.id);
   },'practice-add-button');
   const aiPanel=create('details',section,undefined,'practice-ai');
+  aiPanel.open=Boolean(options.aiOpen);
   create('summary',aiPanel,tr('AI: Design exercises','هوش مصنوعی: طراحی تمرین'));
   create('p',aiPanel,tr('Choose a goal above and optionally describe your teaching preferences. AI proposes a new exercise without changing the score.',
     'هدف را از بالا انتخاب کنید و در صورت نیاز توضیح دهید. AI تمرین جدید پیشنهاد می‌دهد و نت‌های اتود را تغییر نمی‌دهد.'));
@@ -119,7 +128,7 @@ export async function renderStudioPractice(host, etude, options) {
       item.assessment.attempts=spec.attempts;
       item.flow.onIncorrect=spec.retry;
       if(!validatePracticeSequence([...items,item],catalog))throw Error('AI settings are not valid for this goal');
-      items.push(item);change();
+      items.push(item);change(item.id);
     }catch(error){aiStatus.textContent=tr('Could not generate settings: ','ساخت تنظیمات ناموفق بود: ')+error.message;}
     finally{aiBtn.disabled=false;}
   },'practice-ai-button');
@@ -129,7 +138,13 @@ export async function renderStudioPractice(host, etude, options) {
   const list=create('div',section,undefined,'practice-step-list');
   items.forEach((step,index)=>{
     const def=catalog.goals.find(g=>g.id===step.goal);
+    if(!def) {
+      create('p',list,tr('Unsupported exercise goal: ','هدف تمرین پشتیبانی نمی‌شود: ')+step.goal,'practice-warning');
+      return;
+    }
     const card=create('details',list,undefined,'practice-step');
+    card.dataset.stepId=step.id;
+    card.open=Boolean(options.expanded?.includes(step.id));
     const summary=create('summary',card);
     create('span',summary,String(index+1).padStart(2,'0'),'practice-step-index');
     const identity=create('span',summary,undefined,'practice-step-identity');
@@ -192,6 +207,7 @@ export async function renderStudioPractice(host, etude, options) {
       checkbox(form,tr('Reveal correct answer','نمایش پاسخ صحیح'),step.feedback.revealCorrect,
         value=>update(()=>{step.feedback.revealCorrect=value;}));
     const advanced=create('details',card,undefined,'practice-advanced');
+    advanced.open=Boolean(options.expandedAdvanced?.includes(step.id));
     create('summary',advanced,tr('More settings','تنظیمات بیشتر'));
     const more=create('div',advanced,undefined,'practice-fields');
     number(more,tr('Answer time (seconds)','زمان پاسخ (ثانیه)'),step.assessment.responseSeconds,1,120,1,
