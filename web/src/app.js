@@ -22,11 +22,15 @@ import {isPersianAccidental, appendPersianAccidental}
 import { mountEtudeComposer } from './studio-etude-generation.js?v=goal-first-1'
 import { renderStudioPractice } from './studio-practice.js?v=goal-first-1'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
+import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
+
+// Canonicalize older /#studio and /#practice links before state initialization.
+upgradeLegacyHash();
 const $ = s => document.querySelector(s),
   app = $('#app');
 let fa = localStorage.lang !== 'en',
   dark = localStorage.theme === 'dark',
-  page = routeFromHash(),
+  page = readRoute().page,
   e = fresh(),
   rec = null,
   scoreTool = 'select',
@@ -68,7 +72,7 @@ if(!collection.size && localStorage.etude){
 }
 let activeId=null;
 function loadRoute(){
-  const id=location.hash.slice(1).split('/')[1];
+  const id=readRoute().id;
   activeId=page!=='home' && collection.has(id)?id:null;
   e=activeId?collection.get(activeId).data:fresh();
   sel.clear();
@@ -1436,13 +1440,10 @@ function practice() {
   }
 }
 
-function routeFromHash(){
-  const key=location.hash.slice(1).split('/')[0];
-  return ['studio','practice'].includes(key)?key:'home';
-}
-window.addEventListener('hashchange',()=>{
-  const route=routeFromHash();
-  cancel();page=route;loadRoute();render();window.scrollTo(0,0);
+// Browser Back/Forward, Android WebView history and iOS WKWebView history
+// update the same Goosh page state without full page reloads.
+listenToRoutes(()=>{
+  cancel();page=readRoute().page;loadRoute();render();window.scrollTo(0,0);
 });
 
 function openDeleteEtudeDialog(id,name){
@@ -1475,7 +1476,7 @@ function openDeleteEtudeDialog(id,name){
 function etudeList(){
   const actions=row(app);
   if(page==='studio')btn(actions,t('New etude','ساخت اتود'),()=>{
-    location.hash='studio/'+addEtude(fresh(),'own');
+    navigateTo('studio',addEtude(fresh(),'own'));
   }).className='primary';
   btn(actions,t('Import etude','وارد کردن اتود'),()=>$('#file').click());
   const grid=el('div',app,undefined,'shelves');
@@ -1490,7 +1491,7 @@ function etudeList(){
       const name=entry.data.title||t('Untitled etude','اتود بدون نام');
       el('strong',item,name);
       el('small',item,entry.data.notes.length.toLocaleString(fa?'fa':'en')+' '+t('notes','نت'));
-      item.onclick=()=>{location.hash=page+'/'+id};
+      item.onclick=()=>navigateTo(page,id);
       const remove=btn(card,'',()=>openDeleteEtudeDialog(id,name),t('Delete etude','حذف اتود'));
       remove.className='etude-delete';
       remove.setAttribute('aria-label',t('Delete etude','حذف اتود')+' · '+name);
@@ -1520,7 +1521,7 @@ function render() {
   const nav = $('#nav');
   nav.replaceChildren();
   const routes = [['home',t('Home','خانه')],['studio',t('Etude studio','استودیوی اتود')],['practice',t('Practice','تمرین')]];
-  const navigate = key => { if(location.hash!=='#'+key)location.hash=key };
+  const navigate = key => navigateTo(key);
   const footer=$('#footer') || el('footer',document.body);
   footer.id='footer';
   footer.replaceChildren();
@@ -1543,7 +1544,7 @@ function render() {
   if(page==='home'){
     renderHome({
       el,app,t,collection,navigate,
-      createEtude:()=>{location.hash='studio/'+addEtude(fresh(),'own')},
+      createEtude:()=>navigateTo('studio',addEtude(fresh(),'own')),
       importEtude:()=>$('#file').click()
     });
   }else if(!activeId){
@@ -1574,7 +1575,7 @@ $('#file').onchange = async ev => {
     const data = JSON.parse(await f.text());
     if (!valid(data)) throw Error();
     const id=addEtude(data,'imported');
-    location.hash=(page==='practice'?'practice':'studio')+'/'+id;
+    navigateTo(page==='practice'?'practice':'studio',id);
   } catch {
     alert(t('Invalid etude file', 'فایل اتود معتبر نیست'))
   } finally {
