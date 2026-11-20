@@ -424,12 +424,17 @@ details[open]>summary{margin-bottom:12px}
 .octave-rail{min-width:calc(var(--whites)*38px);display:flex;direction:ltr;touch-action:pan-x;user-select:none}
 .octave-rail span{flex:1;text-align:center;border-inline-start:1px solid var(--line);font:600 11px/30px system-ui;color:var(--muted)}
 .score-title{font-size:1rem;margin:20px 0 0}
-/* A single labeled switch button replaces the duplicate Score/editor heading. */
+/* The score/editor title stays at the surface; the editor has its own
+   adjacent Back to Score action, while entry lives under Musical System. */
 #app[data-page="studio"] .score-heading {
   display: flex;
   align-items: center;
-  direction: ltr;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  direction: inherit;
   margin: 20px 0 9px;
+  scroll-margin-top: 90px;
 }
 #app[data-page="studio"] .score-heading .signature-toggle {
   display: inline-flex;
@@ -463,9 +468,9 @@ details[open]>summary{margin-bottom:12px}
 #app[data-page="studio"] .score-heading .signature-toggle-label {
   white-space: nowrap;
 }
-/* The current editor name sits beneath the switch and above its tools. */
-#app[data-page="studio"] .score-heading + .score-title {
-  margin: 4px 0 10px;
+/* Both headings have one local title, with no duplicate Score label. */
+#app[data-page="studio"] .score-heading .score-title {
+  margin: 0;
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.45;
