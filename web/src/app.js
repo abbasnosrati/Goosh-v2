@@ -139,10 +139,6 @@ function stopKeys() {
 // The keyboard displays the same per-letter alterations already used for
 // sound by freq(e,m). Only natural-letter keys are altered by e.key; the
 // separate black-key MIDI pitches retain their existing spelling and sound.
-const pianoSyllables = {
-  en: ['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'],
-  fa: ['دو','دو♯','ر','ر♯','می','فا','فا♯','سل','سل♯','لا','لا♯','سی']
-};
 const pianoMarkNames = {'♭':'Flat','♯':'Sharp','کرن':'Koron','سری':'Sori'};
 function updatePianoKey(key, shortcut) {
   const midi = Number(key.dataset.midi);
@@ -166,7 +162,6 @@ function updatePianoKey(key, shortcut) {
   } else {
     el('span',key,label(midi),'piano-key-note');
   }
-  el('small',key,(fa?pianoSyllables.fa:pianoSyllables.en)[pc],'piano-key-syllable');
   if (hasTuning) el('small',key,hz,'piano-key-frequency');
   key.classList.toggle('piano-key-tuned',hasTuning);
   const spoken = mark
@@ -1229,7 +1224,7 @@ function studio() {
     }
   });
   // The Manual/AI choice lives beside the existing score. The notes stay
-  // canonical on this etude; generated exercises only store practice settings.
+  // canonical on this etude; generated exercises only store practice steps.
   const showSignatureEditor = editing => {
     stopSignaturePreview();
     if (editing) {
@@ -1254,7 +1249,8 @@ function studio() {
     etude: composerTarget, fa,
     signatureEditing: signatureMode,
     signatureIcon: scoreSignatureIcon,
-    onEditKeySignature: () => showSignatureEditor(true),
+    returnSignatureIcon: scoreReturnStaffIcon,
+    onToggleKeySignature: showSignatureEditor,
     isRecording: () => Boolean(rec),
     isCurrent: () => page === 'studio' && activeId === composerId && e === composerTarget,
     onModeChange: locked => {
@@ -1274,8 +1270,8 @@ function studio() {
       stopScorePlayback();
       Object.assign(composerTarget, next);
       practiceToExpand = next.practiceSequence?.[0]?.id ?? null;
-      // Regeneration begins a completely new practice plan, including the
-      // legacy Practice settings; no second copy of notes is maintained.
+      // Regeneration begins a new practice plan; keep legacy rule values
+      // for backward-compatible Practice playback without exposing its old UI.
       composerTarget.rule = fresh().rule;
       scoreUndoStack.length = 0;
       sel.clear();
@@ -1288,19 +1284,6 @@ function studio() {
   el('h2',scoreHeading,signatureMode
     ? t('Key Signature Editor','تنظیم سرکلید')
     : t('Score','خط حامل'),'score-title');
-  // Return is visible only while editing, beside the editor itself.
-  // The entry control now belongs to Musical System (in both composer modes).
-  if (signatureMode) {
-    const returnLabel = t('Back to Score', 'بازگشت به خط حامل');
-    const returnButton = btn(scoreHeading, '', () => showSignatureEditor(false), returnLabel);
-    returnButton.className = 'score-tool-button signature-toggle score-back-button';
-    returnButton.setAttribute('aria-label', returnLabel);
-    const symbol = scoreReturnStaffIcon();
-    symbol.classList.add('score-switch-symbol');
-    returnButton.append(symbol);
-    const label = el('span', returnButton, returnLabel, 'signature-toggle-label');
-    label.dir = 'auto';
-  }
   const scoreActions = row(panel);
   scoreActions.classList.add('score-actions');
   for (const [mode, en, ir] of [
@@ -1493,56 +1476,7 @@ function studio() {
   practiceToExpand = null;
   renderStudioPractice(practiceHost,e,{fa,save,expanded,
     locked:composer.isPracticeLocked()});
-  rules();
   sheet()
-}
-
-function detail(name) {
-  const d = el('details', app);
-  el('summary', d, name);
-  return d
-}
-
-function rules() {
-  const p = detail(t('Practice settings', 'تنظیم تمرین')),
-    r = e.rule;
-  const option = (k, s, opts) => field(p, s, r[k], v => r[k] = v, opts),
-    num = (k, s, l) => field(p, s, r[k], v => r[k] = v, null, l);
-  option('mode', t('Response', 'پاسخ'), [
-    ['piano', t('Piano', 'پیانو')],
-    ['text', t('Type note', 'نام نت')],
-    ['mic', t('Microphone', 'میکروفن')]
-  ]);
-  option('order', t('Order', 'ترتیب'), [
-    ['listen', t('Listen first', 'اول شنیدن')],
-    ['answer', t('Answer first', 'اول پاسخ')]
-  ]);
-  for (const [k, s] of [
-      ['staff', t('Show staff', 'نمایش حامل')],
-      ['tuner', t('Allow tuner', 'اجازهٔ تیونر')]
-    ]) {
-    const l = el('label', p, s),
-      c = el('input', l);
-    c.type = 'checkbox';
-    c.checked = r[k];
-    c.onchange = () => {
-      r[k] = c.checked;
-      save()
-    }
-  }
-  num('count', t('Countdown', 'شمارش معکوس'), [0, 30, 1]);
-  num('listen', t('Listen (s)', 'شنیدن (ثانیه)'), [.1, 120, .1]);
-  num('answer', t('Answer (s)', 'پاسخ (ثانیه)'), [.1, 120, .1]);
-  option('ref', t('Reference', 'مرجع'), [
-    ['off', '—'],
-    ['first', t('At start', 'ابتدا')],
-    ['each', t('Every note', 'قبل هر نت')]
-  ]);
-  option('refMidi', t('Reference pitch', 'نت مرجع'), Array.from({
-    length: 60
-  }, (_, i) => [36 + i, label(36 + i)]));
-  num('repeat', t('Repeats', 'تکرار'), [1, 12, 1]);
-  num('refTime', t('Reference (s)', 'مدت مرجع'), [.1, 120, .1])
 }
 
 function cancel() {
