@@ -1990,3 +1990,72 @@ Isolated tests evaluated the actual fetched `app.js` keyboard helper functions w
 5. Test multi-row wrapped scores, rests, empty scores, Set/Erase tools, and both light/dark themes. Returning to Select/Eraser removes the ghost and all extra auxiliary staff lines; the original eraser and note-settings actions should still work.
 
 **Preserve:** Do not make ordinary staff clicks cause AI generation, do not change pitch tuning/frequency rules, do not convert all insertions into chords, and do not intercept Pen hits on note heads with the old Select handler. This implementation intentionally avoids requiring a new "Chord mode" toggle: the user sees the precise outcome in the ghost preview instead.
+
+
+---
+
+# ONE canonical Etude engine: exact time signatures + Free meter, including Pen/Eraser, AI and Practice (2026-11-21)
+
+**Important clarification from the user:** DO NOT BUILD TWO DIFFERENT SCORE/TIMING ENGINES. The pre-existing Goosh `e.notes` objects (`m`, onset `at` seconds and duration `d` seconds) remain the **single canonical source of truth** for both measured and Free meter, playback, piano recording, Pencil, Eraser, AI composition and Practice. The implementation introduces derived **notation/measure analysis within the existing `web/src/model.js`**, not new storage of note events, a separate audio engine or a second Score renderer. Accurate rhythmic validity matters more than drawing decorative barlines.
+
+## Core design and compatibility
+
+**`web/src/model.js`:** Existing `fresh()` gains `meter:'none'` (default Free) and `measureCount:4` (prepared bars; ignored in Free). Both fields are optional in `valid(e)` to preserve old imported and stored Etudes. `METER_PRESETS`: Free, 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, 9/8, 12/8. `meterInfo(e)` computes bar size as quarter-note beats `numerator*4/denominator`. Global BPM continues to specify quarter notes even in compound meters; changing BPM rescales existing `e.notes` like before and retains rhythmic proportionality.
+
+**`meterTimeline(e)` is the single source of metering truth for every consumer**:
+- In Free it returns `measured:false` and **does nothing** to the original expressive timing. No barlines or time signature are forced.
+- In measured mode it maps the original (seconds/BPM) times into integer rhythmic ticks (`960` per quarter note), preserving the original note objects and all chords. Rounding is **NOT** silently performed on the existing notes; onsets/durations more than 1.5 ticks off the supported grid cause `issues`. It verifies exact representability into regular/dotted/double-dotted note values through 32nd-notes and their ties, without claiming triplet or arbitrary tuplet support.
+- It derives the exact bars, crossings and ties for notes sustaining across barlines, and exact rests for all time where no note sounds. Chord voices whose notes overlap do not create false rests. Empty bars are conventionally represented by one full-measure rest even for 6/8, 9/8 and other compound signatures.
+- The explicit `measureCount` enables drawing blank measures *before* the teacher writes any notes, without fake audio, dummy notes or a second copy of the composition. The analysis can return a larger count when the music extends beyond prepared bars; deliberate Pencil/retiming changes check and respect the prepared capacity rather than silently appending bars.
+
+**`web/src/score.js`:** The **same original `score()` function** chooses derived measured events or its old Free events based only on `meterTimeline(e)`. It renders the correct numerator/denominator, actual note/rest types, ties crossing barlines, bars and full-measure rests. When possible it wraps to the next system at a **bar boundary**, not mid-measure. If a metered Etude has invalid unsnapped existing timing it displays a warning and deliberately does **not** fake a valid barline pattern. Its original SVG staff, Key Signature, audio marker IDs, pencil ghost note, eraser hit targets, pitch/tuning and free-meter notation remain in place. Playback marker fragments can be highlighted by their actual segment start/end, so two tied noteheads do not both appear active simultaneously.
+
+## Uniform editing semantics — no exception for Pencil or Eraser
+
+**`web/src/app.js`:**
+- Studio Score now has a localized **Time signature** dropdown (Free default or supported signatures), an explicit **Measures** number control for prepared bars and a **Pen note value** select with whole, half, quarter, eighth, sixteenth, thirty-second and common dotted durations. Uses the original Studio and existing `e.notes`. Meter change is rejected with an in-context message if current expressive/free timings cannot be represented exactly; it never quantizes them behind the teacher's back.
+- The original **Pen** inserts the selected musical duration rather than always one quarter in measured mode. Pen's ghost preview and click both use the same previously implemented placement planner. It can **fill an existing rest** without shifting later notes, insert before/between notes shifting later notes by the chosen duration, add at end, or add a chord at exactly the original onset. Each potential edited set is checked using `meterTimeline({...e,notes:candidate})` before mutation: reject invalid grids, insufficient rest capacity and unplanned extra measures; explain how to choose a shorter value or add measures. Free retains its older arbitrary time-based insertion behavior.
+- The original **Eraser** removes only the selected underlying note (even if the note had several tied visual segments), leaving later notes at exactly their original onsets. The shared analyzer then produces the correctly sized **rest** in its place; it does not slide the score backwards or lose remaining notes of an existing chord. Uses `meterTimeline` to validate the resulting state.
+- The pre-existing **Note settings** can edit note duration and rest-before. In measured mode these numeric fields explicitly use **quarter-note beats** instead of free seconds. A proposed edit is checked using the same meter analyzer; invalid values are rejected, never silently rounded. In Free the existing seconds-based controls remain intact. The global tempo editor continues to rescale all notes/rests proportionally.
+- The existing **Undo** restores exact previous times for sequential Pencil insertion and exact Eraser deletion as previously implemented. These actions are tested in a measured score, including editing through a chord. No separate undo stack for the measured system.
+- **Piano live recording** in measured mode explicitly snaps onset and duration to a 1/32-note grid (stated in the visible UI hint). When recording stops, the displayed number of measures is extended if necessary; Free mode retains the original raw playing timing with no quantization. This is deliberate UI behavior, not a second recording engine.
+- Changing time signature uses `sheet()` to repaint the same Score and does not remount the AI composer / cancel an in-flight AI generation.
+
+## AI and Practice share the same meter, not a second music engine
+
+**`web/src/ai-etude.js`:** The existing Generate request sends `meter:e.meter||'none'` in addition to musical system, Dastgah/mode, tonic and actual tuning. The existing `convertEtude` accepts valid metered note durations and explicit rest-before values, creates **the same standard e.notes**, checks that four requested measures have the correct total quarter-note beats and calls `meterTimeline(result)` to reject any inexact or unrepresentable rhythm BEFORE overwriting any existing Etude. The previous Iranian Shur **Free** ABC parsing remains intact, including the E-koron special spelling; metered Shur uses the same JSON result path and retains the E-koron notation exception.
+
+**`scripts/goosh_server.py`:** No new API and no new server technology. The Python AI endpoint accepts a whitelisted `meter` field. In measured mode its AI JSON schema expects a variable number of notes, note duration and `restBefore` expressed in quarter-note beats, with correct overall duration for **four bars** of the requested signature. The Python layer performs basic input/response and total-duration checks, then the **browser's canonical meterTimeline** is the final authority about actual notation/beat capacity; there is no separate Python playback engine. AI cannot silently change current music on an invalid response. In Free, the existing 16-note generic POC and Shur's special ABC prompt remain available; no barlines are imposed by the frontend. For metered AI, an unverified ABC string is intentionally **not fabricated**: the authoritative Score is rendered directly from validated notes.
+- Python exercise-design prompt receives the current meter and measured bar count, while still returning only Practice Step settings, never a new score.
+
+**`web/src/studio-practice.js`:** AI Practice Design forwards the actual Etude's meter/bar count and canonical notes as read-only context. Original Exercise goal, sequence, settings and same-score relationship are unchanged.
+
+**Existing Practice learner in `web/src/app.js`:** Shows the current meter and corresponding measure number; its Staff option shows the original complete canonical measured Score instead of moving a note to a fake first measure. Free retains the old isolated-note Staff view. This makes measure context visible to students, while the legacy per-note assessment timing itself remains unchanged. Full multi-voice rhythmic evaluation/tuplet/chord exercise assessment is **not** falsely claimed implemented.
+
+**`web/style.css` and `web/index.html`:** Small theme-consistent, responsive meter/measure/Pen controls and warnings; cache version `meter-one-timeline-1`. No new palette or dependency.
+
+## Completed tests and limitations
+
+Isolated source-backed JavaScript checks performed:
+- `valid()` accepts old Etudes without meter/measureCount; Free preserves rubato and has no bars. All modified JS modules parse.
+- New empty 4/4 creates exactly four measure lines and four full-measure rests but no fake notes; 6/8 similarly renders four correct bars/full-measure rests.
+- Correct beat capacity in 4/4 and 6/8, note-duration decomposition, leading and internal rests, sustained chords (no false rests), long notes split and **tied** across barlines, and rejection of non-notatable arbitrary free timings rather than silent timing alteration.
+- SVG score mock verifies meter numbers and barlines, in-Score Pencil click targets a rest at its exact musical onset, actual tied note fragments are rendered, and multi-row 4/4 Score preferentially wraps after measure boundaries. Free has no meter or extra lines.
+- Isolated test with **actual Pencil and Eraser handler source**: Eraser removes only the intended note and creates a derived one-beat rest without shifting existing note onsets; Undo restores it. Pencil creates simultaneous chords without shifting, inserts eighth notes before existing pitches with exact corresponding onset shifts, and Undo restores the old timestamps. Inserting into an unplanned fifth bar is rejected rather than silently extending a four-bar score.
+- AI adapter tests for 4/4, 6/8, explicit rests, meter crossings and Shur E-koron; irregular unnotatable AI beats are rejected. Legacy Free 16-note adapter still works.
+- Model regression checks: old Etudes import; accurate empty bars, meter-specific full-measure rests and unchanged note values.
+
+**Not performed / not guaranteed:** a real desktop-browser visual inspection and interaction test, live Python/OpenRouter API integration or Python interpreter compilation, audio-device recording test, or native APK test. The initial supported notation vocabulary does **not** include tuplets/irrational rhythmic subdivisions, complex voice-dependent beam grouping, or sophisticated multi-voice measure editing; these should be separate explicit milestones rather than misrepresented as fully solved.
+
+## Desktop manual acceptance checklist
+
+1. Fetch branch and hard-refresh. New Etude defaults to **Free** (no time signature or barlines); choose **4/4**, default **four empty measures** appear immediately with full-measure rests and the correct time signature. Switch to 3/4 and 6/8 to verify capacities, silent bars and numerator/denominator.
+2. Choose Pencil and a **note value**, e.g. eighth or half. Insert into a visible rest; the resulting rest reduces by the exact duration. Insert between notes; later notes shift by exactly the inserted beat count while previous chords remain simultaneous. Insert on a notehead to create a chord. Ctrl/Cmd+Z restores exact note times.
+3. Choose Eraser and delete a note in the middle or a member of a chord: later onsets must stay fixed and the removed temporal space becomes a correctly sized rest. Undo must restore it.
+4. Edit one note's duration and rest-before as **quarter-note beats** in measured mode. Invalid off-grid timing must be rejected. Change BPM and verify measure structure and audio/pitch stay consistent.
+5. Attempt to add beyond prepared measures: see an explanation instead of auto-overflow; deliberately increase **Measures** and try again. Then test live recording: measured timing is snapped to the disclosed 1/32 grid and can extend measures; Free recording preserves natural timing.
+6. Try switching a free-recorded rubato Etude to 4/4: app must not pretend its expressive durations exactly fit; it should reject the selection without altering `e.notes`. Back to Free retains the original performance.
+7. Generate a metered AI Etude with API credentials: verify server/client agree on 4 bars and that music has real correct rests/ties. Try Exercise Design with AI and verify that meter context is present without changing music. Open Practice and check the original measure positions are shown.
+8. Check free mode, imported older files, key signatures/Koron/Sori, piano playback, score transport, editing and Undo on desktop/light/dark/mobile-sized viewports.
+
+**Do not** add a second e.notes collection, second meter renderer, per-mode audio engine, automatic silent retiming of existing music, or a disconnected AI/Practice rhythmic grid.
