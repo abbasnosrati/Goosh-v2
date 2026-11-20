@@ -557,7 +557,12 @@ function renderSignatureControls(){
 }
 
 function measuredEditAllowed(notes) {
-  return !meterInfo(e) || !meterTimeline({...e,notes}).issues.length;
+  if(!meterInfo(e))return true;
+  const timeline=meterTimeline({...e,notes});
+  // The teacher explicitly chose how many measures to prepare. A Pen or
+  // retiming edit must not silently append a fifth bar to a four-bar score.
+  return !timeline.issues.length &&
+    timeline.bars.length <= (e.measureCount||4);
 }
 function meterMessage(en,ir) {
   const status=document.querySelector('#app[data-page="studio"] .score-meter-status');
@@ -639,8 +644,8 @@ function sheet() {
       }));
       candidate.push(inserted);
       if(!measuredEditAllowed(candidate)){
-        meterMessage('This note cannot be placed on the current rhythmic grid.',
-          'این نت با شبکهٔ ریتمی میزان قابل ثبت نیست.');
+        meterMessage('This note does not fit the selected measure count or rhythmic grid. Add a measure or choose a shorter note.',
+          'این نت در تعداد میزان یا شبکهٔ ریتمی فعلی جا نمی‌گیرد. یک میزان اضافه کنید یا کشش کوتاه‌تری انتخاب کنید.');
         return;
       }
       stopScorePlayback();
