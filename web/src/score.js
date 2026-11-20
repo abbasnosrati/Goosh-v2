@@ -130,11 +130,16 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert}={
         fill:'currentColor'},accidental)
       if(selected.has(index))head.setAttribute('stroke-width',3)
       annotate(x,beats,s)
-      // Playback indication is a visual overlay, independent of selection.
-      // data-playback-note keeps the original array index after sorting/wrapping.
-      draw('circle',{cx:x,cy:y,r:12.5,fill:'none',
-        stroke:'var(--accent)','stroke-width':2.5,opacity:0,
-        'pointer-events':'none','data-playback-note':index})
+      // Small arrow near (not around) the note. Keep the original index for
+      // playback highlighting across sorted and wrapped score rows.
+      const indicatorX = x + (y >= 86 ? -12 : 12);
+      draw('path',{
+        d:'M'+indicatorX+' '+(y-25)+' V'+(y-14)+
+          ' m-4 -4 4 4 4-4',
+        fill:'none',stroke:'var(--accent)','stroke-width':2,
+        'stroke-linecap':'round','stroke-linejoin':'round',opacity:0,
+        'pointer-events':'none','data-playback-note':index
+      })
       draw('circle',{cx:x,cy:y,r:10,fill:'transparent'}).onclick=ev=>{
         ev.stopPropagation();pick?.(index,ev.shiftKey||ev.ctrlKey||ev.metaKey)
       }
