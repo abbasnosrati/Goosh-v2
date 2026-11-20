@@ -282,7 +282,7 @@ export function mountEtudeComposer(host, {
       return;
     }
     const goal = state.goal;
-    const context = selectedContext();
+    const context = {...selectedContext(),meter:etude.meter||'none'};
     if (isReplace()) {
       const approved = await confirmStudioAction({
         title: t('Replace this etude?', 'اتود فعلی جایگزین شود؟'),
