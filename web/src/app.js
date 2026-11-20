@@ -6,7 +6,8 @@ import {
   valid,
   meterInfo,
   meterTimeline,
-  METER_PRESETS
+  METER_PRESETS,
+  planScoreNoteReorder
 } from './model.js'
 import {
   unlock,
@@ -372,8 +373,12 @@ function undoScoreEdit() {
   } else if (action.kind==='move') {
     if (!e.notes.includes(action.note)) {scoreUndoStack.pop();return false;}
     stopScorePlayback();
-    // A drag clears a per-note accidental; Undo must restore the exact
-    // original notation metadata, not merely its MIDI and onset.
+    // Restore ALL reordered positions as one atomic Undo. No additional
+    // notes/rests were ever created: silence is derived from these onsets.
+    for(const {note,at} of action.shifted||[])
+      if(e.notes.includes(note))note.at=at;
+    // A change of staff line clears the per-note accidental; a purely
+    // horizontal reorder keeps it. In either case Undo is exact.
     for(const property of ['m','at','staffM','staffAccidental','displayPitch']){
       if(Object.hasOwn(action.before,property))
         action.note[property]=action.before[property];
@@ -673,19 +678,47 @@ function sheet() {
     move: rec ? undefined : (index,target) => {
       if(scoreTool!=='select'||signatureMode||rec||
          !Number.isInteger(index)||index<0||index>=e.notes.length||!target)return;
-      const note=e.notes[index],m=target.m,at=target.at;
-      if(!Number.isInteger(m)||m<0||m>127||
-         !Number.isFinite(at)||at<0||at>1e7)return;
-      // A moved note is reinterpreted as a natural staff pitch. Existing
-      // e.key/e.offset then determine the sounding Koron/Flat/Sharp/Sori.
-      // Remove old explicit staff accidentals, including legacy Ek4.
+      const note=e.notes[index],m=target.m;
+      if(!Number.isInteger(m)||m<0||m>127||!target.slot)return;
       const written=Number.isInteger(note.staffM)?note.staffM:note.m;
-      const previousAt=note.at;
-      if(m===written&&Math.abs(at-previousAt)<1e-7)return;
-      const candidate=e.notes.map((entry,i)=>i===index
-        ?{...entry,m,at,staffM:undefined,staffAccidental:undefined,
-           displayPitch:undefined}
-        :entry);
+      const pitchChanged=m!==written;
+      const placement=planScoreNoteReorder(e,index,target.slot);
+      if(!placement.ok){
+        const full=placement.reason==='no-room';
+        const complex=placement.reason==='polyphony';
+        meterMessage(
+          full
+            ? 'Not enough rest space in the destination measure. Choose another slot.'
+            : complex
+              ? 'This overlapping or chord passage cannot be reordered safely.'
+              : 'This destination cannot be represented with the current note lengths.',
+          full
+            ? 'در میزان مقصد سکوت کافی وجود ندارد. جایگاه دیگری انتخاب کنید.'
+            : complex
+              ? 'جابجایی افقی این آکورد یا نت‌های هم‌پوشان فعلاً ایمن نیست.'
+              : 'این مقصد با کشش‌های فعلی نت‌ها قابل ثبت نیست.'
+        );
+        return;
+      }
+      // Small horizontal motion within the SAME note/rest slot is not a
+      // timing edit. It must preserve every duration and explicit accidental.
+      if(!pitchChanged&&!placement.moves.length)return;
+      const shifted=placement.moves.map(({index:i,at})=>({
+        note:e.notes[i],at:e.notes[i].at,to:at
+      }));
+      const atByNote=new Map(shifted.map(x=>[x.note,x.to]));
+      const candidate=e.notes.map(entry=>{
+        const at=atByNote.get(entry)??entry.at;
+        if(entry!==note)return {...entry,at};
+        const moved={...entry,at};
+        if(pitchChanged){
+          moved.m=m;
+          delete moved.staffM;
+          delete moved.staffAccidental;
+          delete moved.displayPitch;
+        }
+        return moved;
+      });
       if(!measuredEditAllowed(candidate)){
         meterMessage(
           'This move does not fit the current meter or prepared measures.',
@@ -697,12 +730,16 @@ function sheet() {
       for(const property of ['m','at','staffM','staffAccidental','displayPitch'])
         if(Object.hasOwn(note,property))before[property]=note[property];
       stopScorePlayback();
-      note.m=m;
-      note.at=at;
-      delete note.staffM;
-      delete note.staffAccidental;
-      delete note.displayPitch;
-      rememberScoreEdit({kind:'move',note,before});
+      for(const change of shifted)change.note.at=change.to;
+      if(pitchChanged){
+        note.m=m;
+        // Only an actual vertical change resets a per-note accidental.
+        // A horizontal reorder keeps explicit Koron/Sori/Flat/Sharp.
+        delete note.staffM;
+        delete note.staffAccidental;
+        delete note.displayPitch;
+      }
+      rememberScoreEdit({kind:'move',note,before,shifted});
       sel.clear();
       sel.add(index);
       meterMessage('','');
