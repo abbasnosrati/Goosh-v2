@@ -19,7 +19,7 @@ import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=koron-align-a4-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { mountEtudeComposer } from './studio-etude-generation.js?v=clear-empty-music-1'
+import { mountEtudeComposer } from './studio-etude-generation.js?v=key-editor-navigation-1'
 import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=practice-flow-2'
 import { renderHome } from './home.js?v=clean-routes-1';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
@@ -1048,6 +1048,7 @@ function studio() {
     render();
     // After the Studio rerender, take the user to the editor/score heading.
     const heading = document.querySelector('#app[data-page="studio"] .score-heading');
+    heading?.focus({preventScroll:true});
     heading?.scrollIntoView({
       behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
       block: 'start'
@@ -1098,6 +1099,7 @@ function studio() {
     }
   });
   const scoreHeading = el('div', panel, undefined, 'score-heading');
+  scoreHeading.tabIndex = -1;
   el('h2',scoreHeading,signatureMode
     ? t('Key Signature Editor','تنظیم سرکلید')
     : t('Score','خط حامل'),'score-title');
