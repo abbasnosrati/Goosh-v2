@@ -645,6 +645,7 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score-actions .score-tool-button[hidden],
 #app[data-page="studio"] .score-actions .score-wrap-button[hidden],
 #app[data-page="studio"] .score-actions .score-zoom-button[hidden],
+#app[data-page="studio"] .score-actions .score-transport-actions[hidden],
 #app[data-page="studio"] .score-below-actions[hidden] {
   display: none !important;
 }
