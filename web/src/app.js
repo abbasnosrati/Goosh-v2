@@ -1195,7 +1195,6 @@ function studio() {
       tempoNumber.value = String(e.bpm);
   };
 
-  tuning();
   rules();
   sheet()
 }
@@ -1204,30 +1203,6 @@ function detail(name) {
   const d = el('details', app);
   el('summary', d, name);
   return d
-}
-
-function tuning() {
-  const p = detail(t('Tuning & key signature', 'کوک و سرکلید'));
-  for (const k in e.marks) field(p, k + ' ¢', e.marks[k], v => e.marks[k] = v, null, [-1200, 1200, 1]);
-  const r = row(p);
-  let pc = 0;
-  const sync = () => {
-    mark.value = e.key[pc] || '';
-    offset.value = e.offset[pc] || 0
-  };
-  field(r, t('Pitch', 'نت'), 0, v => {
-    pc = v;
-    sync()
-  }, names.map((n, i) => [i, n]));
-  const mark = field(r, t('Signature', 'سرکلید'), e.key[0] || '', v => {
-      if (v) e.key[pc] = v;
-      else delete e.key[pc];
-      sheet()
-    }, [
-      ['', '♮'], ...Object.keys(e.marks).map(k => [k, k])
-    ]),
-    offset = field(r, '¢', e.offset[0] || 0, v => e.offset[pc] = v, null, [-1200, 1200, 1]);
-  btn(r, '♪', () => voice(freq(e, 60 + pc))(1))
 }
 
 function rules() {
