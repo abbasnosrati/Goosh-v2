@@ -315,6 +315,52 @@ function sheet() {
   paintPlaybackMarker(true);
 }
 
+// Retiming a note must move subsequent note ONSETS, not only its audio release.
+// Preserve existing silence gaps and same-onset chords without quantizing notes.
+function retimeNote(note, newDuration, newRest, restChanged) {
+  const onset = note.at;
+  const previousEnd = e.notes.filter(n => n.at < onset)
+    .reduce((end, n) => Math.max(end, n.at + n.d), 0);
+  const restShift = restChanged ? previousEnd + newRest - onset : 0;
+  const durationShift = newDuration - note.d;
+  const proposed = e.notes.map(n => ({
+    note: n,
+    at: n.at + (n.at >= onset ? restShift : 0) +
+      (n.at > onset ? durationShift : 0)
+  }));
+  // An earlier overlapping note can make a large shortening invalid.
+  // Reject it rather than silently moving notes to negative time.
+  if (proposed.some(({at}) => !Number.isFinite(at) || at < 0 || at > 1e7))
+    return false;
+  stopScorePlayback();
+  for (const {note: n, at} of proposed) n.at = at;
+  note.d = newDuration;
+  save();
+  sheet();
+  return true;
+}
+
+// A BPM change is a GLOBAL time-scale edit, including rests and note lengths.
+// Preserve the exact beat relationships and piano pitch. Do not time-stretch
+// or artificially sustain a decaying piano sample.
+function setEtudeTempo(nextBpm) {
+  if (!Number.isInteger(nextBpm) || nextBpm < 20 || nextBpm > 300)
+    return false;
+  if (nextBpm === e.bpm) return true;
+  const ratio = e.bpm / nextBpm;
+  if (e.notes.some(n => n.at * ratio > 1e7 || n.d * ratio > 1e5))
+    return false;
+  stopScorePlayback(); // Existing scheduled audio must not retain old timing.
+  for (const n of e.notes) {
+    n.at *= ratio;
+    n.d *= ratio;
+  }
+  e.bpm = nextBpm;
+  save();
+  sheet();
+  return true;
+}
+
 function noteSettings(note) {
   const earlier = e.notes.filter(n => n.at < note.at);
   const precedingEnd = earlier.reduce((end,n) => Math.max(end,n.at+n.d),0);
@@ -324,22 +370,32 @@ function noteSettings(note) {
   dialog.setAttribute('aria-label',heading.textContent);
   const duration = field(dialog,t('Duration (s)','کشش (ثانیه)'),+note.d.toFixed(3),()=>{},null,[.001,100000,'any']);
   const silence = field(dialog,t('Rest before note (s)','سکوت پیش از نت (ثانیه)'),+rest.toFixed(3),()=>{},null,[0,100000,'any']);
-  const initialDuration = duration.value, initialRest = silence.value;
+  const initialRest = silence.value;
+  el('p', dialog, t(
+    'Changing a note’s duration moves later notes, preserving the existing gaps.',
+    'با تغییر کشش این نت، نت‌های بعدی جابه‌جا می‌شوند و فاصله‌های سکوت حفظ می‌شوند.'
+  ), 'note-timing-hint');
   const actions = row(dialog);
   btn(actions,t('Save','ذخیره'),()=>{
-    if(!duration.value || !silence.value || !duration.reportValidity() || !silence.reportValidity())return;
-    if(silence.value!==initialRest){
-      const onset=note.at, shift=precedingEnd+Number(silence.value)-onset;
-      for(const n of e.notes)if(n.at>=onset)n.at+=shift;
+    if (!duration.reportValidity() || !silence.reportValidity()) return;
+    const length = Number(duration.value), before = Number(silence.value);
+    if (!Number.isFinite(length) || length < .001 || length > 1e5 ||
+        !Number.isFinite(before) || before < 0 || before > 1e5) return;
+    if (!retimeNote(note, length, before, silence.value !== initialRest)) {
+      duration.setCustomValidity(t(
+        'This change would place a note before the beginning of the etude.',
+        'این تغییر باعث می‌شود نتی قبل از ابتدای قطعه قرار بگیرد.'
+      ));
+      duration.reportValidity();
+      duration.setCustomValidity('');
+      return;
     }
-    if(duration.value!==initialDuration)note.d=Number(duration.value);
-    save();sheet();dialog.close();
+    dialog.close();
   });
   btn(actions,t('Cancel','انصراف'),()=>dialog.close());
   dialog.onclose=()=>dialog.remove();
   dialog.showModal();
 }
-
 
 
 function scoreToolIcon(mode) {
@@ -714,6 +770,38 @@ function studio() {
   pauseButton.dataset.scorePause = '';
   pauseButton.classList.add('score-transport-button');
   updateScoreTransportButtons();
+
+  // Visible global tempo control: changing BPM changes every onset, note
+  // duration and rest interval in the saved etude, not merely the label.
+  const tempoControl = el('div', scoreActions, undefined, 'score-tempo');
+  el('span', tempoControl, t('Tempo', 'سرعت'), 'score-tempo-label');
+  const tempoSlider = el('input', tempoControl, undefined, 'score-tempo-slider');
+  tempoSlider.type = 'range';
+  tempoSlider.min = '20';
+  tempoSlider.max = '300';
+  tempoSlider.step = '1';
+  tempoSlider.value = String(e.bpm);
+  tempoSlider.setAttribute('aria-label', t('Tempo in BPM', 'سرعت قطعه برحسب BPM'));
+  const tempoNumber = el('input', tempoControl, undefined, 'score-tempo-number');
+  tempoNumber.type = 'number';
+  tempoNumber.min = '20';
+  tempoNumber.max = '300';
+  tempoNumber.step = '1';
+  tempoNumber.value = String(e.bpm);
+  tempoNumber.setAttribute('aria-label', t('Tempo in BPM', 'سرعت قطعه برحسب BPM'));
+  const tempoUnit = el('span', tempoControl, 'BPM', 'score-tempo-unit');
+  const syncTempo = bpm => {
+    if (!setEtudeTempo(bpm)) return false;
+    tempoSlider.value = String(e.bpm);
+    tempoNumber.value = String(e.bpm);
+    return true;
+  };
+  tempoSlider.oninput = () => syncTempo(Number(tempoSlider.value));
+  tempoNumber.onchange = () => {
+    if (!tempoNumber.reportValidity() || !syncTempo(Number(tempoNumber.value)))
+      tempoNumber.value = String(e.bpm);
+  };
+
   btn(scoreActions, '−', () => {
     zoom = Math.max(.4, zoom - .2);
     sheet()
@@ -745,15 +833,6 @@ function studio() {
     save();
     sheet()
   }, t('Delete selected notes', 'حذف نت‌های انتخاب‌شده') + ' (Delete)').dataset.del = '';
-  field(edit, 'BPM', e.bpm, v => {
-    const ratio = e.bpm / v;
-    e.notes.forEach(n => {
-      n.at *= ratio;
-      n.d *= ratio
-    });
-    e.bpm = v;
-    sheet()
-  }, null, [20, 300, 1]);
   const d = field(edit, t('Duration (s)', 'کشش (ثانیه)'), 1, () => {}, null, [.01, 120, .01]),
     gap = field(edit, t('Rest (s)', 'سکوت (ثانیه)'), 0, () => {}, null, [0, 120, .01]);
   btn(edit, t('Apply timing', 'اعمال زمان'), () => {

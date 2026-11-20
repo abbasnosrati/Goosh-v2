@@ -422,3 +422,62 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score[data-tool="eraser"] svg * {
   cursor: var(--score-tool-cursor, crosshair) !important;
 }
+
+/* Studio global BPM control: visible at all widths, including mobile. */
+#app[data-page="studio"] .score-actions { flex-wrap: wrap; }
+#app[data-page="studio"] .score-tempo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  direction: ltr;
+}
+#app[data-page="studio"] .score-tempo-label {
+  color: var(--muted);
+  font-size: .82rem;
+  white-space: nowrap;
+}
+#app[data-page="studio"] .score-tempo-slider {
+  width: clamp(90px, 12vw, 150px);
+  height: 22px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+#app[data-page="studio"] .score-tempo-number {
+  width: 57px;
+  padding: 4px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+#app[data-page="studio"] .score-tempo-unit {
+  color: var(--muted);
+  font-size: .75rem;
+  font-weight: 700;
+}
+@media(max-width:600px) {
+  #app[data-page="studio"] .score-tempo {
+    order: 5;
+    width: 100%;
+    justify-content: space-between;
+  }
+  #app[data-page="studio"] .score-tempo-slider {
+    width: auto;
+    flex: 1;
+    min-width: 60px;
+  }
+}
+
+.note-timing-hint {
+  margin: 4px 0 12px;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.6;
+}

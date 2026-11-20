@@ -1,5 +1,41 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
+## 2026-11-20 — Studio tempo control and note-duration propagation
+
+**User-reported bug and requirements:** The user changed the duration of an AI-generated note from 1 second to 4 seconds. The audible note tail extended but the next note still began at its old timestamp. They also requested a prominently visible overall piece-speed control that genuinely slows the composition. **Important musical direction:** preserve the natural acoustic envelope and decay of piano samples; do NOT invent artificial sustain, a held pedal, or change piano timbre to force long notes to remain audible.
+
+### Root cause verified in source
+
+- Original `noteSettings()` edited only `note.d` (release duration), not the subsequent notes' `n.at` values. Playback schedules notes by absolute onset, so later notes were not delayed when a prior note was lengthened.
+- Existing BPM control was hidden under `Edit notes & timing`. It did scale notes in seconds, but was not a visible, clearly labeled score-level speed control.
+- The old save guard used `!silence.value`; the legitimate zero-second rest value was falsy, potentially preventing users from saving note duration changes when there was no rest before the note.
+- The existing AI ABC `Q:` header is not currently imported as Studio BPM. The new control displays **e.bpm**, which is the BPM that actually determines note onset/duration in Goosh (rather than claiming to display the source ABC tempo).
+- `audio.js` has a natural fade, short tail and approximately six-second sample/voice maximum. The user's instruction is to preserve natural piano behavior, not prolong sample playback artificially.
+
+### Changes implemented
+
+1. **`web/src/app.js` – `retimeNote(note, newDuration, newRest, restChanged)`:** Computes the selected note's original onset, earlier sounding end, and duration delta. A new duration shifts every **later onset** (strictly greater than the selected note's onset) by the duration difference, preserving the existing inter-note gaps/rests. Simultaneously played notes at exactly the selected onset are not split apart. For example, with notes at seconds 0, 1, 2, changing the first note from 1 second to 4 seconds shifts the latter onsets to 4 and 5 seconds while leaving their durations unchanged. Shortening works in the other direction. The selected note's own onset is unchanged unless the user explicitly changes its rest-before setting.
+2. **Rest-before editing:** If requested, shifts the selected onset and all notes starting there or after it by the requested rest change. If both rest-before and duration change together, the two shifts are combined precisely once. A zero-second rest is explicitly valid. The helper rejects changes that would yield negative or out-of-range onset timestamps instead of corrupting the saved model, and reports a field-level validity message, not a browser alert.
+3. **Transport synchronization:** Editing note timing stops and clears the current score transport before writing new note times. This prevents already-scheduled audio from continuing with old timestamps while the score shows newly edited timings. Notes, freqs and samples are otherwise unchanged; next Play uses the updated onsets and durations. The playback-note marker continues to follow the new timing.
+4. **`setEtudeTempo(nextBpm)`:** Applies one global factor `oldBpm / newBpm` to every `n.at` and `n.d` and saves the new `e.bpm`. This proportionally scales **note lengths and silent gaps together**, preserving phrase structure and musical pitch. E.g. 90→60 BPM multiplies all times by 1.5; reducing tempo is audible as a slower sequence. Stops prior scheduled playback before rescaling. The existing valid BPM range (20–300) is respected.
+5. **Visible UI:** Added a `Tempo / سرعت` control to the Studio score toolbar, immediately beside transport buttons, with an interactive range slider, precisely editable BPM number and BPM unit. Both controls stay synchronized. Removed the duplicate hidden BPM control from `Edit notes & timing` to avoid inconsistent editing paths.
+6. **`web/style.css`:** Uses existing Goosh colors and tokens; tempo slider and number remain accessible on desktop and move to a full-width line below score transport on small screens, without horizontal overflow. `web/index.html` updates only the cache-busting app import.
+7. **Audio intentionally unchanged:** No changes to `web/src/audio.js`, piano envelope, six-second cap, audio playback rate or sample data. A long note may naturally fade before its written/scheduled duration ends; the next note still starts at the proper updated time. Paused/Stop transport implementation was not refactored.
+
+### Validation and edge cases to verify
+
+- Note 1s→4s: shift all later onsets +3s; note 1s→0.5s: shift later onsets -0.5s; keep existing silence gaps intact. Simultaneous note starts remain simultaneous.
+- Change rest-before with and without duration; entering zero rest must save. Invalid negative timeline after shortening overlapping notes must not corrupt data.
+- Tempo change 90→60: all onsets/durations and gaps ×1.5; 60→90 returns to original values within normal floating-point accuracy. Staff notation is derived from duration/BPM and thus retains rhythmic values at different speeds.
+- Play, pause, stop, playback markers and the active tone use updated audio onsets. New edits stop stale scheduled playback.
+- Desktop/mobile layout; empty etudes; imported and AI-generated etudes. No live audio listening test or on-device UI verification is claimed.
+
+### Explicit non-goals
+
+Do **not** synthesize extra sustain for a piano, force notes to play until their notated ending, reorder the user's existing notes, modify ABC generation or core music theory, or add a second backend. Time edits here affect the Studio etude as a whole without changing the audio instrument's natural decay.
+
+---
+
 ## 2026-11-20 — Studio playback active-note marker
 
 **Request:** while playing an etude in Studio, visually indicate exactly which notation note is sounding. Do **not** alter the Play button, add Pause/Stop controls, or refactor transport/audio.
