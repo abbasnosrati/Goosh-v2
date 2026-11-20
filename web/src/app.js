@@ -427,26 +427,6 @@ function studio() {
     }
     render()
   }
-  btn(r, t('Pen', 'قلم'), () => {
-    pen = !pen;
-    render()
-  }).classList.toggle('active', pen);
-  btn(r, t('Play', 'پخش'), () => {
-    unlock();
-    for (const n of e.notes) voice(freq(e, n.m), n.at)(n.d)
-  });
-  btn(r, '−', () => {
-    zoom = Math.max(.4, zoom - .2);
-    sheet()
-  }, t('Zoom out', 'کوچک‌نمایی'));
-  btn(r, '+', () => {
-    zoom = Math.min(3, zoom + .2);
-    sheet()
-  }, t('Zoom in', 'بزرگ‌نمایی'));
-  btn(r, t('Wrap staff', 'چندخطی'), () => {
-    wrap = !wrap;
-    render()
-  }).classList.toggle('active', wrap);
   piano(panel, (m, at) => {
     if (!rec) return;
     const n = {
@@ -465,6 +445,28 @@ function studio() {
   });
   el('h2',panel,t('Score','خط حامل'),'score-title');
   el('div', panel, undefined, 'score')
+  const scoreActions = row(panel);
+  scoreActions.classList.add('score-actions');
+  btn(scoreActions, t('Pen', 'قلم'), () => {
+    pen = !pen;
+    render()
+  }).classList.toggle('active', pen);
+  btn(scoreActions, t('Play', 'پخش'), () => {
+    unlock();
+    for (const n of e.notes) voice(freq(e, n.m), n.at)(n.d)
+  });
+  btn(scoreActions, '−', () => {
+    zoom = Math.max(.4, zoom - .2);
+    sheet()
+  }, t('Zoom out', 'کوچک‌نمایی'));
+  btn(scoreActions, '+', () => {
+    zoom = Math.min(3, zoom + .2);
+    sheet()
+  }, t('Zoom in', 'بزرگ‌نمایی'));
+  btn(scoreActions, t('Wrap staff', 'چندخطی'), () => {
+    wrap = !wrap;
+    render()
+  }).classList.toggle('active', wrap);
   const timing = el('details', panel, undefined, 'controls');
   el('summary', timing, t('Edit notes & timing', 'ویرایش نت و زمان'));
   const edit = row(timing);
