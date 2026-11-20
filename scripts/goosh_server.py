@@ -18,24 +18,20 @@ PROJECT = Path(__file__).resolve().parent.parent
 WEB_ROOT = PROJECT / "web"
 PRACTICE_CATALOG = json.loads((WEB_ROOT / "practice-goals.json").read_text(encoding="utf-8"))
 PRACTICE_GOALS = {g["id"]: g for g in PRACTICE_CATALOG["goals"]}
+MUSIC_CATALOG = json.loads((WEB_ROOT / "music-systems.json").read_text(encoding="utf-8"))
+MUSIC_SYSTEMS = {item["id"]: item for item in MUSIC_CATALOG["systems"]}
 MODELS = {
-    "shur": {
-        "name": "شور", "tonic": "G4", "microtone": "Ak4",
-        "pitches": ["G4", "Ak4", "Bb4", "C5", "D5", "Eb5", "F5", "G5"],
-    },
-    "segah": {
-        "name": "سه‌گاه", "tonic": "Ek4", "microtone": "Ek4",
-        "pitches": ["Ek4", "F4", "G4", "Ak4", "B4", "C5", "D5", "Ek5"],
-    },
-    "mahur": {
-        "name": "ماهور", "tonic": "C4", "microtone": None,
-        "pitches": ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"],
-    },
-    "homayun": {
-        "name": "همایون", "tonic": "G4", "microtone": "Ak4",
-        "pitches": ["G4", "Ak4", "B4", "C5", "D5", "Ek5", "F5", "G5"],
-    },
+    item["id"]: {
+        "name": item["label"]["fa"],
+        "tonic": item["tonic"],
+        "microtone": item["microtone"],
+        "pitches": item["pitches"],
+    }
+    for item in MUSIC_SYSTEMS["iranian"]["styles"]
 }
+WESTERN_SCALES = {item["id"]: item for item in MUSIC_SYSTEMS["western"]["styles"]}
+WESTERN_TONICS = {item["id"]: item for item in MUSIC_CATALOG["tonics"]}
+
 RHYTHM = [1, 1, 1, 1, .5, .5, 1, 2, 1, .5, .5, 2, 1, 1, 1, 1]
 SEMITONES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 CENTS = {"": 0, "#": 100, "b": -100, "k": -50, "s": 50}
@@ -150,28 +146,78 @@ class APIError(Exception):
         super().__init__(message)
 
 
-def generate_etude(dastgah, goals=None):
-    if not isinstance(dastgah, str):
-        raise APIError(400, "Unsupported dastgah.")
+def make_western_mode(scale, tonic):
+    """Derive diatonic note tokens from the canonical catalog.
+
+    Prefer an enharmonic tonic spelling that keeps all seven scale degrees
+    within the existing score engine's single-sharp/single-flat notation.
+    No second hand-maintained list of allowed pitches or scales.
+    """
+    definition = WESTERN_SCALES.get(scale)
+    tonic_data = WESTERN_TONICS.get(tonic)
+    if definition is None or tonic_data is None:
+        raise APIError(400, "Unsupported Western scale or tonic.")
+    letters = "CDEFGAB"
+    candidates = []
+    for root in tonic_data["spellings"]:
+        start = letters.index(root[0])
+        initial = (4 + 1) * 12 + SEMITONES[root[0]]
+        initial += {"#": 1, "b": -1, "": 0}[root[1:]]
+        tokens = []
+        deviations = 0
+        for index, interval in enumerate(definition["intervals"]):
+            letter = letters[(start + index) % 7]
+            octave = 4 + (start + index) // 7
+            natural = (octave + 1) * 12 + SEMITONES[letter]
+            delta = initial + interval - natural
+            if delta not in (-1, 0, 1):
+                break
+            suffix = {1: "#", -1: "b", 0: ""}[delta]
+            tokens.append(letter + suffix + str(octave))
+            deviations += abs(delta)
+        if len(tokens) == 8:
+            candidates.append((deviations, tokens))
+    if not candidates:
+        raise APIError(400, "Selected scale needs accidentals that this score cannot represent.")
+    _, notes = min(candidates, key=lambda candidate: candidate[0])
+    return {
+        "name": notes[0][:-1] + " " + definition["label"]["en"],
+        "tonic": notes[0],
+        "microtone": None,
+        "pitches": notes,
+    }
+
+
+def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, tonic="C"):
+    if music_system not in MUSIC_SYSTEMS:
+        raise APIError(400, "Unsupported musical system.")
     if goals is None: goals = []
     if not isinstance(goals, list) or len(goals) > 10 or any(not isinstance(g, str) or g not in PRACTICE_GOALS for g in goals):
         raise APIError(400, "Invalid practice goals.")
-    mode = MODELS.get(dastgah)
-    if mode is None:
-        raise APIError(400, "Unsupported dastgah.")
+    if music_system == "western":
+        mode = make_western_mode(scale, tonic)
+        prompt_intro = ("Compose a tonal, monophonic ear-training etude in Western " +
+                        mode["name"] + ". Respect this scale and make its characteristics audible.")
+    else:
+        mode = MODELS.get(dastgah) if isinstance(dastgah, str) else None
+        if mode is None:
+            raise APIError(400, "Unsupported dastgah.")
+        prompt_intro = "Compose a simple monophonic beginner etude inspired by Persian dastgah " + mode["name"] + "."
     model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 
     prompt = "\n".join([
-        "Compose a simple monophonic beginner etude inspired by Persian dastgah " + mode["name"] + ".",
+        prompt_intro,
         "Write 4 bars of 4/4, exactly 16 notes and four notes per bar.",
         "Use only these exact pitch tokens: " + ", ".join(mode["pitches"]) + ".",
         "Start and end on the tonic " + mode["tonic"] + ".",
         "Use a clear motif, small melodic movement, and a final cadence.",
         "Quarter-note durations by bar: [1,1,1,1] [0.5,0.5,1,2] [1,0.5,0.5,2] [1,1,1,1].",
-        "k means koron (-50 cents), s means sori (+50 cents), b is a flat.",
+        "In pitch tokens # is a sharp and b is a flat (one semitone).",
+        "k means koron (-50 cents), s means sori (+50 cents) in Iranian repertoire only.",
         "Return JSON fields title, abcNotation, and notes with pitch, duration, and frequency.",
         "For ABC use X:, T:, M:4/4, L:1/4, K:none; _/ means koron and ^/ means sori.",
-        "C4 is middle C. This is a simplified POC, not an authentic performance tuning.",
+        "C4 is middle C. Keep the composition inside the supplied scale and pitch range.",
+        "Iranian tuning in this application is simplified and not an authentic performance tuning.",
         "Return only the requested JSON.",
     ])
     teaching = "\n".join(PRACTICE_GOALS[g]["label"]["en"] + ": " + PRACTICE_GOALS[g]["aiGuidance"] for g in dict.fromkeys(goals))
@@ -184,17 +230,17 @@ def generate_etude(dastgah, goals=None):
         "response_format": {
             "type": "json_schema",
             "json_schema": {
-                "name": "persian_etude",
+                "name": "goosh_etude",
                 "strict": True,
                 "schema": response_schema(mode),
             },
         },
         "messages": [
-            {"role": "system", "content": "Compose Persian-inspired beginner etudes as structured JSON."},
+            {"role": "system", "content": "Compose beginner etudes in the requested musical system as structured JSON."},
             {"role": "user", "content": prompt},
         ],
     }
-    if dastgah == "shur":
+    if music_system == "iranian" and dastgah == "shur":
         # Send the user's ABC-only 8-bar prompt unmodified. Convert its answer
         # to the existing Studio JSON contract server-side (no second model).
         payload = {
@@ -208,7 +254,7 @@ def generate_etude(dastgah, goals=None):
 
     try:
         content = result["choices"][0]["message"]["content"]
-        if dastgah == "shur":
+        if music_system == "iranian" and dastgah == "shur":
             return parse_abc_etude(content, get_frequency)
         parsed = json.loads(content)
         return normalise_etude(parsed, mode)
@@ -368,7 +414,9 @@ class GooshHandler(SimpleHTTPRequestHandler):
             self.send_json(400, {"error": "Invalid JSON body."})
             return
         try:
-            result = (generate_etude(body.get("dastgah"), body.get("practiceGoals"))
+            result = (generate_etude(body.get("dastgah"), body.get("practiceGoals"),
+                                     body.get("musicSystem", "iranian"),
+                                     body.get("scale"), body.get("tonic", "C"))
                       if endpoint == "/api/generate-etude" else design_practice(body))
         except APIError as error:
             self.send_json(error.status, {"error": str(error)})
