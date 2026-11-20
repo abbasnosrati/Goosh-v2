@@ -1035,11 +1035,11 @@ function studio() {
   });
   const scoreHeading = el('div', panel, undefined, 'score-heading');
   el('h2',scoreHeading,signatureMode
-    ? t('Key Signature Editor','تنظیم سرکلید')
-    : t('Score','خط حامل'),'score-title');
+    ? t('Back to Score','بازگشت به خط حامل')
+    : t('Edit Key Signature','ویرایش سرکلید'),'score-title');
   const signatureAction = signatureMode
-    ? t('Return to score', 'بازگشت به خط حامل')
-    : t('Edit key signature', 'ویرایش سرکلید');
+    ? t('Back to Score', 'بازگشت به خط حامل')
+    : t('Edit Key Signature', 'ویرایش سرکلید');
   const keyButton = btn(scoreHeading, '', () => {
     stopSignaturePreview();
     if (!signatureMode) {
