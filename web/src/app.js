@@ -689,7 +689,7 @@ function sheet() {
       if(!measuredEditAllowed(candidate)){
         meterMessage(
           'This move does not fit the current meter or prepared measures.',
-          'این جابه‌جایی با کسر میزان یا تعداد میزان‌های فعلی سازگار نیست.'
+          'این جابه‌جایی با میزان‌نما یا تعداد میزان‌های فعلی سازگار نیست.'
         );
         return;
       }
@@ -797,7 +797,7 @@ function noteSettings(note) {
     if (!retimeNote(note, length, before, silence.value !== initialRest)) {
       duration.setCustomValidity(t(
         'This timing cannot be written exactly in the selected meter.',
-        'این زمان‌بندی در کسر میزان انتخابی به‌طور دقیق قابل نت‌نویسی نیست.'
+        'این زمان‌بندی در میزان‌نما انتخابی به‌طور دقیق قابل نت‌نویسی نیست.'
       ));
       duration.reportValidity();
       duration.setCustomValidity('');
@@ -1404,9 +1404,9 @@ function studio() {
   scoreBelowActions.hidden=signatureMode;
 
   const meterWrap=el('label',scoreBelowActions,undefined,'score-meter-control');
-  el('span',meterWrap,t('Time signature','کسر میزان'));
+  el('span',meterWrap,t('Time signature','میزان‌نما'));
   const meterSelect=el('select',meterWrap);
-  meterSelect.setAttribute('aria-label',t('Time signature','کسر میزان'));
+  meterSelect.setAttribute('aria-label',t('Time signature','میزان‌نما'));
   for(const meter of METER_PRESETS){
     const name=meter==='none'?t('Free (no meter)','آزاد (بدون میزان)'):meter;
     const option=el('option',meterSelect,name);
@@ -1419,7 +1419,7 @@ function studio() {
     if(meterTimeline(proposed).issues.length){
       meterMessage(
         'This etude contains timing that cannot be written exactly in '+selected+'. Adjust note/rest durations first or use Free.',
-        'زمان‌بندی این اتود در کسر میزان '+selected+' قابل نت‌نویسی دقیق نیست. ابتدا کشش نت‌ها و سکوت‌ها را اصلاح کنید یا حالت آزاد را نگه دارید.'
+        'زمان‌بندی این اتود در میزان‌نما '+selected+' قابل نت‌نویسی دقیق نیست. ابتدا کشش نت‌ها و سکوت‌ها را اصلاح کنید یا حالت آزاد را نگه دارید.'
       );
       meterSelect.value=e.meter||'none';
       return;
@@ -1573,7 +1573,7 @@ function practice() {
   const p = el('section', app, undefined, 'practice-panel');
   el('h2', p, e.title || t('Your etude', 'اتود شما'));
   const activeMeter=meterInfo(e);
-  if(activeMeter) el('p',p,t('Time signature','کسر میزان')+': '+
+  if(activeMeter) el('p',p,t('Time signature','میزان‌نما')+': '+
     activeMeter.meter+' · '+t('Measures','میزان‌ها')+': '+
     meterTimeline(e).bars.length,'practice-meter-summary');
   if(!e.notes.length){
