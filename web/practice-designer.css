@@ -118,7 +118,7 @@
   margin:0;border-color:var(--line);background:var(--panel);color:var(--ink);
 }
 #app[data-page="studio"] .practice-action-wrap button:disabled {
-  opacity:.45;cursor:not-allowed;
+  opacity:.45;cursor:not-allowed;pointer-events:none;
 }
 #app[data-page="studio"] .practice-action-wrap.needs-goal:focus-visible {
   outline:2px solid var(--accent);outline-offset:3px;border-radius:8px;
