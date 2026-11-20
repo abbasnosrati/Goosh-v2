@@ -576,3 +576,83 @@ Do not fix or extend these issues speculatively. Ask for or follow a **specific 
 - No changes were made to the score engraving/marker implementation, AI generation, etude list, audio samples, or practice evaluation. No browser/device playback testing has been claimed.
 
 Manual checks: Play→Stop→Play returns to note 1; Play→Pause→Resume continues from its position; Play→Stop while paused resets; rapid repeated Play/Stop clicks do not layer the score audio; live piano keys remain independent; Record appears at the far right in both RTL/LTR.
+
+## Studio Score editing tools and playback indicator (2026-11-20)
+
+**Scope and branch:** `redesign` only. This section documents the user's four requests in detail. Do not apply these changes to `main`. The existing Score transport (Play/Stop/Pause/Resume), Record control, note-highlight timing logic, and all unrelated Studio features were intentionally preserved.
+
+### A. Playback indication: small arrow instead of a ring
+
+**File:** `web/src/score.js`; `score()` → local `note()` renderer.
+
+- Removed the old transparent playback-indicator circle with radius `12.5` surrounding each notehead.
+- Draw a **small downward-pointing arrow** using an SVG `path`, `fill:none`, `stroke:var(--accent)`, stroke width `2`, round joins/caps, and default `opacity:0`.
+- Position the arrow slightly offset from the notehead: `indicatorX = x + (y >= 86 ? -12 : 12)`. For notes with upward stems the arrow sits left of the stem; for notes with downward stems it sits right. Its stem runs from `y - 25` to `y - 14`; the tip stops above the notehead with a small gap, rather than circling/obscuring it.
+- Keep `data-playback-note:index` on the SVG path. The existing playback-marker functions in `web/src/app.js` still query this attribute and toggle `opacity` to `1`/ `0` by current note index, including simultaneous notes, sorting, wrapped rows, pauses, resumes and stops.
+- Set `pointer-events:none` so the arrow cannot intercept note clicks. The separate transparent note hit area remains available for editing.
+- No changes to the score timing, note values, stems, accidentals, engraving geometry or the audio transport.
+
+### B. Select / Pen / Eraser toolbar
+
+**File:** `web/src/app.js`.
+
+- Replaced the former standalone text Pen toggle with three adjacent **SVG icon-only buttons**, rendered at the beginning of the existing Score toolbar (under the Score heading, above the staff): **Select** (mouse-pointer icon), **Pen** (pencil icon), and **Eraser** (eraser icon).
+- Each button provides a localized English/Persian `title` and `aria-label`, plus `aria-pressed` reflecting the active tool. The active button gets the existing `active` class.
+- Tool state is a single mutually exclusive `scoreTool` value, initialized to `'select'`. Allowed modes: `'select'`, `'pen'`, `'eraser'`. This replaces the prior boolean `pen` flag. `loadRoute()` resets to Select when opening another etude/route.
+- Clicking a tool sets `scoreTool` and calls the existing `render()`; clicking the already active tool does nothing. No second editor or toolbar was introduced.
+- Existing Play/Stop/Pause/Resume, zoom controls, Wrap staff, and right-aligned Record remain in the same toolbar with their prior handlers and state.
+
+**Select (normal mouse cursor):**
+
+- This is the default mode and the explicit way to leave Pen or Eraser.
+- Mouse uses its normal cursor (the custom cursor property is removed).
+- Clicking an existing note uses the previous selection flow and opens `noteSettings()`; Shift/Ctrl/Meta multi-selection is retained.
+- Clicking blank staff does not insert/delete anything.
+
+**Pen (pencil cursor):**
+
+- Adds a new note **only when clicking blank space on the staff** via the existing `score(..., {insert})` callback.
+- Keeps the prior insertion behavior: MIDI pitch and timing are computed by the score renderer and default new duration remains `60 / e.bpm`. Save using `save()`, then redraw using `sheet()`.
+- Clicking an existing note does not open Note settings or erase it while Pen is active.
+- Staff cursor becomes a small custom pencil SVG, with its drawing tip as the click hotspot; fallback is `crosshair`. Cursor applies to the staff SVG and its child note/overlay elements.
+
+**Eraser (eraser cursor):**
+
+- Clicking an existing note's transparent notehead hit target invokes `pick(index, ...)` and removes exactly that note from `e.notes` using `splice(index, 1)`. This index is the original array index even if notes are sorted for display or wrapped.
+- Stops any active Score transport first, preventing stale playback markers or scheduled audio from referring to deleted notes.
+- Clears selected indices (`sel.clear()`), persists the mutated etude with `save()`, and immediately redraws the score with `sheet()`.
+- Clicking empty staff does nothing; no note is created, and the existing note settings modal is not opened.
+- No browser `alert()` or `confirm()` is used for per-note erasing. This is direct editor behavior, not whole-etude deletion.
+- Staff cursor becomes a custom eraser SVG with a hotspot near its contact edge and a `crosshair` fallback.
+- Existing recording guard (`if (rec) return`) still prevents note selection/erasure while actively recording.
+
+### C. Mouse cursors and responsive UI styling
+
+**Files:** `web/src/app.js`, `web/style.css`.
+
+- `scoreToolIcon(mode)` generates the Select/Pen/Eraser toolbar SVG icons using `document.createElementNS()`; no new icon library or external image dependency was added.
+- `scoreEditingCursor(mode)` builds a small inline 32×32 SVG and encodes it with `encodeURIComponent` as a CSS `data:image/svg+xml` cursor. The Pen hotspot is `3 29`, the Eraser hotspot is `7 23`.
+- `sheet()` updates `.score[data-tool]` and sets/removes the CSS `--score-tool-cursor` custom property for the active mode.
+- New narrowly scoped CSS rules style 44×44 minimum tool buttons, SVG strokes, active border, and apply the custom cursor consistently on `.score`, nested `svg` and child SVG shapes. This prevents the default cursor of note hit targets from overriding the chosen tool.
+- These rules are confined to `#app[data-page="studio"]`. Practice, Home, etude-library cards and theme tokens were not edited.
+- Native SVG cursor support may vary by browser; `crosshair` is the explicit fallback. Touch interaction still uses the selected toolbar tool; there is no hover cursor on touchscreens.
+
+### D. Files updated and cache versions
+
+1. `web/src/score.js`: replace the playback ring with the offset arrow only.
+2. `web/src/app.js`: mutually exclusive tool state; toolbar SVG controls; note deletion via existing Score pick callback; encoded cursor helpers; import score renderer using `./score.js?v=playback-arrow-tools-1`.
+3. `web/style.css`: scoped Score editing-button styles and pen/eraser cursors.
+4. `web/index.html`: set stylesheet/script cache query values to `score-edit-tools-1` so the updated toolbar, mouse cursors and arrow load without stale browser assets.
+5. `CODEX_AI_ETUDE_HANDOFF.md`: this precise implementation record.
+
+### E. Manual verification checklist for Codex (NOT automatically passed)
+
+1. Open an etude on `redesign`. The Score toolbar begins with icon-only Select, Pen and Eraser; Select is active by default, all icons have accessible labels, and Record is still on the far right.
+2. Play notes with stems in both directions, including simultaneous notes, rests, and multiple wrapped systems. Confirm a **small arrow with slight separation** appears near each sounding note, not a circle. Stop clears it; Pause freezes it; Resume progresses it.
+3. Select Pen. Hover on the staff and directly over existing noteheads. The mouse cursor should look like a pencil rather than an ordinary pointer. Click blank staff: one correctly timed note is inserted and persists after reload. Click an existing note: no settings dialog appears.
+4. Select Eraser. Confirm eraser cursor on the staff and noteheads. Erase a note from a middle row and a note from a chord; only the clicked note is removed and the change persists on reload. Blank clicks do nothing.
+5. Return to Select with the mouse-pointer icon. The ordinary cursor returns, note-selection and Note settings work normally, and Shift/Ctrl/Meta selection still works.
+6. Test switching tools during playback and while recording. Active playback should not stack or retain stale note indexes after erasing; recording should still prevent erasure. Try desktop and narrow/touch layouts, LTR/RTL and light/dark themes.
+7. Ensure no changes were introduced to piano audio, etude export/import, AI generation, practice scoring, the generated rhythmic notation, or unrelated pages.
+
+**Verification status:** JavaScript source syntax and the intended DOM/CSS wiring were checked at source level. The browser, mobile/WebView, audio output and real pointer-cursor rendering were not exercised here; do not mark these manual checks as passed without actually executing them.
