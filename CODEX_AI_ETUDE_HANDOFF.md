@@ -1301,3 +1301,21 @@ Open Studio's normal Score view: the treble-clef switch button appears immediate
 4. **`web/index.html`:** Updated the app.js cache version to `outside-score-select-1`. **No CSS**, tuning behavior, note data, Score editing algorithms or other routes were changed.
 
 **Manual checks:** Select Pen, click inside score (should remain Pen), click elsewhere (should become Mouse/Select); repeat for Eraser. Check selecting Pen/Eraser by toolbar click still works. Check unrelated input focusing/clicks, modal dialogs, RTL/LTR and Practice/Home do not suffer side effects. No live browser QA was performed; this was checked by syntax and source inspection only.
+
+## Editor switch becomes a single icon-and-label button (2026-11-20)
+
+**Branch:** `redesign`. **Requested UX correction:** The user rejected the previous separate large action heading ("Edit Key Signature" / "Back to Score") plus an icon-only button with swap arrows. There must instead be exactly **one clickable button** incorporating the appropriate musical symbol **and** the corresponding visible text. In the normal Score editor this is **treble clef icon + Edit Key Signature**; in the Key Signature Editor it is **notation staff with two notes icon + Back to Score**. Crucially, the Back to Score state must **not** have the filled, accent-colored active background.
+
+### Scoped source changes
+
+1. **`web/src/app.js` → `studio()`:** Kept the existing `div.score-heading` container, but removed the redundant `h2.score-title` that repeated the editor action label. The existing `button.score-tool-button.signature-toggle` now contains an SVG musical icon followed by `span.signature-toggle-label` containing the localized `signatureAction` string. Its text shows **Edit Key Signature / ویرایش سرکلید** when `signatureMode` is false, and **Back to Score / بازگشت به خط حامل** when true. The inline text span uses `dir="auto"` for Persian/English correctness.
+2. Preserved the **existing approved music icons** unchanged: `scoreSignatureIcon()` for the treble clef, and `scoreReturnStaffIcon()` for the five-line staff with two notes. Removed only the unused `scoreEditorSwitchArrowsIcon()` helper and no longer appended two-way arrows, which had made the button look cluttered. The toggle's `signatureMode = !signatureMode; render()`, initial selection, audio cleanup, `data-signature-toggle`, accessible name, tooltip and `aria-pressed` semantics were all retained.
+3. Removed the conditional `.active` class on the editor-switch button to prevent the global `button.active` CSS from applying a saturated background to Back to Score. `aria-pressed` still indicates the currently active editor for accessibility.
+4. **`web/style.css`:** Reworked only the scoped `#app[data-page="studio"] .score-heading .signature-toggle` styles to render a compact, 44px-minimum-height, unfilled button with SVG and text separated by 9px. Set transparent background and standard text color in both normal and `[aria-pressed="true"]`/pressed states, along with a subtle border, accent-colored hover border and accessible keyboard focus ring. Removed CSS for the unused swap-arrow symbol and duplicate title in the editor-switch heading. Kept the existing musical-symbol SVG sizing.
+5. **`web/index.html`:** Bumped CSS and JavaScript versions to `editor-labeled-switch-1` for reliable refresh.
+
+### Unchanged features
+Everything else in Studio remains unchanged: Key Signature Editor functions, tuning and frequency displays, piano/score editing tools, Show/Hide transport controls, audio playback, recording, AI generation, Share/PDF actions, and the separate practice settings. The prior outside-score Pen/Eraser → Select interaction is also unchanged.
+
+### Manual verification still required
+Normal Score view must show exactly one button with treble clef at the start and "Edit Key Signature" beside it. Clicking opens Key Signature Editor and makes the same button read "Back to Score" beside the staff-with-notes icon, **without filled accent background**. Clicking returns to the normal score. Confirm both languages, keyboard focus, responsive layout and themes. Source-level JavaScript parsing and static checks were performed, but there was no live browser/device visual testing.
