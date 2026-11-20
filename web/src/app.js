@@ -1049,6 +1049,9 @@ function studio() {
   keyButton.append(signatureSymbol);
   const switchLabel = el('span', keyButton, signatureAction, 'signature-toggle-label');
   switchLabel.dir = 'auto';
+  el('h2',panel,signatureMode
+    ? t('Key Signature Editor','تنظیم سرکلید')
+    : t('Score','خط حامل'),'score-title');
   const scoreActions = row(panel);
   scoreActions.classList.add('score-actions');
   for (const [mode, en, ir] of [
