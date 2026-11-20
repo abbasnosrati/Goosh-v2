@@ -124,6 +124,9 @@ export async function renderStudioPractice(host, etude, options) {
   const addAction=(text,cls,handler)=>{
     const wrapper=create('div',buttons,undefined,'practice-action-wrap');
     wrapper.tabIndex=0;
+    // Disabled buttons do not receive click/focus. Focus the surrounding
+    // surface on touch or mouse to expose the same compact tooltip.
+    wrapper.onpointerdown=()=>{if(!picker.value)wrapper.focus();};
     const action=button(wrapper,text,handler,cls);
     const tip=create('span',wrapper,tr('Select a practice goal first.','ابتدا هدف تمرین را انتخاب کنید.'),
       'practice-goal-tooltip');
