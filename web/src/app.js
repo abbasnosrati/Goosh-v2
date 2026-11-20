@@ -13,8 +13,10 @@ import {
   voice,
   liveVoice,
   microphone,
-  createScoreOutput
-} from './audio.js?v=score-transport-1'
+  createScoreOutput,
+  ready as pianoSamplesReady,
+  PIANO_TAP_RING_SECONDS
+} from './audio.js?v=score-piano-sample-articulation-1'
 import {
   score
 } from './score.js?v=meter-one-timeline-1'
@@ -51,6 +53,8 @@ let fa = localStorage.lang !== 'en',
   session = null,
   playback = null,
   scoreTransport = null,
+  scorePlaybackPending = false,
+  scorePlaybackRequestId = 0,
   scoreUndoStack = [],
   practiceToExpand = null,
   penQuarterBeats = 1
@@ -232,7 +236,7 @@ function piano(parent, onStart) {
         pressed.delete(id);
         if (!pressed.size) b.classList.remove('down');
         const d = (performance.now() - at) / 1000;
-        off(d < .18 ? 2 : Math.min(6, d));
+        off(d < .18 ? PIANO_TAP_RING_SECONDS : Math.min(6, d));
 
       })
     };
@@ -927,7 +931,7 @@ function updateScoreTransportButtons() {
   const playButton = $('[data-score-transport]');
   const pauseButton = $('[data-score-pause]');
   if (!playButton || !pauseButton) return;
-  const isActive = Boolean(scoreTransport);
+  const isActive = Boolean(scoreTransport || scorePlaybackPending);
   const mainLabel = isActive
     ? t('Stop and return to start', 'توقف و بازگشت به ابتدای قطعه')
     : t('Play score', 'پخش قطعه');
@@ -940,7 +944,7 @@ function updateScoreTransportButtons() {
   pauseButton.replaceChildren(scoreTransportIcon(scoreTransport?.paused ? 'play' : 'pause'));
   pauseButton.title = pauseLabel;
   pauseButton.setAttribute('aria-label', pauseLabel);
-  pauseButton.disabled = !isActive;
+  pauseButton.disabled = !scoreTransport;
 }
 
 function silenceScoreTransport(transport) {
@@ -960,7 +964,13 @@ function silenceScoreTransport(transport) {
 }
 
 function stopScorePlayback() {
-  if (!scoreTransport) return;
+  // Cancel a Play request while the piano samples are still loading.
+  ++scorePlaybackRequestId;
+  scorePlaybackPending = false;
+  if (!scoreTransport) {
+    updateScoreTransportButtons();
+    return;
+  }
   const transport = scoreTransport;
   scoreTransport = null;
   silenceScoreTransport(transport);
@@ -971,23 +981,50 @@ function stopScorePlayback() {
 function scheduleScoreTransport(transport) {
   transport.output = createScoreOutput();
   transport.anchor = transport.clock.currentTime;
+  const repeatGates = new Map();
+  let audibleEnd = transport.end;
   for (const n of transport.notes) {
     const remaining = n.at + n.d - transport.offset;
     if (remaining <= 0) continue;
     const delay = Math.max(0, n.at - transport.offset);
     const duration = n.at < transport.offset ? remaining : n.d;
-    const release = voice(n.hz, delay, transport.output);
-    release(duration);
+    // The app's piano key uses the SAME voice/sample, but a brief tap
+    // releases after two seconds instead of cutting at a short note end.
+    // Written lengths still determine exact attack times and score markers.
+    const ring = Math.min(6, Math.max(PIANO_TAP_RING_SECONDS, duration));
+    const startAt = transport.anchor + delay;
+    // Re-striking the same key damps the old piano string (as liveVoice
+    // does), without muting other notes of a chord or neighboring pitches.
+    repeatGates.get(n.hz)?.gain.setTargetAtTime(0, startAt, .012);
+    const gate = transport.clock.createGain();
+    gate.connect(transport.output);
+    const release = voice(n.hz, delay, gate, () => gate.disconnect());
+    release(ring);
     transport.releases.push(release);
+    repeatGates.set(n.hz, gate);
+    audibleEnd = Math.max(audibleEnd, transport.offset + delay + ring + .18);
   }
+  // Don't disconnect the instrument bus at the final notated note-off:
+  // its natural piano decay must finish like an individual key tap.
   transport.timer = setTimeout(() => {
     if (scoreTransport === transport && !transport.paused) stopScorePlayback();
-  }, Math.max(100, (transport.end - transport.offset) * 1000 + 220));
+  }, Math.max(100, (audibleEnd - transport.offset) * 1000 + 80));
 }
 
-function startScorePlayback() {
-  if (scoreTransport || !e.notes.length) return;
+async function startScorePlayback() {
+  if (scoreTransport || scorePlaybackPending || !e.notes.length) return;
+  // A click on a piano key after loading uses the decoded MP3 samples;
+  // don't play an Etude through the oscillator fallback while the same
+  // samples are still loading in the background.
   const clock = unlock();
+  const requestedEtude = e;
+  const requestId = ++scorePlaybackRequestId;
+  scorePlaybackPending = true;
+  updateScoreTransportButtons();
+  await pianoSamplesReady;
+  if (requestId !== scorePlaybackRequestId || e !== requestedEtude ||
+      page !== 'studio') return;
+  scorePlaybackPending = false;
   const notes = e.notes.map((n,index) => ({
     index, at:n.at, d:Math.min(n.d,6), hz:freq(e,n.m)
   }));
@@ -1289,7 +1326,7 @@ function studio() {
   const transportActions = el('div', scoreActions, undefined, 'score-transport-actions');
   transportActions.hidden = signatureMode;
   const playButton = btn(transportActions, '', () => {
-    if (scoreTransport) stopScorePlayback();
+    if (scoreTransport || scorePlaybackPending) stopScorePlayback();
     else startScorePlayback();
   });
   playButton.dataset.scoreTransport = '';
