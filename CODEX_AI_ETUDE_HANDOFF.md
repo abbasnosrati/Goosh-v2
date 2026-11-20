@@ -1,5 +1,16 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
+## 2026-11-20 — Musical note lengths/rest notation and Shur phrasing review
+
+**Scope:** shared SVG staff renderer and Shur AI prompt only; no piano/audio/model or unrelated UI changes.
+
+- `web/src/score.js` renders whole, half, quarter, eighth, sixteenth, thirty-second notes (open/closed heads, stems, flags), dots and visual rest symbols for gaps between sounding notes. Durations come from stored seconds divided by current BPM. This is independent of the selected AI dastgah or fixed measures, so M:none is supported.
+- Horizontal spacing responds to values. Original note indices/timing are preserved for selection and pen insertion. Non-quantized performance durations show a small beat annotation instead of changing sound data.
+- The Shur `SHUR_PROMPT` now asks for an expressive G4 shahed, A-koron secondary ist, contrasting light ornaments/long held notes, breathing rests and a sustained final G4. It keeps the original sample motif, ABC key, C4–C5 range, and the 4–20 *creative* phrase request (not parser validation).
+- This is a simple SVG engraver, not a full musical typesetter: no beam grouping, ties/slurs or display of a final rest after the last sounding note. Current Q header is not automatically applied to Studio BPM.
+- No live OpenRouter request or full UI browser acceptance test was run. Review actual generated ABC and listening quality before claiming musical authenticity.
+
+---
 ## 2026-11-20 — Follow-up: accept valid AI music beyond the requested phrase count
 
 **Observed user error:** `Invalid AI etude response: Expected 4–20 free-meter phrases, received 22.`

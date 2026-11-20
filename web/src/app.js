@@ -13,7 +13,7 @@ import {
 } from './audio.js?v=7237d72'
 import {
   score
-} from './score.js'
+} from './score.js?v=rhythm-values-1'
 import { generateStudioEtude } from './ai-etude.js?v=khara-free-phrases-3'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),

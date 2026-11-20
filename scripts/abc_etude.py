@@ -103,6 +103,22 @@ STRICT RULES:
     Do not make every phrase the same length.
     Do not mechanically repeat the reference motif.
 
+11. Make shahed and ist audible through sustained note values and breath:
+    - Introduce G4 as the principal shahed with a meaningful held
+      duration after a short F4-G4 pickup, then revisit it with variation.
+    - Let A Koron be a genuine secondary resting point with a pause;
+      do not force every internal phrase to finish on G4.
+    - Contrast light ornaments (short 1 or 2-unit notes) with selected
+      4, 6, 8 or 12-unit notes on musically structural pitches.
+      Include pauses such as z2 and z4 between ideas.
+    - Avoid chains of equal-length notes, formulaic repeated contours
+      and merely ascending/descending scales.
+    - Shape an opening, development, high point and natural answer.
+    - Let the final G4 ist be a sustained resolution (G8 or G12
+      when suitable), not a fleeting passing tone.
+    - These values are examples, not a fixed beat grid or mandated
+      sequence. Preserve irregular free-meter phrasing.
+
 
 GUSHEH CONSTRAINTS & SETTINGS (JSON):
 
@@ -130,7 +146,7 @@ GUSHEH CONSTRAINTS & SETTINGS (JSON):
     },
     "variableNotes": ["Ek4"],
     "sampleMotif": "L:1/16\nQ:1/4=60\nG4 F G4 | F G4 | F G _/E F D2 | z _/E D E F D _/E C2 | z4 | C D _/E F G4 | F G4 | C D _/E F G A B4 A2 G8 | A4 | F G4 G4 |]",
-    "melodicRules": "Begin with anchored G4 motifs featuring quick lower-neighbor pickup notes (F4-G4). Descend into the lower tetrachord (G4 down to C4) alternating deliberately between Mi Koron (Ek4) and Mi Flat (Eb4) with brief rests between phrases. Ascend rapidly from C4 through Ek4, F4, G4, and Ak4 up to Bb4 (or touching C5), pause distinctly on La Koron (Ak4) as a secondary stop, and resolve cleanly via F4-G4 onto G4."
+    "melodicRules": "Begin with anchored G4 motifs featuring quick lower-neighbor pickup notes (F4-G4). Descend into the lower tetrachord (G4 down to C4) alternating deliberately between Mi Koron (Ek4) and Mi Flat (Eb4) with brief rests between phrases. Ascend rapidly from C4 through Ek4, F4, G4, and Ak4 up to Bb4 (or touching C5), pause distinctly on La Koron (Ak4) as a secondary stop, and resolve cleanly via F4-G4 onto G4. Give shahed G4 and secondary ist Ak4 greater structural weight through varied held note values and breathing rests. Keep passing ornaments short, vary note durations substantially, and sustain the final G4 ist."
   }
 }
 
