@@ -25,6 +25,14 @@ export function unlock() {
   return c
 }
 
+// Separate Score playback from live piano voices while keeping the same mix.
+export function createScoreOutput() {
+  const c = unlock();
+  const output = c.createGain();
+  output.connect(bus);
+  return output;
+}
+
 function synth(hz, delay, output, onEnded) {
   const c = unlock(),
     t = c.currentTime + delay,
