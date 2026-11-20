@@ -563,3 +563,16 @@ Do not fix or extend these issues speculatively. Ask for or follow a **specific 
 - Only the location of the existing controls within `studio()` in `web/src/app.js` was changed; the original event handlers, active state, and functional behavior are preserved.
 - Bumped the JavaScript import query in `web/index.html` to invalidate cached scripts. No CSS/audio/practice/AI logic changes.
 - Source layout inspected; live browser/device visual verification not performed.
+
+### Score transport and Record alignment (2026-11-20)
+
+- Branch: `redesign`. Implemented only the user-requested Studio transport controls and Record placement.
+- Replaced the Score Play text button with an icon-only Play control. During playback, that same control shows a Stop-square icon; clicking Stop immediately fades the Studio Score audio and resets playback to the beginning.
+- Added a separate icon-only Pause control immediately next to Play. It is disabled until playback starts; when paused it becomes a Resume/Play icon, and resumes from the saved elapsed position. The Stop control remains available while paused.
+- Play cannot start overlapping playbacks: one `scoreTransport` object owns the scheduled voices and output gain node. Clicking the changed Play/Stop control again stops the current instance rather than launching another.
+- The Score playback gain node is isolated from live piano sound, so stopping/pausing the score does not silence the entire audio engine. The existing note-highlight marker functions in `app.js` remain unchanged; transport updates their state on start, pause, resume, and stop.
+- Moved the existing Record button into the same Score toolbar, anchored to the **physical far right**, with an SVG record/stop icon plus localized label. Its existing Record/Stop handler and keyboard shortcut remain unchanged. The Score toolbar remains directly below the Score heading and above the staff.
+- Changed files: `web/src/audio.js` (isolated score output), `web/src/app.js` (transport logic and controls), `web/style.css` (scoped toolbar icons and Record alignment), `web/index.html` (cache-busting versions).
+- No changes were made to the score engraving/marker implementation, AI generation, etude list, audio samples, or practice evaluation. No browser/device playback testing has been claimed.
+
+Manual checks: Play→Stop→Play returns to note 1; Play→Pause→Resume continues from its position; Play→Stop while paused resets; rapid repeated Play/Stop clicks do not layer the score audio; live piano keys remain independent; Record appears at the far right in both RTL/LTR.
