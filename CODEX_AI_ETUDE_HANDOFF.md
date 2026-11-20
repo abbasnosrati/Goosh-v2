@@ -1,5 +1,19 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
+## 2026-11-20 — Studio editor-switch button first, with actual G-clef icon
+
+**Request:** Two narrowly scoped UI changes to the Studio Score toolbar: (1) place the existing toggle that switches between the normal note score and the key-signature editor at the very beginning, ahead of Mouse/Select; (2) replace the toggle's former multi-line staff/sharp/note illustration with the actual treble-clef symbol (𝄞). No new toggle or mode, and no transport or tuning changes.
+
+**Code change — `web/src/app.js`:** Lifted the already-existing `keyButton` creation from inside the `if(mode==='select')` branch of the tool loop and inserted it directly after `scoreActions` is created, before the `for (select, pen, eraser)` loop. This creates the DOM order **editor toggle → Select/Mouse → Pen → Eraser → other controls**. The callback still stops the active tuning preview, stops playback when entering signature mode, picks the existing configured signature pitch, toggles `signatureMode`, and calls `render()`. The original context-sensitive tooltip/`aria-label` (Edit key signature vs Return to score), `aria-pressed`, active state, `signature-toggle` class and dataset are all retained. In signature-editing mode, the edit tools continue being hidden as before.
+
+**Icon change — `scoreSignatureIcon()`:** Replaced the old SVG staff-with-sharps/staff-with-notes switching artwork with one consistent treble-clef (G-clef, Unicode U+1D11E) rendered as an inline SVG `<text>`, using the same musical symbol already used in Goosh's existing score staff. The icon inherits `currentColor`, stays decorative with `aria-hidden=true`, and the parent button continues owning accessibility. Existing `.signature-toggle svg` size/styling is reused; no external image or new icon dependency is added. Music-font fallback is `Noto Music`, `Bravura`, `Segoe UI Symbol`, serif, consistent with the app's staff.
+
+**Other files:** `web/index.html` only updates the existing `app.js` cache-busting import to display the new order/icon after refresh. This Codex section is included **in the same commit** as the code. No changes to CSS, other controls, `web/src/score.js`, `web/src/key-signature.js`, data model, piano samples, audio timing, pitch tuning, or AI generation.
+
+**Verification:** Check the toolbar DOM order and that there is exactly one editor switch; verify that mouse comes next in standard mode, and selecting signature mode hides mouse/pen/eraser while preserving the editor switch. Both toggle directions should keep the same clef icon and context-sensitive accessible label. Syntax and mocked DOM tests are applicable; full browser/device render should be checked visually for music-font availability and icon sizing.
+
+---
+
 ## 2026-11-20 — Correct Koron size and A4 vertical alignment in key-signature editor
 
 **Screenshot feedback:** The user approved the actual Persian Koron vector shape but reported that, when it appears over pitch A (La) in the Studio key-signature editing view, it is too large and the triangular flag sits noticeably higher than the A4 staff position. The request is a strictly visual positioning/scale correction; no new feature or glyph redesign is authorized.

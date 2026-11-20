@@ -623,46 +623,24 @@ function noteSettings(note) {
 
 // One context-sensitive pictogram: a key signature on the notes view,
 // and a plain musical staff when already editing the key signature.
-function scoreSignatureIcon(view = 'signature') {
+// Use the same actual treble-clef musical symbol already used on the staff.
+// The editor-switch control keeps its existing accessible, contextual label.
+function scoreSignatureIcon() {
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', '0 0 32 24');
+  svg.setAttribute('viewBox', '0 0 32 34');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('focusable', 'false');
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-linecap', 'round');
-  svg.setAttribute('stroke-linejoin', 'round');
-  const path = (d, width = 1.25) => {
-    const p = document.createElementNS(ns, 'path');
-    p.setAttribute('d', d);
-    p.setAttribute('stroke-width', String(width));
-    svg.append(p);
-  };
-  // Five staff lines are shared by both icons.
-  path('M1 4.5H31 M1 8.25H31 M1 12H31 M1 15.75H31 M1 19.5H31', 0.9);
-  if (view === 'signature') {
-    // Conventional sharps on the staff make this read as a key signature.
-    path('M11 3V17 M14.5 2V16 M9.5 8.5L16 7 M9.5 12.5L16 11', 1.6);
-    path('M21 7V21 M24.5 6V20 M19.5 12.5L26 11 M19.5 16.5L26 15', 1.6);
-  } else {
-    // Unaltered staff with notes signifies returning to the score.
-    const head = (cx, cy) => {
-      const n = document.createElementNS(ns, 'ellipse');
-      n.setAttribute('cx', String(cx));
-      n.setAttribute('cy', String(cy));
-      n.setAttribute('rx', '3.1');
-      n.setAttribute('ry', '2.2');
-      n.setAttribute('transform', 'rotate(-22 ' + cx + ' ' + cy + ')');
-      n.setAttribute('fill', 'currentColor');
-      n.setAttribute('stroke', 'none');
-      svg.append(n);
-    };
-    head(11, 15.75);
-    path('M14 15.75V4.5', 1.45);
-    head(23, 12);
-    path('M26 12V2.5', 1.45);
-  }
+  const clef = document.createElementNS(ns, 'text');
+  clef.setAttribute('x', '16');
+  clef.setAttribute('y', '25');
+  clef.setAttribute('text-anchor', 'middle');
+  clef.setAttribute('font-size', '19');
+  clef.setAttribute('font-family', '"Noto Music","Bravura","Segoe UI Symbol",serif');
+  clef.setAttribute('fill', 'currentColor');
+  clef.setAttribute('stroke', 'none');
+  clef.textContent = '𝄞';
+  svg.append(clef);
   return svg;
 }
 
@@ -1003,6 +981,25 @@ function studio() {
     : t('Score','خط حامل'),'score-title');
   const scoreActions = row(panel);
   scoreActions.classList.add('score-actions');
+  const signatureAction = signatureMode
+    ? t('Return to score', 'بازگشت به خط حامل')
+    : t('Edit key signature', 'ویرایش سرکلید');
+  const keyButton = btn(scoreActions, '', () => {
+    stopSignaturePreview();
+    if (!signatureMode) {
+      stopScorePlayback();
+      signaturePitch = SIGNATURE_PITCHES.find(p => e.key[p.pc])?.pc ?? 0;
+      scoreTool = 'select';
+    }
+    signatureMode = !signatureMode;
+    render();
+  }, signatureAction);
+  keyButton.className = 'score-tool-button signature-toggle';
+  keyButton.dataset.signatureToggle = '';
+  keyButton.setAttribute('aria-label', signatureAction);
+  keyButton.setAttribute('aria-pressed', String(signatureMode));
+  if (signatureMode) keyButton.classList.add('active');
+  keyButton.append(scoreSignatureIcon());
   for (const [mode, en, ir] of [
     ['select', 'Select', 'انتخاب'],
     ['pen', 'Pen', 'قلم'],
@@ -1022,27 +1019,6 @@ function studio() {
     tool.setAttribute('aria-pressed', String(!signatureMode && scoreTool === mode));
     if (!signatureMode && scoreTool === mode) tool.classList.add('active');
     tool.append(scoreToolIcon(mode));
-    if(mode==='select'){
-      const signatureAction = signatureMode
-        ? t('Return to score', 'بازگشت به خط حامل')
-        : t('Edit key signature', 'ویرایش سرکلید');
-      const keyButton=btn(scoreActions,'',()=>{
-        stopSignaturePreview();
-        if(!signatureMode){
-          stopScorePlayback();
-          signaturePitch=SIGNATURE_PITCHES.find(p=>e.key[p.pc])?.pc ?? 0;
-          scoreTool='select';
-        }
-        signatureMode=!signatureMode;
-        render();
-      },signatureAction);
-      keyButton.className='score-tool-button signature-toggle';
-      keyButton.dataset.signatureToggle='';
-      keyButton.setAttribute('aria-label',signatureAction);
-      keyButton.setAttribute('aria-pressed',String(signatureMode));
-      if(signatureMode)keyButton.classList.add('active');
-      keyButton.append(scoreSignatureIcon(signatureMode ? 'staff' : 'signature'));
-    }
   }
   const wrapButton = btn(scoreActions, '', () => {
     wrap = !wrap;
