@@ -20,6 +20,7 @@ import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
 import { generateStudioEtude } from './ai-etude.js?v=khara-free-phrases-3'
+import { renderStudioPractice } from './studio-practice.js'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),
   app = $('#app');
@@ -1212,6 +1213,10 @@ function studio() {
       tempoNumber.value = String(e.bpm);
   };
 
+  // Practice Sequence is authored here in Studio, not in the learner player.
+  // The editor reads/writes the same e.practiceSequence used by AI and export.
+  const practiceHost=el('div',app,undefined,'studio-practice-host');
+  renderStudioPractice(practiceHost,e,{fa,save});
   rules();
   sheet()
 }
