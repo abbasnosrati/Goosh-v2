@@ -424,35 +424,44 @@ details[open]>summary{margin-bottom:12px}
 .octave-rail{min-width:calc(var(--whites)*38px);display:flex;direction:ltr;touch-action:pan-x;user-select:none}
 .octave-rail span{flex:1;text-align:center;border-inline-start:1px solid var(--line);font:600 11px/30px system-ui;color:var(--muted)}
 .score-title{font-size:1rem;margin:20px 0 0}
-/* Keep the editor switch beside the currently active view heading. */
+/* A single labeled switch button replaces the duplicate Score/editor heading. */
 #app[data-page="studio"] .score-heading {
   display: flex;
   align-items: center;
   direction: ltr;
-  gap: 14px;
-  flex-wrap: wrap;
   margin: 20px 0 9px;
-}
-#app[data-page="studio"] .score-heading .score-title {
-  margin: 0;
-}
-html[dir="rtl"] #app[data-page="studio"] .score-heading .score-title {
-  direction: rtl;
 }
 #app[data-page="studio"] .score-heading .signature-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   direction: ltr;
-  gap: 3px;
+  gap: 9px;
   flex: 0 0 auto;
-  min-width: 60px;
   min-height: 44px;
-  padding: 7px 8px;
-  border-radius: 11px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border-color: var(--line);
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.4;
 }
-#app[data-page="studio"] .score-heading .signature-toggle.active {
+#app[data-page="studio"] .score-heading .signature-toggle[aria-pressed="true"],
+#app[data-page="studio"] .score-heading .signature-toggle:active {
+  background: transparent;
+  color: var(--ink);
+}
+#app[data-page="studio"] .score-heading .signature-toggle:hover {
   border-color: var(--accent);
+}
+#app[data-page="studio"] .score-heading .signature-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+#app[data-page="studio"] .score-heading .signature-toggle-label {
+  white-space: nowrap;
 }
 @media print {
   #app[data-page="studio"] .score-heading { display: none !important; }
@@ -563,14 +572,6 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   width: 30px;
   height: 24px;
   flex-shrink: 0;
-}
-#app[data-page="studio"] .score-heading .signature-toggle .score-switch-arrows {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  fill: none;
-  stroke: currentColor;
-  opacity: .9;
 }
 #app[data-page="studio"] .score[data-tool="pen"],
 #app[data-page="studio"] .score[data-tool="pen"] svg,
