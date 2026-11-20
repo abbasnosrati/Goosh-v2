@@ -890,16 +890,28 @@ function resumeScorePlayback() {
 function studio() {
   const heading = el('h2', app, e.title || t('Untitled etude', 'اتود بدون نام'), 'print-title');
   const top = row(app);top.classList.add('project-actions');
-  const title = el('input', top, undefined, 'etude-title-input');
+  const titleEdit = el('div', top, undefined, 'etude-title-edit');
+  const title = el('input', titleEdit, undefined, 'etude-title-input');
   title.type = 'text';
   title.value = e.title;
+  title.size = Math.max(12, Math.min(48, title.value.length + 2));
   title.placeholder = t('Untitled etude', 'اتود بدون نام');
   title.setAttribute('aria-label', t('Etude title', 'عنوان اتود'));
+  title.oninput = () => {
+    title.size = Math.max(12, Math.min(48, title.value.length + 2));
+  };
   title.onchange = () => {
     e.title = title.value;
     heading.textContent = title.value;
     save();
   };
+  const editTitleButton = btn(titleEdit, '', () => {
+    title.focus();
+    title.select();
+  }, t('Edit etude title', 'ویرایش عنوان اتود'));
+  editTitleButton.className = 'etude-title-edit-button';
+  editTitleButton.setAttribute('aria-label', t('Edit etude title', 'ویرایش عنوان اتود'));
+  editTitleButton.append(scoreToolIcon('pen'));
   const shareButton = btn(top, '', async () => {
     if (window.Capacitor?.getPlatform() === 'android') {
       try {
