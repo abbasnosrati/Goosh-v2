@@ -1234,13 +1234,6 @@ function studio() {
     }
     signatureMode = editing;
     render();
-    // After the Studio rerender, take the user to the editor/score heading.
-    const heading = document.querySelector('#app[data-page="studio"] .score-heading');
-    heading?.focus({preventScroll:true});
-    heading?.scrollIntoView({
-      behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-      block: 'start'
-    });
   };
   const composeHost = el('div', panel, undefined, 'studio-compose-host');
   const composerTarget = e, composerId = activeId;
