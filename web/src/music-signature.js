@@ -75,3 +75,15 @@ export function effectiveTuningCents(etude) {
   }
   return result;
 }
+
+export function orderedSignatureEntries(key = {}) {
+  const entries = Object.entries(key).filter(([,mark])=>Boolean(mark));
+  // Standard western engraving follows the cycle of fifths, not the JS
+  // numeric ordering of e.key's pitch-class keys.
+  const sharpOrder = [5,0,7,2,9,4,11];
+  const flatOrder = [11,4,9,2,7,0,5];
+  const sharps = entries.filter(([,mark])=>mark==='♯').length;
+  const flats = entries.filter(([,mark])=>mark==='♭').length;
+  const order = sharps>flats ? sharpOrder : flatOrder;
+  return entries.sort(([a],[b])=>order.indexOf(Number(a))-order.indexOf(Number(b)));
+}
