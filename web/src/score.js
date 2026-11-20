@@ -1,6 +1,7 @@
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
 import {orderedSignatureEntries} from './music-signature.js'
+import {meterTimeline} from './model.js'
 
 const ns = 'http://www.w3.org/2000/svg',
   steps = [0,0,1,1,2,3,3,4,4,5,5,6]
@@ -19,25 +20,41 @@ function symbol(beats) {
 export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,tool='select',fa=false}={}) {
   host.replaceChildren()
   const second=60/(e.bpm||90),width=Math.max(240,host.clientWidth||700)
-  const margin=64+Object.keys(e.key).length*17
-  const ordered=e.notes.map((note,index)=>({note,index})).sort((a,b)=>
-    a.note.at-b.note.at||a.index-b.index)
-  const groups=[]
-  for(const item of ordered){
-    const g=groups[groups.length-1]
-    if(g&&Math.abs(g.at-item.note.at)<1e-7){
-      g.entries.push(item);g.duration=Math.max(g.duration,item.note.d)
-    }else groups.push({type:'notes',at:item.note.at,duration:item.note.d,entries:[item]})
+  const timeline=meterTimeline(e)
+  const measured=timeline.measured && !timeline.issues.length
+  const margin=64+Object.keys(e.key).length*17+(measured?34:0)
+  let events=[]
+  if(measured){
+    // These events are derived from exactly the SAME e.notes timeline as
+    // free meter. No second editing, recording or playback engine.
+    events=timeline.bars.flatMap(bar=>bar.events)
+  }else{
+    const ordered=e.notes.map((note,index)=>({note,index})).sort((a,b)=>
+      a.note.at-b.note.at||a.index-b.index)
+    const groups=[]
+    for(const item of ordered){
+      const g=groups[groups.length-1]
+      if(g&&Math.abs(g.at-item.note.at)<1e-7){
+        g.entries.push(item);g.duration=Math.max(g.duration,item.note.d)
+      }else groups.push({type:'notes',at:item.note.at,duration:item.note.d,entries:[item]})
+    }
+    let soundingUntil=0
+    for(const g of groups){
+      if(g.at-soundingUntil>second*.025)
+        events.push({type:'rest',at:soundingUntil,duration:g.at-soundingUntil})
+      events.push(g)
+      soundingUntil=Math.max(soundingUntil,g.at+g.duration)
+    }
+    if(!events.length)events.push({type:'empty',at:0,duration:second})
   }
-  const events=[]
-  let soundingUntil=0
-  for(const g of groups){
-    if(g.at-soundingUntil>second*.025)
-      events.push({type:'rest',at:soundingUntil,duration:g.at-soundingUntil})
-    events.push(g)
-    soundingUntil=Math.max(soundingUntil,g.at+g.duration)
+  if(timeline.measured && timeline.issues.length){
+    const note=document.createElement('p')
+    note.className='score-meter-warning'
+    note.textContent=fa
+      ? 'این زمان‌بندی با کسر میزان انتخاب‌شده قابل نت‌نویسی دقیق نیست. کشش‌ها را اصلاح کنید یا حالت آزاد را انتخاب کنید.'
+      : 'The current timing cannot be engraved exactly in this meter. Correct the durations or switch to Free meter.'
+    host.append(note)
   }
-  if(!events.length)events.push({type:'empty',at:0,duration:second})
   const rows=[]
   let items=[],cursor=margin+16
   for(const ev of events){
@@ -58,10 +75,23 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
   function planPlacement(rowIndex,x,forceChord=false) {
     const row=rows[rowIndex]
     const rowGroups=row.items.filter(ev=>ev.type==='notes')
-    if(!allGroups.length)return {kind:'after',at:0,x:row.items[0]?.x??margin+16}
     const closest=rowGroups.reduce((best,g)=>!best||Math.abs(g.x-x)<Math.abs(best.x-x)?g:best,null)
     if(closest&&(forceChord||Math.abs(closest.x-x)<=CHORD_ZONE))
       return {kind:'chord',at:closest.at,x:closest.x}
+    if(measured){
+      // In metered notation rest events have actual beat positions. Pencil
+      // fills a rest (Eraser creates one) instead of shifting nearby notes.
+      const target=row.items.reduce((best,ev)=>
+        !best||Math.abs(ev.x-x)<Math.abs(best.x-x)?ev:best,null)
+      if(target&&(target.type==='rest'||target.type==='barline')){
+        const at=target.at
+        const nextNote=e.notes.map(n=>n.at).filter(t=>t>at+1e-7)
+          .reduce((a,b)=>Math.min(a,b),Infinity)
+        return {kind:'rest',at,x:target.x,
+          available:Number.isFinite(nextNote)?Math.max(0,nextNote-at):Infinity}
+      }
+    }
+    if(!allGroups.length)return {kind:'after',at:0,x:row.items[0]?.x??margin+16}
     const next=rowGroups.find(g=>g.x>x)
     if(next) {
       const prevIndex=rowGroups.indexOf(next)-1
@@ -119,6 +149,13 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
           'stroke-dasharray':'2 8','pointer-events':'none'})
     }
     draw('text',{x:7,y:103,'font-size':46,fill:'currentColor'},'𝄞')
+    if(measured && rowIndex===0){
+      const x=46+Object.keys(e.key).length*17
+      draw('text',{x,y:82,'font-size':19,'font-weight':700,
+        fill:'currentColor','text-anchor':'middle'},String(timeline.meter.numerator))
+      draw('text',{x,y:101,'font-size':19,'font-weight':700,
+        fill:'currentColor','text-anchor':'middle'},String(timeline.meter.denominator))
+    }
     const sigMidi={0:72,2:74,4:76,5:77,7:79,9:69,11:71}
     orderedSignatureEntries(e.key).forEach(([pc,mark],i)=>{
       const x=40+17*i
@@ -228,6 +265,30 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
     for(const ev of row.items){
       if(ev.type==='rest')rest(ev)
       else if(ev.type==='notes')ev.entries.forEach(entry=>note(entry,ev.x))
+      else if(ev.type==='barline'){
+        line(ev.x,68,ev.x,104,{'stroke-width':1.4,
+          'data-measure-end':String(ev.barIndex+1)})
+      }
+    }
+    if(measured){
+      // Join split note durations, including ties across barlines. The
+      // canonical note's sounding time remains continuous and unchanged.
+      for(const ev of row.items.filter(x=>x.type==='notes')){
+        for(const entry of ev.entries.filter(x=>x.tieTo)){
+          const pitch=Number.isInteger(entry.note.staffM)
+            ?entry.note.staffM:entry.note.m
+          const y=104-step(pitch)*4.5+8
+          const next=row.items.filter(x=>x.type==='notes'&&x.at>ev.at)
+            .find(x=>x.entries.some(p=>p.index===entry.index&&p.tieFrom))
+          const end=next?next.x-6:Math.min(w-12,ev.x+24)
+          draw('path',{
+            d:'M'+(ev.x+6)+' '+y+' Q'+((ev.x+end)/2)+' '+(y+9)+
+              ' '+end+' '+y,
+            stroke:'currentColor','stroke-width':1.2,fill:'none',
+            'data-tie-note':entry.index
+          })
+        }
+      }
     }
     if(tool==='pen'){
       // A ghost note communicates BOTH the exact snapped pitch and which
@@ -259,8 +320,8 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
         fill:'var(--accent)','fill-opacity':.86,'text-anchor':'middle'
       })
       const hints=fa
-        ? {chord:'هم‌زمان',before:'قبل از نت',between:'بین نت‌ها',after:'بعد از نت'}
-        : {chord:'Chord',before:'Before',between:'Between',after:'After'}
+        ? {chord:'هم‌زمان',before:'قبل از نت',between:'بین نت‌ها',after:'بعد از نت',rest:'سکوت'}
+        : {chord:'Chord',before:'Before',between:'Between',after:'After',rest:'Rest'}
       function showGhost(ev) {
         const rect=svg.getBoundingClientRect()
         const x=ev.clientX-rect.left,y=ev.clientY-rect.top
