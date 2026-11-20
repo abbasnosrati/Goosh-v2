@@ -126,7 +126,7 @@ export async function generateStudioEtude(dastgah, current, signal) {
     response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dastgah }),
+      body: JSON.stringify({ dastgah, practiceGoals: (current.practiceSequence || []).filter(s => s.enabled).map(s => s.goal).filter((g,i,all) => all.indexOf(g) === i) }),
       signal
     })
   } catch (error) {
