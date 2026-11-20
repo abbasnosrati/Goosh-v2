@@ -396,3 +396,29 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   margin-left: auto;
   white-space: nowrap;
 }
+
+
+/* Score editing modes: select, draw, and erase. Scoped to the Studio staff. */
+#app[data-page="studio"] .score-actions .score-tool-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 9px;
+}
+#app[data-page="studio"] .score-actions .score-tool-button svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#app[data-page="studio"] .score-actions .score-tool-button.active {
+  border-color: var(--accent);
+}
+#app[data-page="studio"] .score[data-tool="pen"],
+#app[data-page="studio"] .score[data-tool="pen"] svg,
+#app[data-page="studio"] .score[data-tool="pen"] svg *,
+#app[data-page="studio"] .score[data-tool="eraser"],
+#app[data-page="studio"] .score[data-tool="eraser"] svg,
+#app[data-page="studio"] .score[data-tool="eraser"] svg * {
+  cursor: var(--score-tool-cursor, crosshair) !important;
+}
