@@ -2216,3 +2216,20 @@ The user observed that nudging a Score note slightly to either side created or c
 - **Not performed:** manual visual pointer interaction in the live desktop/mobile browser, end-to-end audio listening, or native APK runtime validation. The additional per-voice/chord-member horizontal move semantics and automatic multi-bar overflow pushing remain intentionally out of scope and safe-rejected.
 
 **Acceptance checklist:** In Select, wiggle a note a little sideways and release: ZERO change to rhythm or rests. Drag it to a neighboring note: exact swap within the bar. Drag it onto a rest: swap/rest follows note's original position. Drag it into another measured bar with enough silent capacity: original space becomes a rest of equal duration; the target measure reflows without exceeding the meter. If it is full: show the error and do not damage the Etude. In Free, move the third note onto eighth: reorder the sequence, keep original intentional silence and note lengths. Horizontal-only must preserve an explicit accidental; vertical must apply the new key signature. Ctrl/Cmd+Z must restore every changed note.
+
+
+---
+
+## Language-only presentation adjustment: Western modes vs tonic notes (2026-11-21)
+
+**User request:** In the Western Music mode/scale dropdown, keep all actual mode names in **English**, even when the application language is Persian (for example `Major`, `Natural Minor`, `Dorian`, `Phrygian`, `Lydian`, `Mixolydian`, `Locrian`). For the **note-name / Tonic dropdown**, show Persian musical note names when the UI language is Persian and the original English notation when the UI language is English.
+
+**Implementation (display only, NO musical-data changes):**
+- `web/src/studio-etude-generation.js`: `fillStyleOptions()` uses `entry.label.en` unconditionally only for `musicSystem==='western'`, and keeps `localized(entry.label,fa)` for the Iranian Dastgah selector. Selector headings, controls and all existing functions remain unchanged.
+- The `tonicDisplayName(tonic,fa)` display-only helper converts `tonic.spellings` into Persian note names: C/دو, D/ر, E/می, F/فا, G/سل, A/لا, B/سی. It retains exact sharp/flat glyphs and enharmonic pairs, e.g. `F♯ / G♭` -> `فا♯ / سل♭`. In English it returns the unchanged original catalog `tonic.label`.
+- The underlying `option.value=entry.id` and `option.value=tonic.id` remain **identical** in both languages. The music-systems catalog, `signatureForMusic`, `e.key/e.offset`, piano sample/tuning, AI request, and Practice are not modified. Only the visible text changes.
+- `web/src/app.js` composer import cache tag and `web/index.html` app import tag bumped to `western-modes-tonics-language-1`; other files untouched apart from this handoff.
+
+**Verified:** All 12 Western tonic entries produce the expected Persian note-name/spelling display and retain all 12 original English labels; the seven Western mode labels use their English catalog text in both languages; all option IDs remain stable. Full edited composer JS parsed successfully. Real device/browser visual QA still required.
+
+**Do not** translate Western mode names into Persian again or save localized Tonic display labels in Etude data. Locale only controls presentation, not pitch identifiers.
