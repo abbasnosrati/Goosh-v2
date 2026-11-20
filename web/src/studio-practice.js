@@ -100,7 +100,7 @@ export async function renderStudioPractice(host, etude, options) {
       .map(node=>node.parentElement?.dataset.stepId);
     save();
     renderStudioPractice(host,etude,{...options,expanded,expandedAdvanced,
-      selectedGoal:picker.value});
+      locked:section.inert,selectedGoal:picker.value});
   };
   const addRow=create('div',section,undefined,'practice-add-row');
   const goalField=create('label',addRow,undefined,'practice-field practice-goal-picker');
