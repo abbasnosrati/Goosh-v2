@@ -354,6 +354,10 @@ function undoScoreEdit() {
     if (i<0) {scoreUndoStack.pop();return false;}
     stopScorePlayback();
     e.notes.splice(i,1);
+    // Sequential Pen insertion shifts later onsets as one undoable edit.
+    // Restore their exact original positions, including rests/chords.
+    for(const {note,at} of action.shifted || [])
+      if(e.notes.includes(note))note.at=at;
   } else if (action.kind==='erase') {
     if (e.notes.includes(action.note)) {scoreUndoStack.pop();return false;}
     stopScorePlayback();
@@ -569,6 +573,8 @@ function sheet() {
   score(h, e, {
     zoom,
     wrap,
+    tool: scoreTool,
+    fa,
     selected: sel,
     pick: (i, multi) => {
       if (rec) return;
@@ -588,14 +594,27 @@ function sheet() {
       else sel.add(i);
       sheet();
     },
-    insert: (m, at) => {
-      if (scoreTool === 'pen') {
-        const note = {m, at, d:60 / e.bpm};
-        e.notes.push(note);
-        rememberScoreEdit({kind:'pen', note});
-        save();
-        sheet();
-      }
+    insert: (m, placement) => {
+      if (scoreTool !== 'pen' || rec || !placement) return;
+      // At the notehead's X we deliberately join its onset (a chord).
+      // Everywhere else we insert BEFORE the following onset, shifting
+      // all following notes/chords by the new quarter-note duration.
+      const duration=60/e.bpm;
+      const chord=placement.kind==='chord';
+      const at=placement.at;
+      if(!Number.isFinite(at)||at<0||at>1e7) return;
+      const shifted=chord||placement.kind==='after'?[]:e.notes
+        .filter(n=>n.at>=at-1e-7)
+        .map(note=>({note,at:note.at}));
+      if(shifted.some(({note})=>note.at+duration>1e7))return;
+      stopScorePlayback();
+      for(const {note} of shifted)note.at+=duration;
+      const inserted={m,at,d:duration};
+      e.notes.push(inserted);
+      rememberScoreEdit({kind:'pen',note:inserted,shifted});
+      sel.clear();
+      save();
+      sheet();
     }
   });
   paintPlaybackMarker(true);
