@@ -59,7 +59,15 @@ export function drawKeySignatureEditor(host,e,{selectedPc=0,onSelect}={}){
     if(mark||e.offset[pitch.pc]){
       if(isPersianAccidental(mark)){
         // Render the existing mark with the same shared SVG as the score.
-        appendPersianAccidental(svg,mark,{x:x-13,y:y-23,width:26,height:37})
+        if(mark==='کرن'){
+          // In the 120×160 source, the triangle tip is at (100,46).
+          // At width 18 and height 26 (meet), its y is 7.9px below the
+          // nested SVG top. Anchor that tip to this note's staff pitch.
+          appendPersianAccidental(svg,mark,{x:x-10,y:y-8,width:18,height:26})
+        }else{
+          // Keep the existing Sori sizing and position unchanged.
+          appendPersianAccidental(svg,mark,{x:x-13,y:y-23,width:26,height:37})
+        }
       } else {
         draw('text',{
           x,y:y+7,'font-size':27,

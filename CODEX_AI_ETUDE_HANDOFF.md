@@ -1,5 +1,21 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
+## 2026-11-20 — Correct Koron size and A4 vertical alignment in key-signature editor
+
+**Screenshot feedback:** The user approved the actual Persian Koron vector shape but reported that, when it appears over pitch A (La) in the Studio key-signature editing view, it is too large and the triangular flag sits noticeably higher than the A4 staff position. The request is a strictly visual positioning/scale correction; no new feature or glyph redesign is authorized.
+
+**Root cause:** In `web/src/key-signature.js`, the previous call to `appendPersianAccidental(svg,mark,{x:x-13,y:y-23,width:26,height:37})` used the same dimensions and top-left offset for both Persian marks. The shared artwork has a normalized SVG `viewBox="0 0 120 160"` and Koron's triangular tip is at `(100,46)`, high up within that box. With the old 26×37 SVG, its tip rendered about **11.9 units above** the actual pitch Y coordinate from `yFor(pitch.midi)`. Thus the Koron visually floated above A4.
+
+**Exact correction:** In `web/src/key-signature.js`, only the `mark==='کرن'` branch of the existing SVG render call is adjusted to `{x:x-10,y:y-8,width:18,height:26}`. This shrinks the displayed Koron by roughly 30% while maintaining the original aspect ratio and artwork. Because SVG `preserveAspectRatio="xMidYMid meet"` fits 120×160 into 18×26 with horizontal scale `18/120 = 0.15`, the triangle tip's Y inside the fitted box is `(26 - 160*0.15)/2 + 46*0.15 = 7.9` units from its top. Placing its top at `y-8` makes the triangular tip effectively coincide with the staff position `y` (within 0.1 SVG unit). For A4, `yFor(69)=90.5`, so the tip now appears around Y=90.4 instead of Y≈78.6. Its horizontal footprint becomes narrower and remains centered around the existing letter/pitch target.
+
+**Scope protection:** Sori retains the original `{x:x-13,y:y-23,width:26,height:37}` and the shared paths in `web/src/persian-accidentals.js` are unchanged. Do not alter the symbols shown in the regular score, the control buttons, other pitches' data, `e.key/e.offset/e.marks`, note pitch or timings, audio, AI, transport, layouts, mobile sizing, or existing tuning controls. The actual seven-column key-signature view and hit targets are preserved.
+
+**Files:** `web/src/key-signature.js` (one contained display-only conditional), `web/src/app.js` and `web/index.html` (module cache-version-only edits, to force the updated view to load without stale JS), and this `CODEX_AI_ETUDE_HANDOFF.md` section in the same commit.
+
+**Test/verification expectations:** Assert the nested Koron SVG has `width=18,height=26`, `x=x-10,y=y-8` while Sori retains its original dimensions; inspect a test etude with `e.key[9]='کرن'` and verify the computed A4 triangle tip aligns to `yFor(69)`. Ensure blank pitches still have no placeholder, and selectable pitch hit targets remain. Compare the actual appearance at normal zoom and on desktop/mobile in a browser; no live browser visual verification or audio test is claimed.
+
+---
+
 ## 2026-11-20 — Replace Persian Koron/Sori glyphs with in-repo vector artwork (UI only)
 
 **User's requirement:** Existing staff/selection buttons already support b (flat), # (sharp), koron and sori. Do NOT implement new key signature functionality; instead replace ONLY the rendered **shape** of koron and sori with the two specific Persian visual references provided in this chat. The screenshots are visual references, not image assets; no screenshot pixels or fonts are embedded. Preserve flat, sharp, natural and all original musical meaning.
