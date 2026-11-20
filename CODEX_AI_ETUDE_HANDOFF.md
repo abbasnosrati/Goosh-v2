@@ -877,3 +877,34 @@ No modifications were requested or made to the audio engine, transport schedulin
 - Confirm the existing Generate desktop-only breakpoint remains enforced below 768px; this change does not alter mobile availability.
 - Verify narrow desktop widths, light/dark and both language directions, especially that the group stays aligned and icon controls do not overlap.
 - Browser and device interaction tests are **not** claimed as passed based on source checks alone.
+
+## Studio header simplification — remove Back, iconize Share/PDF, unbox title (2026-11-20)
+
+**Branch:** `redesign`. **Scope:** Only the *opened* Etude Studio page, not the etude list or Practice.
+
+### Requirements and implementation details
+
+1. **Remove "Back to list" on open Studio only:** In `web/src/app.js`, `render()` now calls `studio()` directly for `page === 'studio'` when an etude is active. The old leading `btn(row(app), 'Back to list', ...)` is retained in the **Practice** branch only; no global navigation links, routing, list handling, or keyboard shortcuts were changed. The shared navbar remains available for navigation.
+
+2. **Simplify editable etude title:** In `web/src/app.js`, `studio()`, replaced `field(top, t('Etude','اتود'), ...)` with a single `<input type="text" class="etude-title-input">`. This removes the visible "Etude" label entirely. The input displays the existing `e.title` (for example, "Etude in Dastgah-e Shur") without decorative form framing. It has a localized `aria-label="Etude title"` and a localized placeholder for untitled etudes. The original title edit behavior remains: on `change`, update `e.title`, update the existing `h2.print-title` used for print/PDF, and persist using the existing `save()` helper. Do not replace the title with a hard-coded value or remove editability.
+
+3. **Share file icon-only button:** Reused the original Share handler (Android Capacitor file share, native Web Share, fallback `.goosh` download) in `shareButton`. Removed the visible "Share file" text and appended an inline SVG *share/upload* icon from `studioFileIcon('share')`. Kept a localized tooltip (`title`) and added a localized `aria-label`. The click behavior, file format, permissions, and fallback handling are unchanged.
+
+4. **PDF icon-only button:** Reused the original PDF/print handler in `pdfButton`. Removed the visible text and appended an inline SVG *document with folded corner and PDF lettering* from `studioFileIcon('pdf')`. Kept a localized tooltip ("Export PDF" / "خروجی PDF") and added a localized `aria-label`. The existing `wrap` adjustments, Android Capacitor printing and browser `print()` are unchanged.
+
+5. **Icon implementation:** Added `studioFileIcon(type)` in `web/src/app.js`, which constructs a 24×24 SVG using `document.createElementNS`. It uses theme-inheriting `currentColor`, with no new assets or dependencies. Both new file buttons share the CSS class `studio-file-action`.
+
+6. **CSS:** In `web/style.css`, scoped to `#app[data-page="studio"]:not(:has(> .shelves))`: `.project-actions .etude-title-input` has transparent background, **no box/border**, no rounded field edge, no box shadow, and typographic weight; only a subtle underline when keyboard-focused, so it remains accessible. It flexes to occupy remaining toolbar space. `.studio-file-action` buttons have consistent 44×44 touch targets, centered 22×22 SVG icons and preserve theme tokens. Nothing in the global input controls, Etudes list or Practice is modified.
+
+7. **Cache busting:** In `web/index.html`, changed the CSS and app.js versions to `studio-title-file-icons-1` to load the new layout rather than stale cached assets.
+
+8. **Codex documentation:** This section records exactly what was changed and what was intentionally preserved.
+
+### Manual verification (not executed here)
+
+- Open Studio: there is **no Back to list button**; Studio's navbar still works. Open Practice separately and confirm its Back to list remains.
+- The top project-action row shows just the actual etude title (without "Etude" prefix or enclosing input box) and two icon buttons for Share and PDF. The title remains editable on click/focus and the rename persists.
+- Share exports a `.goosh` file exactly as previously; PDF still prints/exports the active etude. Both buttons have appropriate localized accessible names and visible icons in light/dark themes.
+- Verify keyboard focus is clearly visible on the borderless title and file icons; check desktop and narrow/mobile layouts and RTL/LTR.
+- Confirm AI Generate remains beside Record in the Score toolbar and the score tools, Tempo, piano and audio behavior are unchanged.
+- Only source-level checks were run. Browser/device visual and functional testing is **not** claimed complete.
