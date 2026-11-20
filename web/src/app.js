@@ -159,7 +159,7 @@ function updatePianoKey(key, shortcut) {
     el('span',key,label(midi),'piano-key-note');
   }
   el('small',key,(fa?pianoSyllables.fa:pianoSyllables.en)[pc],'piano-key-syllable');
-  if (hasTuning) el('small',key,hz+' Hz','piano-key-frequency');
+  if (hasTuning) el('small',key,hz,'piano-key-frequency');
   key.classList.toggle('piano-key-tuned',hasTuning);
   const spoken = mark
     ? names[pc]+' '+(fa ? mark : pianoMarkNames[mark] || mark)+' '+octave
