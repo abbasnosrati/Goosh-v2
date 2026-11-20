@@ -670,7 +670,7 @@ function sheet() {
       save();
       sheet();
     },
-    move: (index,target) => {
+    move: rec ? undefined : (index,target) => {
       if(scoreTool!=='select'||signatureMode||rec||
          !Number.isInteger(index)||index<0||index>=e.notes.length||!target)return;
       const note=e.notes[index],m=target.m,at=target.at;
