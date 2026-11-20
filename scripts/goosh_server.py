@@ -333,7 +333,7 @@ class GooshHandler(SimpleHTTPRequestHandler):
     def _serve_app_route(self):
         """Rewrite only known HTML app routes, never JS/CSS/API/missing assets."""
         path = urlsplit(self.path).path
-        if re.fullmatch(r"/(?:etudes|practice)(?:/[a-zA-Z0-9_-]+)?/?", path):
+        if re.fullmatch(r"/(?:etudes|practice)(?:/[^/.]+)?/?", path):
             self.path = "/index.html"
 
     def do_GET(self):
