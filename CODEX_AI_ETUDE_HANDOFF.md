@@ -1935,3 +1935,58 @@ Isolated tests evaluated the actual fetched `app.js` keyboard helper functions w
 **Not completed:** a live desktop-browser visual regression, physical piano playback quality test, or end-to-end live OpenRouter test. Inspect narrow key widths and contrast in light and dark themes in the actual browser.
 
 **Scope warning:** Do not move each pitch to another MIDI key or change `freq()` to match visual labels. This is only a truthful representation of the currently sounding, already-tuned notes in the pre-existing Goosh keyboard. Do not alter the Manual/AI workflow, key signature editor, note recognition, or Practice learner as a follow-up without explicit user request.
+
+
+---
+
+# Pencil notation preview, faint auxiliary ledger guides, and precise sequential vs chord insertion (2026-11-21)
+
+**Approved user request:** Pencil-mode notation needs ultra-faint extended ledger lines to help position notes above/below the five-line staff. As the pointer moves over the staff, show a translucent preview note snapped to the exact intended staff position; the eventual rendered note may shift horizontally as score layout changes, but the preview must communicate its pitch and intended **insertion semantics**. The teacher must be able to insert a new note **before the first**, **between existing notes**, **after the last**, or at the **same onset as an existing note** to build a chord without accidentally replacing/overwriting the previous or next note.
+
+**Strict scope:** `web/src/score.js` (score SVG rendering and Pen hit plan), `web/src/app.js` (Pen time insertion and single-action undo), `web/index.html` (JS cache key), and this handoff. No changes to sound generation, instrument samples, note model, musical scale/key editor, AI composition, Practice Design, or the Manual/AI composer. Remains on branch `feature/practice-sequence-studio`.
+
+## Score rendering and hover behavior
+
+- `score(host,e,{...,tool='select',fa=false})` now receives active Studio tool mode and UI language from `app.js`. The same renderer remains available to the Practice view with default `tool='select'`, hence **no extra overlays** in Practice or when selecting/erasing.
+- Only in **Pen mode**, draw **12 ultra-faint dashed helper ledger lines** across the SVG (6 above and 6 below the existing five staff lines, y=14…59 and y=113…158), with `stroke-opacity:0.13`, `stroke-width:0.7`. The original five staff lines, note heads, existing ledger lines and pitch/key-signature artwork remain unchanged.
+- A separately layered `<g pointer-events="none">` **preview ghost** follows `pointermove` inside each staff SVG. Its translucent elliptic notehead snaps vertically to the *same diatonic staff step and MIDI letter* that the eventual Pen click uses. It also draws localized, solid mini-ledger segments at the ghost's particular pitch, a fine vertical insert guide, and a tiny localized placement hint (`Before` / `Between` / `After` / `Chord`; Persian equivalents). The ghost stays hidden outside the staff and on `pointerleave`. It **never intercepts pointer/click selection**. On touch devices, the next click uses the same resolver even without continuous hover.
+- The preview uses SVG attributes and existing `var(--accent)`; it does not require new color schemes, external canvas packages, libraries or CSS framework. The existing editor Pen cursor remains intact.
+
+## One placement resolver for preview **and** click
+
+`planPlacement(rowIndex,x,forceChord)` in `web/src/score.js` resolves horizontal intent with a dedicated **±11 px chord band** around each existing note-group center:
+
+- **Inside the note-centered band / directly on the notehead:** `kind:'chord'`, `at` equals that note group’s existing onset; the new note has a different pitch chosen by vertical hover/click, so it can be placed on another staff pitch at *exactly* the same time. `Shift` + click also explicitly forces `chord` at the nearest note group, useful when alignment is awkward. Clicking a note’s transparent selection target no longer swallows the SVG click while the Pen is active; Select and Eraser still intercept clicks normally.
+- **Left of the first note:** `kind:'before'`, `at` equals that first onset.
+- **In the horizontal space between groups:** `kind:'between'`, `at` equals the *following* group’s onset, not the nearest previous/next note arbitrarily.
+- **Right of the final note:** `kind:'after'`, `at` equals the actual latest sounding end, not just the last note’s start. For wrapped SVG rows, the area after one row’s last note inserts **before the next row’s first note**, not at the end of the whole score. A leading rest in a wrapped score maps to Before on the first note.
+- **Empty score:** start at `at=0`.
+- Preview and click share the **identical** `planPlacement()` and `pitchFromY()` functions: no mismatch between where the ghost says the note goes and where the click is interpreted.
+
+## Safe insertion in `web/src/app.js`
+
+- The previous `insert:(m,at)` always pushed a note at the nearest existing onset. New callback `insert:(m,placement)` reads `placement.kind` and resolves one default quarter-note `d=60/e.bpm`.
+- **Chord:** append with exactly the existing group onset, do not move any notes. This creates genuine simultaneous notes in the current `e.notes` model; the original score already groups same-onset notes for rendering and score transport.
+- **Before / Between:** insert a new note at the chosen group's original onset and shift **every existing note whose onset is at/after the target** by the new note’s default duration. Shifting entire simultaneous groups together prevents existing chords from being broken, and preserves the original relative timings/silences further along the timeline. The original notes remain the **same objects**; no detached copy of the score is created.
+- **After:** append at the latest note end, not at an existing onset, leaving all previous note timings untouched.
+- All Pen placements guard recording state, invalid times and disallowed overflow, stop score playback before edit, save, redraw the score and clear selection, as before.
+- Extended the existing Pen undo record with `shifted:[{note,at},...]`. **Ctrl/Cmd+Z** removes the inserted note *and* restores each shifted original note’s **exact prior onset**. Existing Eraser undo behavior and at-most-100-steps history are unchanged.
+
+## Tested (isolated source-backed JS)
+
+- Full `score.js` and `app.js` parse successfully as JavaScript.
+- A DOM/SVG mock of the actual `score.js` verified that hovering creates a transparent, pointer-pass-through notehead and a `Between` hint on the snapped ledger step; pointer leaving hides it; Pen reveals exactly 12 very faint extra ledger lines; Select mode has none.
+- Click at the center X of a note produces a chord at its original onset; click in the gap is a sequential insertion; click left of the first note produces Before; click right of the last note produces After; Shift-click forces a chord. The notehead click target does not swallow Pen-mode click.
+- Multiple SVG rows and rests were checked: clicking after one wrapped row correctly resolves to before the next row group rather than end of entire Etude.
+- Isolated integration test of the actual Pen handler and `undoScoreEdit()`: inserting a simultaneous note leaves all prior onset times unchanged; inserting before a *two-note chord* shifts both notes' start times together and later events too; inserting before the first shifts the full score; inserting after the last appends at the sounding end. Each associated Undo restores the original exact array of note pitches/times/durations, with the expected save/redraw calls.
+- **Not yet tested in a real desktop browser or device:** pointer precision/touch hit boxes, visual line/glyph contrast at actual screen sizes, real time playback quality and zoom/wrap interactions. These require a manual visual smoke test.
+
+## Desktop acceptance checklist
+
+1. Fetch branch, restart or refresh local Goosh and hard-refresh the Studio page; select the **Pen** above Score.
+2. Confirm six pairs of auxiliary ledger lines (above and below the staff) appear only in Pen and are faint. Move the pointer vertically: a translucent preview note should snap to the intended line or space, and local ledger guides should appear outside the five normal lines. Remove the pointer: the ghost must disappear.
+3. Move horizontally: hover over a note's X → `Chord/هم‌زمان`. Hover between two note X positions → `Between/بین نت‌ها`. Hover before the first note and after the final one → appropriate hints. A direct click over a C notehead at the height of F should append F at exactly C’s onset.
+4. Insert a new note between two existing notes: the new note must be in sequence; existing later notes must move by exactly one beat while old simultaneous groups stay aligned. Use Ctrl/Cmd+Z and verify all original timings are restored.
+5. Test multi-row wrapped scores, rests, empty scores, Set/Erase tools, and both light/dark themes. Returning to Select/Eraser removes the ghost and all extra auxiliary staff lines; the original eraser and note-settings actions should still work.
+
+**Preserve:** Do not make ordinary staff clicks cause AI generation, do not change pitch tuning/frequency rules, do not convert all insertions into chords, and do not intercept Pen hits on note heads with the old Select handler. This implementation intentionally avoids requiring a new "Chord mode" toggle: the user sees the precise outcome in the ghost preview instead.
