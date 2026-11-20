@@ -1518,6 +1518,10 @@ function matchesNote(value, midi) {
 function practice() {
   const p = el('section', app, undefined, 'practice-panel');
   el('h2', p, e.title || t('Your etude', 'اتود شما'));
+  const activeMeter=meterInfo(e);
+  if(activeMeter) el('p',p,t('Time signature','کسر میزان')+': '+
+    activeMeter.meter+' · '+t('Measures','میزان‌ها')+': '+
+    meterTimeline(e).bars.length,'practice-meter-summary');
   if(!e.notes.length){
     el('p',p,t('Open an etude from your teacher to start practicing.','برای شروع، فایل اتود استادت را باز کن.'));
     btn(p,t('Open etude','باز کردن اتود'),()=>$('#file').click()).className='primary';
@@ -1574,6 +1578,11 @@ function practice() {
     for (let i = 0; i < sorted.length && !s.dead; i++) {
       const n = sorted[i];
       progressLabel.textContent=t('Note','نت')+' '+(i+1).toLocaleString(fa?'fa':'en')+' / '+sorted.length.toLocaleString(fa?'fa':'en');
+      if(activeMeter){
+        const length=activeMeter.barQuarterBeats*activeMeter.quarterSeconds;
+        progressLabel.textContent+=' · '+t('Measure','میزان')+' '+
+          (Math.floor((n.at+1e-7)/length)+1).toLocaleString(fa?'fa':'en');
+      }
       if (r.ref === 'each' || (r.ref === 'first' && !i))
         for (let j = 0; j < r.repeat && !s.dead; j++) {
           voice(freq(e, r.refMidi))(r.refTime);
@@ -1589,13 +1598,13 @@ function practice() {
       body.replaceChildren();
       if (r.staff) {
         const h = el('div', body, undefined, 'score');
-        score(h, {
-          ...e,
-          notes: [{
-            ...n,
-            at: 0
-          }]
-        })
+        if(activeMeter) {
+          // Show the actual canonical measured score; moving a note to t=0
+          // would give the learner the wrong measure/rest context.
+          score(h,e,{selected:new Set([e.notes.indexOf(n)])});
+        } else {
+          score(h, {...e,notes:[{...n,at:0}]});
+        }
       }
       let answer = null,
         needle = null,
