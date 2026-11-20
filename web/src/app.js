@@ -7,7 +7,8 @@ import {
   meterInfo,
   meterTimeline,
   METER_PRESETS,
-  planScoreNoteReorder
+  planScoreNoteReorder,
+  planScoreRestEdit
 } from './model.js'
 import {
   unlock,
@@ -370,6 +371,11 @@ function undoScoreEdit() {
     if (e.notes.includes(action.note)) {scoreUndoStack.pop();return false;}
     stopScorePlayback();
     e.notes.splice(Math.min(action.index,e.notes.length),0,action.note);
+  } else if (action.kind==='rest-edit') {
+    stopScorePlayback();
+    for(const {note,at} of action.shifted||[])
+      if(e.notes.includes(note))note.at=at;
+    e.measureCount=action.measureCount;
   } else if (action.kind==='move') {
     if (!e.notes.includes(action.note)) {scoreUndoStack.pop();return false;}
     stopScorePlayback();
@@ -588,6 +594,70 @@ function meterMessage(en,ir) {
   status.textContent=t(en,ir);
   status.hidden=!status.textContent;
 }
+// Rests are derived from the existing note onsets; erasing/moving one
+// must edit the surrounding note timings atomically, not add a second
+// persistent score/audio timeline.
+function editScoreRest(source, destination=null) {
+  if(page!=='studio'||!activeId||signatureMode||rec||
+     (destination&&scoreTool!=='select')||
+     (!destination&&scoreTool!=='eraser'))return;
+  const result=planScoreRestEdit(e,source,destination);
+  if(!result.ok){
+    const messages={
+      'polyphony':[
+        'A tied or overlapping passage cannot move this rest safely.',
+        'جابجایی این سکوت در بخش چندصدایی یا نت‌های پیوندخورده امکان‌پذیر نیست.'
+      ],
+      'trailing-rest':[
+        'Free mode cannot place a rest after the final note.',
+        'در حالت آزاد، سکوت را نمی‌توان بعد از آخرین نت قرار داد.'
+      ],
+      'required-rest':[
+        'This rest is required to complete the measure. Add a note to fill it.',
+        'این سکوت برای کامل شدن میزان لازم است. برای پر کردن آن نت اضافه کنید.'
+      ],
+      'last-measure':[
+        'At least one measure must remain.',
+        'حداقل یک میزان باید باقی بماند.'
+      ],
+      'different-length':[
+        'Rests can cross measures only with a matching-duration slot.',
+        'انتقال سکوت بین میزان‌ها به جایگاهی با کشش یکسان نیاز دارد.'
+      ]
+    };
+    const [en,ir]=messages[result.reason]||[
+      'This rest cannot be changed at the selected position.',
+      'این سکوت در جایگاه انتخاب‌شده قابل تغییر نیست.'
+    ];
+    meterMessage(en,ir);
+    return;
+  }
+  if(!result.moves.length&&result.measureCount===e.measureCount)return;
+  const shifted=result.moves.map(({index,at})=>({
+    note:e.notes[index],at:e.notes[index].at,to:at
+  }));
+  const positions=new Map(shifted.map(change=>[change.note,change.to]));
+  const candidate=e.notes.map(note=>({
+    ...note,at:positions.get(note)??note.at
+  }));
+  const count=result.measureCount??e.measureCount;
+  const timeline=meterTimeline({...e,measureCount:count,notes:candidate});
+  if((meterInfo(e)&&(timeline.issues.length||timeline.bars.length>count))||
+     candidate.some(note=>note.at<0||note.at+note.d>1e7)){
+    meterMessage('This change would make the measure invalid.',
+      'این تغییر باعث نامعتبر شدن میزان می‌شود.');
+    return;
+  }
+  const oldCount=e.measureCount;
+  stopScorePlayback();
+  for(const change of shifted)change.note.at=change.to;
+  e.measureCount=count;
+  rememberScoreEdit({kind:'rest-edit',shifted,measureCount:oldCount});
+  sel.clear();
+  meterMessage('','');
+  save();
+  sheet();
+}
 function sheet() {
   const h = $('.score');
   if (!h) return;
@@ -612,6 +682,8 @@ function sheet() {
     tool: scoreTool,
     fa,
     selected: sel,
+    moveRest: rec ? undefined : (source,slot) => editScoreRest(source,slot),
+    eraseRest: rec ? undefined : source => editScoreRest(source),
     pick: (i, multi) => {
       if (rec) return;
       if (scoreTool === 'eraser') {
