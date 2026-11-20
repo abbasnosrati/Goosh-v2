@@ -6,6 +6,7 @@ export const fresh = () => ({
   title: '',
   bpm: 90,
   meter: 'none',
+  measureCount: 4,
   notes: [],
   practiceSequence: [],
   musicContext: null,
@@ -37,7 +38,9 @@ export function freq(e, m) {
 }
 export function valid(e) {
   const finite = (n, min, max) => Number.isFinite(n) && n >= min && n <= max;
-  return e?.version === 1 && typeof e.title === 'string' && finite(e.bpm, 20, 300) && (e.meter == null || METER_PRESETS.includes(e.meter)) && Array.isArray(e.notes) && e.notes.every(n => Number.isInteger(n.m) && finite(n.m, 0, 127) && finite(n.at, 0, 1e7) && finite(n.d, .001, 1e5)) && [e.marks, e.key, e.offset].every(x => x && typeof x === 'object' && !Array.isArray(x)) && Object.values(e.marks).every(x => finite(x, -1200, 1200)) && Object.values(e.offset).every(x => finite(x, -1200, 1200)) && Object.values(e.key).every(x => Object.hasOwn(e.marks, x)) && validatePracticeSequence(e.practiceSequence) &&
+  return e?.version === 1 && typeof e.title === 'string' && finite(e.bpm, 20, 300) && (e.meter == null || METER_PRESETS.includes(e.meter)) &&
+    (e.measureCount == null || (Number.isInteger(e.measureCount) &&
+      e.measureCount >= 1 && e.measureCount <= 256)) && Array.isArray(e.notes) && e.notes.every(n => Number.isInteger(n.m) && finite(n.m, 0, 127) && finite(n.at, 0, 1e7) && finite(n.d, .001, 1e5)) && [e.marks, e.key, e.offset].every(x => x && typeof x === 'object' && !Array.isArray(x)) && Object.values(e.marks).every(x => finite(x, -1200, 1200)) && Object.values(e.offset).every(x => finite(x, -1200, 1200)) && Object.values(e.key).every(x => Object.hasOwn(e.marks, x)) && validatePracticeSequence(e.practiceSequence) &&
     (e.musicContext == null ||
       (e.musicContext && typeof e.musicContext === 'object' && !Array.isArray(e.musicContext) &&
        ['iranian','western'].includes(e.musicContext.musicSystem) &&
@@ -107,7 +110,9 @@ export function meterTimeline(etude) {
     end=Math.max(end,start+duration);
   }
   if (issues.length) return {meter,bars:[],issues,measured:true};
-  const barCount=Math.max(1,Math.ceil(end/meter.barTicks));
+  // An explicit measure count lets the teacher begin with empty bars before
+  // writing any notes. It is layout metadata, NOT a second note timeline.
+  const barCount=Math.max(etude.measureCount||1,Math.ceil(end/meter.barTicks));
   if (barCount>256) return {meter,bars:[],issues:[{kind:'too-many-bars'}],measured:true};
   const bars=Array.from({length:barCount},(_,index)=>({
     index,start:index*meter.barTicks,end:(index+1)*meter.barTicks,
