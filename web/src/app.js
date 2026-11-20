@@ -24,7 +24,7 @@ let fa = localStorage.lang !== 'en',
   page = routeFromHash(),
   e = fresh(),
   rec = null,
-  pen = false,
+  scoreTool = 'select',
   zoom = 1,
   wrap = true,
   oct = 4,
@@ -61,7 +61,7 @@ function loadRoute(){
   activeId=page!=='home' && collection.has(id)?id:null;
   e=activeId?collection.get(activeId).data:fresh();
   sel.clear();
-  pen=false;
+  scoreTool='select';
 }
 loadRoute();
 const t = (en, ir) => fa ? ir : en,
@@ -275,30 +275,44 @@ function advancePlaybackMarker() {
 
 function sheet() {
   const h = $('.score');
-  if (h) score(h, e, {
+  if (!h) return;
+  h.dataset.tool = scoreTool;
+  if (scoreTool === 'pen' || scoreTool === 'eraser')
+    h.style.setProperty('--score-tool-cursor', scoreEditingCursor(scoreTool));
+  else h.style.removeProperty('--score-tool-cursor');
+  score(h, e, {
     zoom,
     wrap,
     selected: sel,
     pick: (i, multi) => {
-      if(rec)return;
-      if(!multi){sel.clear();sel.add(i);sheet();noteSettings(e.notes[i]);return}
+      if (rec) return;
+      if (scoreTool === 'eraser') {
+        stopScorePlayback();
+        e.notes.splice(i, 1);
+        sel.clear();
+        save();
+        sheet();
+        return;
+      }
+      if (scoreTool !== 'select') return;
+      if (!multi) { sel.clear(); sel.add(i); sheet(); noteSettings(e.notes[i]); return; }
       if (sel.has(i)) sel.delete(i);
       else sel.add(i);
-      sheet()
+      sheet();
     },
     insert: (m, at) => {
-      if (pen) {
+      if (scoreTool === 'pen') {
         e.notes.push({
           m,
           at,
           d: 60 / e.bpm
         });
         save();
-        sheet()
+        sheet();
       }
     }
-  })
-  if (h) paintPlaybackMarker(true)
+  });
+  paintPlaybackMarker(true);
 }
 
 function noteSettings(note) {
@@ -326,6 +340,38 @@ function noteSettings(note) {
   dialog.showModal();
 }
 
+
+
+function scoreToolIcon(mode) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.8');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  const shape = document.createElementNS(ns, 'path');
+  shape.setAttribute('d', {
+    select: 'M4 3 19 12l-7 1-3 7L4 3Zm8 10 5 7',
+    pen: 'm4 20 5-1 11-11a2.8 2.8 0 0 0-4-4L5 15l-1 5ZM14 6l4 4',
+    eraser: 'M4 14 14 4a2.8 2.8 0 0 1 4 0l3 3a2.8 2.8 0 0 1 0 4l-9 9H9l-5-5a2 2 0 0 1 0-1ZM9 9l7 7M12 20h9'
+  }[mode]);
+  svg.append(shape);
+  return svg;
+}
+
+// Browser-safe custom cursors; the hotspot is the tip of the pen/eraser.
+function scoreEditingCursor(mode) {
+  const shape = mode === 'pen'
+    ? '<path d="M3 29 6 21 23 4Q26 1 29 4Q31 6 28 9L11 26Z" fill="white" stroke="#163949" stroke-width="2" stroke-linejoin="round"/><path d="m20 7 5 5M3 29l8-3" fill="none" stroke="#163949" stroke-width="2"/>'
+    : '<path d="M4 19 18 5Q20 3 22 5l7 7q2 2 0 4L17 28h-6z" fill="white" stroke="#163949" stroke-width="2" stroke-linejoin="round"/><path d="m11 12 10 10" fill="none" stroke="#163949" stroke-width="2"/>';
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">' + shape + '</svg>';
+  return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") ' +
+    (mode === 'pen' ? '3 29' : '7 23') + ', crosshair';
+}
 
 function scoreTransportIcon(type) {
   const ns = 'http://www.w3.org/2000/svg';
@@ -637,10 +683,23 @@ function studio() {
   el('h2',panel,t('Score','خط حامل'),'score-title');
   const scoreActions = row(panel);
   scoreActions.classList.add('score-actions');
-  btn(scoreActions, t('Pen', 'قلم'), () => {
-    pen = !pen;
-    render()
-  }).classList.toggle('active', pen);
+  for (const [mode, en, ir] of [
+    ['select', 'Select', 'انتخاب'],
+    ['pen', 'Pen', 'قلم'],
+    ['eraser', 'Eraser', 'پاک‌کن']
+  ]) {
+    const tool = btn(scoreActions, '', () => {
+      if (scoreTool === mode) return;
+      scoreTool = mode;
+      render();
+    }, t(en, ir));
+    tool.className = 'score-tool-button';
+    tool.dataset.scoreTool = mode;
+    tool.setAttribute('aria-label', t(en, ir));
+    tool.setAttribute('aria-pressed', String(scoreTool === mode));
+    if (scoreTool === mode) tool.classList.add('active');
+    tool.append(scoreToolIcon(mode));
+  }
   const playButton = btn(scoreActions, '', () => {
     if (scoreTransport) stopScorePlayback();
     else startScorePlayback();
