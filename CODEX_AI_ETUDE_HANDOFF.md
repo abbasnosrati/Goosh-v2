@@ -796,3 +796,31 @@ No `app.js`, rendering, musical/recording logic, keyboard handling, playback tra
 
 ### Manual checks still required
 Compare Studio left/right outer edges to the desktop header's wordmark/controls at common viewports (1100, 1280, 1360, 1600px). Confirm the Studio body and piano/staff expand without horizontal page overflow, the separate Etudes list does not change width, and mobile/tablet layouts stay as before. Only CSS/source checks were performed, no actual browser/device visual validation.
+
+## Studio Score toolbar regrouping — playback at Record and zoom beside Wrap (2026-11-20)
+
+**Branch:** `redesign` only. **User request:** Relocate Play/Stop and Pause/Resume beside the right-aligned Record control, replace the text of Wrap staff with an icon, and move Zoom −/+ from the bottom Tempo row to immediately beside Wrap staff.
+
+### Exact changes
+1. **`web/src/app.js` — `studio()`:** Preserved the three existing Select/Pen/Eraser SVG tool buttons at the beginning of `scoreActions`. Immediately after them, replaced the old `Wrap staff` text button with a compact icon-only `wrapButton` using `scoreToolIcon('wrap')`; the existing click handler still toggles `wrap` and calls `render()`. Preserved its active state via `.active`; added a localized `title`/`aria-label` and `aria-pressed` reflecting the current wrap state.
+2. **`web/src/app.js` — `scoreToolIcon(mode)`:** Added the `wrap` path, drawn as multiple staff lines with a line-wrap arrow. It reuses the existing inline 24×24 SVG helper and `currentColor`, with no new icon packages or external assets.
+3. **`web/src/app.js` — Zoom placement:** Moved the **unchanged** Zoom out (`−`) and Zoom in (`+`) controls from `scoreBelowActions` (below the staff, next to Tempo) to `scoreActions`, directly following the Wrap icon. Only the parent element moved; the existing `zoom = Math.max(.4,zoom-.2)` / `Math.min(3,zoom+.2)` and `sheet()` handlers remain unchanged. The zoom buttons receive a `score-zoom-button` class for sizing.
+4. **`web/src/app.js` — Transport grouping:** Added one `div.score-transport-actions` as the last group inside the top Score toolbar. Moved the existing **Play/Stop**, **Pause/Resume**, and **Record** buttons (in that exact order) into this group without modifying their event handlers, `data-score-transport`, `data-score-pause`, `data-record`, visual update function, or keyboard shortcut. `updateScoreTransportButtons()` still resolves the buttons by their original data attributes and preserves the single-instance playback rules.
+5. **`web/src/app.js` — Tempo:** Left the single numeric `score-tempo` input in `scoreBelowActions`, directly beneath the staff. It retains its existing global BPM timing logic, validation and persistence. No slider or additional zoom controls are displayed there.
+6. **`web/style.css`:** Expanded shared score-button alignment rules to `.score-transport-actions > button`. The transport group uses `display:flex`, `gap:9px`, `flex:0 0 auto`, `margin-left:auto` and `direction:ltr`, keeping Play/Stop and Pause/Resume immediately adjacent to the right-aligned Record button in both languages. The Record control no longer individually carries `margin-left:auto`; its parent group handles right alignment. Added 44px minimum hit targets for Wrap and Zoom plus `fill:none`/`stroke:currentColor` on the Wrap icon. Removed the now-unused bottom-row zoom-button sizing rule, leaving the compact Tempo row styling intact.
+7. **`web/index.html`:** Changed only the CSS/JS cache-busting query versions to `score-toolbar-rearrange-1` so clients receive the revised button layout.
+8. **`CODEX_AI_ETUDE_HANDOFF.md`:** Recorded this complete handoff.
+
+### Final order / preservation
+**Below Score title, above staff:** Select · Pen · Eraser · icon-only Wrap staff · Zoom out (−) · Zoom in (+) **[flex spacer]** Play/Stop · Pause/Resume · Record (far right).
+
+**Below staff:** Tempo numeric BPM field only, followed by the existing Studio sections.
+
+No modifications were requested or made to the audio engine, transport scheduling, notes, notation, live piano, recording, AI, Practice page, or etude gallery.
+
+### Manual verification (not yet executed)
+- Check the order and edge alignment at desktop sizes; Play/Stop and Pause/Resume must be beside Record on the physical right, and the three editing tools with Wrap and Zoom on the left.
+- Check that the Wrap icon is recognizable and accurately reflects its active state, including RTL and light/dark.
+- Confirm Zoom still changes score scaling; Tempo remains numeric-only below the staff and changes actual playback timing.
+- At narrow widths, ensure groups wrap without clipping, Record remains grouped with Play/Pause, and controls remain operable.
+- Check rapid Play/Stop clicks, Pause/Resume and Record shortcut remain unchanged. This change was source-inspected; browser/device visual and audio tests are not claimed as passed.
