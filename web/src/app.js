@@ -804,45 +804,6 @@ function studio() {
   pauseButton.classList.add('score-transport-button');
   updateScoreTransportButtons();
 
-  // Visible global tempo control: changing BPM changes every onset, note
-  // duration and rest interval in the saved etude, not merely the label.
-  const tempoControl = el('div', scoreActions, undefined, 'score-tempo');
-  el('span', tempoControl, t('Tempo', 'سرعت'), 'score-tempo-label');
-  const tempoSlider = el('input', tempoControl, undefined, 'score-tempo-slider');
-  tempoSlider.type = 'range';
-  tempoSlider.min = '20';
-  tempoSlider.max = '300';
-  tempoSlider.step = '1';
-  tempoSlider.value = String(e.bpm);
-  tempoSlider.setAttribute('aria-label', t('Tempo in BPM', 'سرعت قطعه برحسب BPM'));
-  const tempoNumber = el('input', tempoControl, undefined, 'score-tempo-number');
-  tempoNumber.type = 'number';
-  tempoNumber.min = '20';
-  tempoNumber.max = '300';
-  tempoNumber.step = '1';
-  tempoNumber.value = String(e.bpm);
-  tempoNumber.setAttribute('aria-label', t('Tempo in BPM', 'سرعت قطعه برحسب BPM'));
-  const tempoUnit = el('span', tempoControl, 'BPM', 'score-tempo-unit');
-  const syncTempo = bpm => {
-    if (!setEtudeTempo(bpm)) return false;
-    tempoSlider.value = String(e.bpm);
-    tempoNumber.value = String(e.bpm);
-    return true;
-  };
-  tempoSlider.oninput = () => syncTempo(Number(tempoSlider.value));
-  tempoNumber.onchange = () => {
-    if (!tempoNumber.reportValidity() || !syncTempo(Number(tempoNumber.value)))
-      tempoNumber.value = String(e.bpm);
-  };
-
-  btn(scoreActions, '−', () => {
-    zoom = Math.max(.4, zoom - .2);
-    sheet()
-  }, t('Zoom out', 'کوچک‌نمایی'));
-  btn(scoreActions, '+', () => {
-    zoom = Math.min(3, zoom + .2);
-    sheet()
-  }, t('Zoom in', 'بزرگ‌نمایی'));
   btn(scoreActions, t('Wrap staff', 'چندخطی'), () => {
     wrap = !wrap;
     render()
@@ -853,6 +814,34 @@ function studio() {
   record.append(scoreTransportIcon(rec ? 'stop' : 'record'));
   el('span', record, rec ? t('Stop', 'توقف') : t('Record', 'ضبط'));
   el('div', panel, undefined, 'score');
+  const scoreBelowActions = row(panel);
+  scoreBelowActions.classList.add('score-below-actions');
+
+  // Tempo remains a global time-scale edit; only numeric input is shown.
+  const tempoControl = el('div', scoreBelowActions, undefined, 'score-tempo');
+  el('span', tempoControl, t('Tempo', 'سرعت'), 'score-tempo-label');
+  const tempoNumber = el('input', tempoControl, undefined, 'score-tempo-number');
+  tempoNumber.type = 'number';
+  tempoNumber.min = '20';
+  tempoNumber.max = '300';
+  tempoNumber.step = '1';
+  tempoNumber.value = String(e.bpm);
+  tempoNumber.inputMode = 'numeric';
+  tempoNumber.setAttribute('aria-label', t('Tempo in BPM', 'سرعت قطعه برحسب BPM'));
+  el('span', tempoControl, 'BPM', 'score-tempo-unit');
+  tempoNumber.onchange = () => {
+    if (!tempoNumber.reportValidity() || !setEtudeTempo(Number(tempoNumber.value)))
+      tempoNumber.value = String(e.bpm);
+  };
+
+  btn(scoreBelowActions, '−', () => {
+    zoom = Math.max(.4, zoom - .2);
+    sheet();
+  }, t('Zoom out', 'کوچک‌نمایی'));
+  btn(scoreBelowActions, '+', () => {
+    zoom = Math.min(3, zoom + .2);
+    sheet();
+  }, t('Zoom in', 'بزرگ‌نمایی'));
   const timing = el('details', panel, undefined, 'controls');
   el('summary', timing, t('Edit notes & timing', 'ویرایش نت و زمان'));
   const edit = row(timing);
