@@ -57,9 +57,23 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
   }
   const rows=[]
   let items=[],cursor=margin+16
-  for(const ev of events){
+  const spanFor=ev=>{
     const beats=Math.max(.125,ev.duration/second)
-    const span=Math.max(26,Math.min(100,36*zoom*(.85+.48*Math.sqrt(Math.min(16,beats)))))
+    return Math.max(26,Math.min(100,36*zoom*(.85+.48*Math.sqrt(Math.min(16,beats)))))
+  }
+  for(let i=0;i<events.length;i++){
+    const ev=events[i],span=spanFor(ev)
+    // Prefer a clean system break at a barline rather than splitting a
+    // measure between two staff rows when the entire measure can fit.
+    if(measured && wrap && items.length &&
+      (i===0 || ev.barIndex!==events[i-1].barIndex)){
+      let measureWidth=0
+      for(let j=i;j<events.length&&events[j].barIndex===ev.barIndex;j++)
+        measureWidth+=spanFor(events[j])
+      if(cursor+measureWidth>width-10 && margin+16+measureWidth<=width-10){
+        rows.push({items,extent:cursor});items=[];cursor=margin+16
+      }
+    }
     if(wrap&&items.length&&cursor+span>width-10){
       rows.push({items,extent:cursor});items=[];cursor=margin+16
     }
