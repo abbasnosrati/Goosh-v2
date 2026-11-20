@@ -978,3 +978,52 @@ The `signatureMode` toggle flow, selected key pitch, signature editing SVG, acci
 - Click the button again: normal score must return with its original key-signature icon; no note/tuning data should change simply by switching views.
 - Confirm visibility and alignment in light/dark themes and English/Persian, and at narrow/mobile widths; inspect browser rendering of the small SVG shapes.
 - Source-level code validation was performed; no live browser/device visual test was run.
+
+## Studio Key Signature Tuning — tuner-style UI redesign (2026-11-20)
+
+**Branch:** `redesign` only. **Reference:** User-provided dark tuner screenshot depicting a prominent cents measurement and frequency, a graduated horizontal slider, decrement/increment controls, Reset, and a Play note action. The task is a scoped visual/UX redesign of the **existing inline Tuning section inside the Key Signature Editor**. It does **not** create a new route or modal or change the tuning model.
+
+### Resulting layout
+
+- Retain the existing selected-pitch heading and separate key-signature accidental selection controls. Only the tuning/previews area underneath them is replaced.
+- Render one centered, softly elevated `div.signature-tuner-card` (up to 550px wide) matching the Goosh light/dark design tokens, with a subtle accent-tinted gradient, generous spacing and rounded edges.
+- **Header:** small localized `KEY SIGNATURE TUNING` label and `Tune <actual selected MIDI note>` heading. Unlike the screenshot, do not label this a *recorded* note: these pitches come from the selected key-signature staff position, not a microphone recording.
+- **Primary feedback:** large signed total tuning value in cents (e.g., `+0 ¢`, `-50 ¢`) using the existing accent color; live calculated frequency beneath it in `Hz` with two decimals. The frequency comes from the existing `freq(e,selected.midi)` function, ensuring that the readout and playback agree with the actual current accidental and offset.
+- **Slider:** horizontal, 1-cent step, with a clearly visible drag thumb and five graduated tick labels. The default fine-adjust range is **base accidental cents ±100** (clipped to -1200..1200); it automatically extends to include an existing manually entered value outside the fine-tune region. Tick labels represent **absolute cents relative to the natural note**, so they are accurate even when an accidental's nominal offset is not zero. The current value also drives an accent-colored progress line.
+- **Direct adjustments:** a centered numeric input accepting whole cents in the existing `-1200..1200` range, flanked by `−` and `+` buttons moving the value by **exactly one cent**. Browser-native spin arrows are visually suppressed; keyboard entry remains available and labelled for accessibility.
+- **Bottom actions:** Reset (returns to the **selected accidental's default value**, not always natural zero), Play original (unaltered equal-tempered natural selected pitch), and Play tuned (current audible tuning). Both listening actions use the existing, bounded short-note audition helper rather than introducing any new audio engine.
+- Responsive layout: three bottom actions across on larger widths; at very narrow widths Reset spans the row and the two Play buttons remain side-by-side. Sliders, cent ticks and numeric controls remain readable, without replacing the site's theme colors with screenshot-specific colors.
+
+### Precise source changes
+
+1. **`web/src/app.js` → `renderSignatureControls()`:**
+   - Replaced the old inline `div.signature-editor-tuning` and separate `div.signature-editor-previews` with a self-contained `div.signature-tuner-card` and its sub-elements: `signature-tuner-heading`, `signature-tuner-readout`, `signature-tuner-scale`, `signature-tuner-ticks`, `signature-tuner-adjust` and `signature-tuner-actions`.
+   - The selected `SIGNATURE_PITCHES` entry, `base=e.marks[mark]||0`, `effective=base+(e.offset[pc]||0)`, accidental buttons and their selection/save behavior remain unchanged.
+   - `updateReadout(value)` synchronizes displayed signed cents, actual `freq(e,selected.midi)`, and the CSS custom property `--tuning-progress`.
+   - `updateSliderRange(value)` creates fine-grained bounds around `base` and reprints the five tick values; numeric entry or step buttons can extend the slider range if needed.
+   - `applyCents(value)` retains the original validation and sound-model persistence semantics: it computes `delta = value - (e.marks[e.key[pc]]||0)`, validates values and delta within -1200..1200, stops any running Score playback, and changes **only `e.offset[pc]`** (or deletes the zero offset). No alternate pitch formula or backing data field was added.
+   - `setAndSave(value)` handles the ±1 buttons, Reset and committed numeric edits: applies cents, updates slider/readout/input, invokes the existing `save()`, then immediately auditions the tuned note.
+   - Slider `oninput` keeps the previous instantaneous pitch adjustment and throttled audible audition while dragging; `onchange` persists the final value and auditions it again. Direct numeric entry validates and reverts visibly on rejection.
+   - Reset is explicitly relative to the selected accidental's baseline: for an accidental like Koron, Reset does **not** silently change/remove the accidental or force it to natural pitch.
+   - The original/tuned preview buttons still use `auditionSignature()` with `force=true` for deliberate clicks. Their current labeling is localized and they show compact existing Play SVGs.
+   - The card is rendered only while `signatureMode` is active because the parent signature-controls section remains hidden on the normal Score view.
+
+2. **`web/style.css`:** Removed obsolete `.signature-editor-tuning` and `.signature-editor-previews` layouts. Added tightly scoped `#app[data-page="studio"]` rules for the card, hierarchy, theme-aware gradient, big cents display, frequency, range slider and thumbs (Chromium/WebKit and Firefox), graduated tick scale, 1-cent buttons, numeric field and three action buttons. Preserved existing mark-selection styling and key-signature grid. Added narrow-screen breakpoints for the card/actions; no global form colors, navigation styles or other pages were modified.
+
+3. **`web/index.html`:** Bumped the `web/style.css` and `web/src/app.js` query versions to `signature-tuner-redesign-1` so browsers load the new tuner rather than cached old styles.
+
+4. **`CODEX_AI_ETUDE_HANDOFF.md`:** Added this detailed implementation record for subsequent changes.
+
+### Manual verification checklist (not executed automatically)
+
+- Switch into the Key Signature Editor; select a pitch. Confirm the accidental controls remain intact and only the tuning area has the new centered tuner-card design. Confirm no extra modal appears.
+- Observe the initial cents and Hz; change the accidental between natural, flat, sharp, Koron and Sori. Check that the readout reflects the actual total cents and tuned frequency, and that Reset returns to the selected accidental's **default** offset.
+- Drag the slider through different values: the center readout, Hz and numeric field should update together; the audible previews should remain short and not accumulate; release and reload the etude to confirm persistence.
+- Click −/+ to move by exactly 1 cent; type a valid signed cent value into the central field and commit it; validate both slider bounds and frequency updates. Invalid values and out-of-range deltas must not be saved.
+- Compare Play original against Play tuned at an altered tuning; they should remain distinct actions. Confirm switching notes or leaving the editor does not corrupt the previously selected pitch.
+- Check light/dark and English/Persian modes as well as desktop and narrow mobile widths, including labels and 44px+ touch targets. Ensure no accidental horizontal overflow or interference with Score/AI/recording tools.
+- Only source-level checks were made; do **not** claim a browser/device or live audio QA pass without running it.
+
+### Explicit non-goals
+
+No changes to `web/src/key-signature.js`, `web/src/model.js`, `web/src/audio.js`, note data schemas, other tuning places, piano, Score playback sequencing, AI generation or Practice functions.
