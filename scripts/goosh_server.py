@@ -159,9 +159,6 @@ def generate_etude(dastgah, goals=None):
     mode = MODELS.get(dastgah)
     if mode is None:
         raise APIError(400, "Unsupported dastgah.")
-    key = os.environ.get("OPENROUTER_API_KEY", "").strip()
-    if not key or key == "replace_with_your_key":
-        raise APIError(503, "Set OPENROUTER_API_KEY in the project .env.")
     model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 
     prompt = "\n".join([
