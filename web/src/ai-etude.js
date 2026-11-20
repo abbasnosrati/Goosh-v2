@@ -115,13 +115,14 @@ export async function generateStudioEtude(context, current, signal, practiceGoal
     throw new Error('Invalid musical system.');
   }
   const {musicSystem, dastgah, scale, tonic} = context;
+  const selectedMeter = context.meter || 'none';
   let response
   try {
     response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({musicSystem, dastgah, scale, tonic, practiceGoals,
-        meter:current.meter||'none',
+        meter:selectedMeter,
         tuningCents: effectiveTuningCents(current)}),
       signal
     })
@@ -137,5 +138,9 @@ export async function generateStudioEtude(context, current, signal, practiceGoal
     throw new Error('Invalid API response.')
   }
   if (!response.ok) throw new Error(payload.error || 'AI generation failed.')
+  // The shared Etude may have been edited while awaiting the remote model.
+  // Never apply a valid response to a different meter than was requested.
+  if ((current.meter||'none')!==selectedMeter)
+    throw new Error('Time signature changed during generation. Please generate again.');
   return convertEtude(payload, current, context)
 }
