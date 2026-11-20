@@ -13,7 +13,7 @@ import {
 } from './audio.js?v=7237d72'
 import {
   score
-} from './score.js?v=rhythm-values-1'
+} from './score.js?v=playback-marker-1'
 import { generateStudioEtude } from './ai-etude.js?v=khara-free-phrases-3'
 import { renderHome } from './home.js?v=hub-iranian-features-2';
 const $ = s => document.querySelector(s),
@@ -29,7 +29,8 @@ let fa = localStorage.lang !== 'en',
   oct = 4,
   sel = new Set(),
   held = new Map(),
-  session = null
+  session = null,
+  playback = null
 const collection = new Map();
 const prefix = 'goosh.etude.';
 for(let i=0;i<localStorage.length;i++){
@@ -234,6 +235,42 @@ function refreshTake(take) {
   });
 }
 
+// Read the Web Audio clock so the notation marker follows scheduled sound,
+// including expressive rests and simultaneous notes. No transport changes.
+function paintPlaybackMarker(force = false) {
+  if (!playback) return;
+  const elapsed = playback.clock.currentTime - playback.started;
+  const active = new Set(playback.notes.filter(n =>
+    elapsed >= n.at && elapsed < n.at + n.d).map(n => n.index));
+  const signature = [...active].join(',');
+  if (!force && signature === playback.markerSignature) return;
+  playback.markerSignature = signature;
+  $('.score')?.querySelectorAll('[data-playback-note]').forEach(marker => {
+    const index = Number(marker.getAttribute('data-playback-note'));
+    marker.setAttribute('opacity', active.has(index) ? '1' : '0');
+  });
+}
+
+function clearPlaybackMarker() {
+  if (!playback) return;
+  cancelAnimationFrame(playback.frame);
+  playback = null;
+  $('.score')?.querySelectorAll('[data-playback-note]').forEach(marker => {
+    marker.setAttribute('opacity', '0');
+  });
+}
+
+function advancePlaybackMarker() {
+  if (!playback) return;
+  const current = playback;
+  paintPlaybackMarker();
+  if (current.clock.currentTime - current.started >= current.end) {
+    clearPlaybackMarker();
+  } else {
+    current.frame = requestAnimationFrame(advancePlaybackMarker);
+  }
+}
+
 function sheet() {
   const h = $('.score');
   if (h) score(h, e, {
@@ -259,6 +296,7 @@ function sheet() {
       }
     }
   })
+  if (h) paintPlaybackMarker(true)
 }
 
 function noteSettings(note) {
@@ -451,8 +489,20 @@ function studio() {
     render()
   }).classList.toggle('active', pen);
   btn(scoreActions, t('Play', 'پخش'), () => {
-    unlock();
-    for (const n of e.notes) voice(freq(e, n.m), n.at)(n.d)
+    const clock = unlock();
+    clearPlaybackMarker();
+    const notes = e.notes.map((n, index) => ({index, at: n.at, d: Math.min(n.d, 6)}));
+    const started = clock.currentTime;
+    for (const n of e.notes) voice(freq(e, n.m), n.at)(n.d);
+    if (notes.length) {
+      playback = {
+        clock, started, notes,
+        end: Math.max(...notes.map(n => n.at + n.d)),
+        markerSignature: null, frame: null
+      };
+      paintPlaybackMarker(true);
+      playback.frame = requestAnimationFrame(advancePlaybackMarker);
+    }
   });
   btn(scoreActions, '−', () => {
     zoom = Math.max(.4, zoom - .2);
@@ -583,6 +633,7 @@ function rules() {
 }
 
 function cancel() {
+  clearPlaybackMarker();
   if (session) {
     session.dead = true;
     session.mic?.close();

@@ -1,5 +1,16 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
+## 2026-11-20 — Studio playback active-note marker
+
+**Request:** while playing an etude in Studio, visually indicate exactly which notation note is sounding. Do **not** alter the Play button, add Pause/Stop controls, or refactor transport/audio.
+
+- `web/src/score.js` adds a non-interactive, accent-colored circle overlay to every note, tagged with its original `e.notes` index. The ring is independent of note selection, pen insertion, register, duration, score wrapping and Korean/E-koron notation.
+- `web/src/app.js` tracks the ongoing Studio playback against `AudioContext.currentTime` (the same clock used by `voice()`), using original note onset (`at`) and duration (`d`). The active ring moves with note timing; during rests it disappears; overlapping notes are marked simultaneously. The last ring clears when the track duration ends.
+- Re-rendering the score for zoom/wrap or other UI updates immediately repaints the current marker. Route/language cancellation removes the marker and cancels its animation loop. No changes were made to `audio.js` or the underlying stored notes.
+- The existing Play button remains unchanged: no Pause or Stop UI was added. Existing playback scheduling was preserved. Repeated Play clicks may still overlap audio streams because that is pre-existing behavior; only the newest Play instance drives the marker.
+- No live browser/device visual QA was run. Check with free-meter rests, short notes, long notes, same-time notes, wrapped staff, and rapid repeated Play presses.
+
+---
 ## 2026-11-20 — Musical note lengths/rest notation and Shur phrasing review
 
 **Scope:** shared SVG staff renderer and Shur AI prompt only; no piano/audio/model or unrelated UI changes.
