@@ -828,3 +828,27 @@ No modifications were requested or made to the audio engine, transport schedulin
 - Confirm Zoom still changes score scaling; Tempo remains numeric-only below the staff and changes actual playback timing.
 - At narrow widths, ensure groups wrap without clipping, Record remains grouped with Play/Pause, and controls remain operable.
 - Check rapid Play/Stop clicks, Pause/Resume and Record shortcut remain unchanged. This change was source-inspected; browser/device visual and audio tests are not claimed as passed.
+
+## Studio Generate AI / Record icon toolbar update (2026-11-20)
+
+**Branch:** `redesign` only. **Scope:** User requested moving the existing Generate button next to Record on the Studio Score toolbar, using iconography for both actions. This is a visual/DOM placement change only, not a feature rewrite.
+
+### Exact changes
+1. **`web/src/app.js`, `studio()`:** Removed the old text-only `Generate` button from the Studio project title / `.project-actions` row. The project actions still contain the title input, Share file, and PDF actions.
+2. **`web/src/app.js`, Score toolbar:** Created the identical Generate handler as `generateButton = btn(transportActions, '', ...)` after the existing Record control in the right-aligned `.score-transport-actions` group. The order is now **Play/Stop, Pause/Resume, Record, Generate AI**, with Generate directly adjacent to Record.
+3. **Preserved the previous desktop feature gate:** Generate still renders only when `window.matchMedia('(min-width: 768px)').matches`. Do not make Generate available on mobile as an unintended side effect of this change.
+4. **Preserved Generate functionality:** The click callback, modal `<dialog>`, Dastgah picker, status text, AI request through `generateStudioEtude()`, abort-on-close/route-change behavior, busy state, replacement confirmation, error handling, save and render behavior all remain exactly as before. The only intentional change to this block is its parent button and its visual presentation.
+5. **Record visual change:** The existing Record control is now icon-only: a filled circle for idle Record and a square for active Stop. Its existing toggle handler, `data-record` identifier, `primary`/`recording` state classes and `R` keyboard shortcut remain unchanged. Added a localized `aria-label` distinguishing Start recording / Stop recording; the localized `title` includes the `R` shortcut.
+6. **AI Generate icon:** Extended the existing `scoreTransportIcon(type)` inline SVG factory with a `generate` branch using a sparkles/star icon. The new button uses `score-generate`, appends `scoreTransportIcon('generate')`, and has localized `title` and `aria-label`. No image files, dependencies, or icon libraries were added.
+7. **`web/style.css`:** Gave `.score-record` and `.score-generate` identical 44×44 minimum hit areas and centered icon alignment. Added a narrow scoped `.score-generate svg` rule for outlined sparkles (`fill:none`, `stroke:currentColor`). Kept the rest of the shared Score toolbar / group layout unchanged, including the left editing/Wrap/Zoom tools, the right-edge transport group and the numeric-only Tempo row below the staff.
+8. **`web/index.html`:** Updated the cached CSS and app.js import query versions to `score-generate-record-icons-1` so the relocated button and styles load without stale assets.
+9. **`CODEX_AI_ETUDE_HANDOFF.md`:** Added this complete technical handoff.
+
+### Verification checklist for Codex (not automatically completed)
+- Open an etude on desktop (at least 768px wide). Confirm Generate no longer appears by Share/PDF at the top, and appears immediately **after Record** in the right-hand Score toolbar group.
+- Confirm both buttons display clear SVG icons at matching sizes, with mouse-hover localized tooltips and screen-reader labels. Record switches visually from a recording circle to a square while recording.
+- Generate still opens exactly the same modal and retains the existing workflow and cancel/abort behavior; no behavioral changes were intended.
+- Check Play/Stop, Pause/Resume, Record/Stop, the Record `R` shortcut, Pen/Eraser, Wrap and Zoom still work normally.
+- Confirm the existing Generate desktop-only breakpoint remains enforced below 768px; this change does not alter mobile availability.
+- Verify narrow desktop widths, light/dark and both language directions, especially that the group stays aligned and icon controls do not overlap.
+- Browser and device interaction tests are **not** claimed as passed based on source checks alone.
