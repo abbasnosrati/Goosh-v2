@@ -9,8 +9,9 @@ import {
   unlock,
   voice,
   liveVoice,
-  microphone
-} from './audio.js?v=7237d72'
+  microphone,
+  createScoreOutput
+} from './audio.js?v=score-transport-1'
 import {
   score
 } from './score.js?v=playback-marker-1'
@@ -30,7 +31,8 @@ let fa = localStorage.lang !== 'en',
   sel = new Set(),
   held = new Map(),
   session = null,
-  playback = null
+  playback = null,
+  scoreTransport = null
 const collection = new Map();
 const prefix = 'goosh.etude.';
 for(let i=0;i<localStorage.length;i++){
@@ -324,6 +326,159 @@ function noteSettings(note) {
   dialog.showModal();
 }
 
+
+function scoreTransportIcon(type) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  const rect = (x,y,width,height) => {
+    const r = document.createElementNS(ns, 'rect');
+    for (const [k,v] of Object.entries({x,y,width,height,rx:1})) r.setAttribute(k,v);
+    svg.append(r);
+  };
+  if (type === 'play') {
+    const path = document.createElementNS(ns,'path');
+    path.setAttribute('d','M8 5 19 12 8 19Z');
+    svg.append(path);
+  } else if (type === 'pause') {
+    rect(5,5,5,14);
+    rect(14,5,5,14);
+  } else if (type === 'record') {
+    const circle = document.createElementNS(ns,'circle');
+    circle.setAttribute('cx','12');
+    circle.setAttribute('cy','12');
+    circle.setAttribute('r','7');
+    svg.append(circle);
+  } else {
+    rect(5,5,14,14);
+  }
+  return svg;
+}
+
+function updateScoreTransportButtons() {
+  const playButton = $('[data-score-transport]');
+  const pauseButton = $('[data-score-pause]');
+  if (!playButton || !pauseButton) return;
+  const isActive = Boolean(scoreTransport);
+  const mainLabel = isActive
+    ? t('Stop and return to start', 'توقف و بازگشت به ابتدای قطعه')
+    : t('Play score', 'پخش قطعه');
+  playButton.replaceChildren(scoreTransportIcon(isActive ? 'stop' : 'play'));
+  playButton.title = mainLabel;
+  playButton.setAttribute('aria-label', mainLabel);
+  const pauseLabel = scoreTransport?.paused
+    ? t('Resume playback', 'ادامه پخش')
+    : t('Pause playback', 'مکث پخش');
+  pauseButton.replaceChildren(scoreTransportIcon(scoreTransport?.paused ? 'play' : 'pause'));
+  pauseButton.title = pauseLabel;
+  pauseButton.setAttribute('aria-label', pauseLabel);
+  pauseButton.disabled = !isActive;
+}
+
+function silenceScoreTransport(transport) {
+  if (transport.timer !== null) clearTimeout(transport.timer);
+  transport.timer = null;
+  if (transport.output) {
+    const output = transport.output;
+    transport.output = null;
+    const time = transport.clock.currentTime;
+    output.gain.cancelScheduledValues(time);
+    output.gain.setTargetAtTime(0, time, .006);
+    setTimeout(() => output.disconnect(), 160);
+  }
+  for (const release of transport.releases.splice(0)) {
+    try { release(0) } catch {}
+  }
+}
+
+function stopScorePlayback() {
+  if (!scoreTransport) return;
+  const transport = scoreTransport;
+  scoreTransport = null;
+  silenceScoreTransport(transport);
+  clearPlaybackMarker();
+  updateScoreTransportButtons();
+}
+
+function scheduleScoreTransport(transport) {
+  transport.output = createScoreOutput();
+  transport.anchor = transport.clock.currentTime;
+  for (const n of transport.notes) {
+    const remaining = n.at + n.d - transport.offset;
+    if (remaining <= 0) continue;
+    const delay = Math.max(0, n.at - transport.offset);
+    const duration = n.at < transport.offset ? remaining : n.d;
+    const release = voice(n.hz, delay, transport.output);
+    release(duration);
+    transport.releases.push(release);
+  }
+  transport.timer = setTimeout(() => {
+    if (scoreTransport === transport && !transport.paused) stopScorePlayback();
+  }, Math.max(100, (transport.end - transport.offset) * 1000 + 220));
+}
+
+function startScorePlayback() {
+  if (scoreTransport || !e.notes.length) return;
+  const clock = unlock();
+  const notes = e.notes.map((n,index) => ({
+    index, at:n.at, d:Math.min(n.d,6), hz:freq(e,n.m)
+  }));
+  const end = Math.max(0, ...notes.map(n => n.at + n.d));
+  const transport = {
+    clock, notes, end, offset:0, anchor:0, paused:false,
+    output:null, releases:[], timer:null
+  };
+  scoreTransport = transport;
+  scheduleScoreTransport(transport);
+  // Keep the existing score note-marker system without changing its functions.
+  clearPlaybackMarker();
+  playback = {
+    clock, started:transport.anchor,
+    notes:notes.map(n => ({index:n.index, at:n.at, d:n.d})),
+    end, markerSignature:null, frame:null
+  };
+  paintPlaybackMarker(true);
+  playback.frame = requestAnimationFrame(advancePlaybackMarker);
+  updateScoreTransportButtons();
+}
+
+function pauseScorePlayback() {
+  const transport = scoreTransport;
+  if (!transport || transport.paused) return;
+  transport.offset = Math.min(transport.end,
+    transport.offset + Math.max(0, transport.clock.currentTime - transport.anchor));
+  silenceScoreTransport(transport);
+  transport.paused = true;
+  if (playback) {
+    cancelAnimationFrame(playback.frame);
+    playback.clock = {currentTime:transport.offset};
+    playback.started = 0;
+    paintPlaybackMarker(true);
+  }
+  updateScoreTransportButtons();
+}
+
+function resumeScorePlayback() {
+  const transport = scoreTransport;
+  if (!transport || !transport.paused) return;
+  if (transport.offset >= transport.end) {
+    stopScorePlayback();
+    return;
+  }
+  transport.paused = false;
+  scheduleScoreTransport(transport);
+  if (playback) {
+    playback.clock = transport.clock;
+    playback.started = transport.anchor - transport.offset;
+    playback.markerSignature = null;
+    paintPlaybackMarker(true);
+    playback.frame = requestAnimationFrame(advancePlaybackMarker);
+  }
+  updateScoreTransportButtons();
+}
+
 function studio() {
   const heading = el('h2', app, e.title || t('Untitled etude', 'اتود بدون نام'), 'print-title');
   const top = row(app);top.classList.add('project-actions');
@@ -448,15 +603,13 @@ function studio() {
       dialog.showModal();
     }, t('Generate a Persian etude with OpenRouter', 'تولید اتود ایرانی با OpenRouter'));
   }
-  const panel = el('section', app),
-    r = row(panel);
-  const record = btn(r, rec ? t('■ Stop', '■ توقف') : t('● Record', '● ضبط'), toggle, t('Record / Stop', 'ضبط / توقف') + ' (R)');
-  record.dataset.record = '';record.className=rec?'recording':'primary';
+  const panel = el('section', app);
 
   function toggle() {
     stopKeys();
     if (rec) { save(); rec = null; }
     else {
+      stopScorePlayback();
       unlock();
       rec = {
         start: unlock().currentTime,
@@ -488,22 +641,20 @@ function studio() {
     pen = !pen;
     render()
   }).classList.toggle('active', pen);
-  btn(scoreActions, t('Play', 'پخش'), () => {
-    const clock = unlock();
-    clearPlaybackMarker();
-    const notes = e.notes.map((n, index) => ({index, at: n.at, d: Math.min(n.d, 6)}));
-    const started = clock.currentTime;
-    for (const n of e.notes) voice(freq(e, n.m), n.at)(n.d);
-    if (notes.length) {
-      playback = {
-        clock, started, notes,
-        end: Math.max(...notes.map(n => n.at + n.d)),
-        markerSignature: null, frame: null
-      };
-      paintPlaybackMarker(true);
-      playback.frame = requestAnimationFrame(advancePlaybackMarker);
-    }
+  const playButton = btn(scoreActions, '', () => {
+    if (scoreTransport) stopScorePlayback();
+    else startScorePlayback();
   });
+  playButton.dataset.scoreTransport = '';
+  playButton.classList.add('score-transport-button');
+  const pauseButton = btn(scoreActions, '', () => {
+    if (!scoreTransport) return;
+    if (scoreTransport.paused) resumeScorePlayback();
+    else pauseScorePlayback();
+  });
+  pauseButton.dataset.scorePause = '';
+  pauseButton.classList.add('score-transport-button');
+  updateScoreTransportButtons();
   btn(scoreActions, '−', () => {
     zoom = Math.max(.4, zoom - .2);
     sheet()
@@ -516,6 +667,11 @@ function studio() {
     wrap = !wrap;
     render()
   }).classList.toggle('active', wrap);
+  const record = btn(scoreActions, '', toggle, t('Record / Stop', 'ضبط / توقف') + ' (R)');
+  record.dataset.record = '';
+  record.className = (rec ? 'recording' : 'primary') + ' score-record';
+  record.append(scoreTransportIcon(rec ? 'stop' : 'record'));
+  el('span', record, rec ? t('Stop', 'توقف') : t('Record', 'ضبط'));
   el('div', panel, undefined, 'score');
   const timing = el('details', panel, undefined, 'controls');
   el('summary', timing, t('Edit notes & timing', 'ویرایش نت و زمان'));
@@ -633,6 +789,7 @@ function rules() {
 }
 
 function cancel() {
+  stopScorePlayback();
   clearPlaybackMarker();
   if (session) {
     session.dead = true;
