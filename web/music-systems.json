@@ -1,0 +1,269 @@
+{
+  "version": 1,
+  "systems": [
+    {
+      "id": "iranian",
+      "label": {
+        "en": "Iranian Music",
+        "fa": "موسیقی ایرانی"
+      },
+      "selector": {
+        "en": "Dastgah",
+        "fa": "دستگاه"
+      },
+      "styles": [
+        {
+          "id": "shur",
+          "label": {
+            "en": "Shur",
+            "fa": "شور"
+          }
+        },
+        {
+          "id": "segah",
+          "label": {
+            "en": "Segah",
+            "fa": "سه‌گاه"
+          }
+        },
+        {
+          "id": "mahur",
+          "label": {
+            "en": "Mahur",
+            "fa": "ماهور"
+          }
+        },
+        {
+          "id": "homayun",
+          "label": {
+            "en": "Homayun",
+            "fa": "همایون"
+          }
+        }
+      ]
+    },
+    {
+      "id": "western",
+      "label": {
+        "en": "Western Music",
+        "fa": "موسیقی غربی"
+      },
+      "selector": {
+        "en": "Scale / Mode",
+        "fa": "گام / مد"
+      },
+      "styles": [
+        {
+          "id": "major",
+          "label": {
+            "en": "Major",
+            "fa": "ماژور"
+          },
+          "intervals": [
+            0,
+            2,
+            4,
+            5,
+            7,
+            9,
+            11,
+            12
+          ]
+        },
+        {
+          "id": "minor",
+          "label": {
+            "en": "Natural Minor",
+            "fa": "مینور طبیعی"
+          },
+          "intervals": [
+            0,
+            2,
+            3,
+            5,
+            7,
+            8,
+            10,
+            12
+          ]
+        },
+        {
+          "id": "dorian",
+          "label": {
+            "en": "Dorian",
+            "fa": "دورین"
+          },
+          "intervals": [
+            0,
+            2,
+            3,
+            5,
+            7,
+            9,
+            10,
+            12
+          ]
+        },
+        {
+          "id": "phrygian",
+          "label": {
+            "en": "Phrygian",
+            "fa": "فریژین"
+          },
+          "intervals": [
+            0,
+            1,
+            3,
+            5,
+            7,
+            8,
+            10,
+            12
+          ]
+        },
+        {
+          "id": "lydian",
+          "label": {
+            "en": "Lydian",
+            "fa": "لیدین"
+          },
+          "intervals": [
+            0,
+            2,
+            4,
+            6,
+            7,
+            9,
+            11,
+            12
+          ]
+        },
+        {
+          "id": "mixolydian",
+          "label": {
+            "en": "Mixolydian",
+            "fa": "میکسولیدین"
+          },
+          "intervals": [
+            0,
+            2,
+            4,
+            5,
+            7,
+            9,
+            10,
+            12
+          ]
+        },
+        {
+          "id": "locrian",
+          "label": {
+            "en": "Locrian",
+            "fa": "لوکرین"
+          },
+          "intervals": [
+            0,
+            1,
+            3,
+            5,
+            6,
+            8,
+            10,
+            12
+          ]
+        }
+      ]
+    }
+  ],
+  "tonics": [
+    {
+      "id": "C",
+      "label": "C",
+      "spellings": [
+        "C"
+      ]
+    },
+    {
+      "id": "C#",
+      "label": "C♯ / D♭",
+      "spellings": [
+        "C#",
+        "Db"
+      ]
+    },
+    {
+      "id": "D",
+      "label": "D",
+      "spellings": [
+        "D"
+      ]
+    },
+    {
+      "id": "D#",
+      "label": "D♯ / E♭",
+      "spellings": [
+        "D#",
+        "Eb"
+      ]
+    },
+    {
+      "id": "E",
+      "label": "E",
+      "spellings": [
+        "E"
+      ]
+    },
+    {
+      "id": "F",
+      "label": "F",
+      "spellings": [
+        "F"
+      ]
+    },
+    {
+      "id": "F#",
+      "label": "F♯ / G♭",
+      "spellings": [
+        "F#",
+        "Gb"
+      ]
+    },
+    {
+      "id": "G",
+      "label": "G",
+      "spellings": [
+        "G"
+      ]
+    },
+    {
+      "id": "G#",
+      "label": "G♯ / A♭",
+      "spellings": [
+        "G#",
+        "Ab"
+      ]
+    },
+    {
+      "id": "A",
+      "label": "A",
+      "spellings": [
+        "A"
+      ]
+    },
+    {
+      "id": "A#",
+      "label": "A♯ / B♭",
+      "spellings": [
+        "A#",
+        "Bb"
+      ]
+    },
+    {
+      "id": "B",
+      "label": "B",
+      "spellings": [
+        "B"
+      ]
+    }
+  ]
+}
