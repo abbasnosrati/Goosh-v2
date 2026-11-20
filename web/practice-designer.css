@@ -33,3 +33,5 @@
 #app[data-page="studio"] .practice-warning{padding:9px 12px;border-inline-start:3px solid var(--accent);background:var(--bg);border-radius:6px;font-size:.85rem}
 #app[data-page="studio"] .practice-footnote,#app[data-page="studio"] .practice-empty{opacity:.7;font-size:.82rem;margin:12px 0 0}
 @media(max-width:560px){#app[data-page="studio"] .practice-add-row button{width:100%}#app[data-page="studio"] .practice-fields{grid-template-columns:1fr}#app[data-page="studio"] .practice-step{padding:11px}#app[data-page="studio"] .practice-step-actions button{min-height:40px}}
+
+@media print{#app[data-page="studio"] .studio-practice-host{display:none!important}}
