@@ -327,12 +327,14 @@ export function planScoreNoteReorder(etude, sourceIndex, target) {
   const sourceSlot=from.findIndex(b=>b.kind==='note'&&
     b.indices.includes(sourceIndex));
   if(sourceSlot<0)return invalid('missing-slot');
-  if(from[sourceSlot].indices.length!==1)return invalid('polyphony');
   const destSlot=to.findIndex(b=>b.kind===target.type&&(
     b.kind==='note'?Math.abs(b.at-target.at)<EPS:
     target.at>=b.at-EPS&&target.at<b.at+b.duration-EPS));
   if(destSlot<0)return invalid('missing-slot');
   if(sourceBar===destinationBar&&sourceSlot===destSlot)return unchanged();
+  // A chord member can move vertically without touching the group onset;
+  // only horizontal separation of a single voice needs special handling.
+  if(from[sourceSlot].indices.length!==1)return invalid('polyphony');
 
   const changes=new Map();
   const reflow=(blocks,barIndex)=>{
