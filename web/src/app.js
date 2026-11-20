@@ -811,10 +811,27 @@ function etudeList(){
     const entries=[...collection.entries()].filter(([,entry])=>entry.origin===origin);
     if(!entries.length)el('p',section,origin==='own'?t('No etudes created yet.','هنوز اتودی نساخته‌اید.'):t('No files imported yet.','هنوز فایلی وارد نکرده‌اید.'));
     for(const [id,entry] of entries.reverse()){
-      const item=el('button',section,undefined,'etude-item');
-      el('strong',item,entry.data.title||t('Untitled etude','اتود بدون نام'));
+      const card=el('div',section,undefined,'etude-card');
+      const item=el('button',card,undefined,'etude-item');
+      const name=entry.data.title||t('Untitled etude','اتود بدون نام');
+      el('strong',item,name);
       el('small',item,entry.data.notes.length.toLocaleString(fa?'fa':'en')+' '+t('notes','نت'));
       item.onclick=()=>{location.hash=page+'/'+id};
+      const remove=btn(card,'',()=>{
+        if(!confirm(t('Delete "'+name+'"? This cannot be undone.','اتود «'+name+'» حذف شود؟ این کار قابل بازگشت نیست.')))return;
+        localStorage.removeItem(prefix+id);
+        collection.delete(id);
+        render();
+      },t('Delete etude','حذف اتود'));
+      remove.className='etude-delete';
+      remove.setAttribute('aria-label',t('Delete etude','حذف اتود')+' · '+name);
+      const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      icon.setAttribute('viewBox','0 0 24 24');
+      icon.setAttribute('aria-hidden','true');
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d','M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6');
+      icon.append(path);
+      remove.append(icon);
     }
   }
 }
