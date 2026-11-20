@@ -17,7 +17,7 @@ function symbol(beats) {
     Math.abs(Math.log(beats/a.value))?b:a)
   return {...best,exact:Math.abs(beats-best.value)<Math.max(.005,best.value*.012)}
 }
-export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,move,tool='select',fa=false}={}) {
+export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,move,moveRest,eraseRest,tool='select',fa=false}={}) {
   host.replaceChildren()
   const second=60/(e.bpm||90),width=Math.max(240,host.clientWidth||700)
   const timeline=meterTimeline(e)
@@ -175,7 +175,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
         ?Math.min(23,nearest.span*.55):-14)
     }
   }
-  function dragDestination(ev,source){
+  function dragDestination(ev,source,asRest=false){
     let nearest=null
     for(const [index,row] of rows.entries()){
       const svg=row.svg
@@ -191,15 +191,15 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
     if(!nearest)return null
     const {index,rect,x}=nearest
     const y=(ev.clientY-rect.top)*(165/rect.height)
-    const m=pitchFromY(y)
-    const slot=dragSlot(index,x,e.notes.indexOf(source))
+    const m=asRest?null:pitchFromY(y)
+    const slot=dragSlot(index,x,asRest?-1:e.notes.indexOf(source))
     if(!slot)return null
-    return {rowIndex:index,m,slot:{
+    return {rowIndex:index,m,rest:asRest,slot:{
         type:slot.type,at:slot.at,barIndex:slot.barIndex,
         position:slot.position
       },
       x:Math.max(12,Math.min(nearest.row.width-12,slot.x)),
-      y:104-step(m)*4.5}
+      y:asRest?89:104-step(m)*4.5}
   }
   function showDragPreview(destination){
     for(const marker of dragMarkers){
@@ -209,16 +209,20 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
     const marker=dragMarkers[destination.rowIndex]
     if(!marker)return
     const {x,y}=destination
+    marker.head.setAttribute('display',destination.rest?'none':'inline')
     marker.head.setAttribute('cx',x)
     marker.head.setAttribute('cy',y)
     marker.head.setAttribute('transform','rotate(-20 '+x+' '+y+')')
+    marker.rest.setAttribute('display',destination.rest?'inline':'none')
+    marker.rest.setAttribute('x',x-7)
+    marker.rest.setAttribute('y',y-2)
     marker.guide.setAttribute('x1',x)
     marker.guide.setAttribute('x2',x)
     marker.ledger.forEach((line,i)=>{
       const positions=[]
       for(let l=113;l<=y;l+=9)positions.push(l)
       for(let l=59;l>=y;l-=9)positions.push(l)
-      line.setAttribute('display',i<positions.length?'inline':'none')
+      line.setAttribute('display',!destination.rest&&i<positions.length?'inline':'none')
       if(i<positions.length){
         line.setAttribute('x1',x-10)
         line.setAttribute('x2',x+10)
@@ -291,29 +295,102 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
     const rest=ev=>{
       const x=ev.x,beats=ev.duration/second,s=symbol(beats)
       if(ev.wholeMeasure){
-        // One centered standard full-measure rest represents any entirely
-        // empty measure, including compound meters such as 6/8.
+        // A whole-measure rest is an editable event: Eraser removes the
+        // EMPTY MEASURE if another measure still remains.
         draw('rect',{x:x-7,y:76,width:14,height:4,fill:'currentColor'})
+      }else{
+        if(s.kind==='whole'||s.kind==='half')
+          draw('rect',{x:x-7,y:s.kind==='whole'?76:82,
+            width:14,height:4,fill:'currentColor'})
+        else if(s.kind==='quarter')
+          draw('path',{d:'M'+(x-2)+' 69 l6 8 -6 7 6 8 q-12 0 -7 11 q-8 -8 0 -12 l-4 -7 5 -8 -5 -6',
+            fill:'none',stroke:'currentColor','stroke-width':2.25,
+            'stroke-linejoin':'round','stroke-linecap':'round'})
+        else {
+          const n=s.kind==='eighth'?1:s.kind==='sixteenth'?2:3
+          line(x+3,70,x-5,103,{'stroke-width':2})
+          for(let i=0;i<n;i++){
+            const y=73+i*8
+            draw('circle',{cx:x+3,cy:y,r:3,fill:'currentColor'})
+            draw('path',{d:'M'+(x+3)+' '+y+' Q'+(x+14)+' '+(y-1)+' '+(x+5)+' '+(y+10),
+              fill:'none',stroke:'currentColor','stroke-width':2.2})
+          }
+        }
+        dots(x,89,s.dots)
+      }
+      if(tool!=='select'&&tool!=='eraser')return
+      if(tool==='select'&&!moveRest)return
+      if(tool==='eraser'&&!eraseRest)return
+      // The glyph remains unchanged; an invisible hit target supplies
+      // the same editing affordances as the visible noteheads.
+      const hit=draw('rect',{x:x-13,y:64,width:26,height:48,
+        fill:'transparent','data-score-rest':ev.at,
+        'data-rest-duration':ev.duration,
+        'data-rest-bar':ev.barIndex??-1})
+      const source={at:ev.at,duration:ev.duration,
+        barIndex:measured?ev.barIndex:null,wholeMeasure:!!ev.wholeMeasure}
+      if(tool==='eraser'){
+        hit.style.cursor='pointer'
+        hit.onclick=pointerEvent=>{
+          pointerEvent.stopPropagation()
+          eraseRest?.(source)
+        }
         return
       }
-      if(s.kind==='whole'||s.kind==='half')
-        draw('rect',{x:x-7,y:s.kind==='whole'?76:82,
-          width:14,height:4,fill:'currentColor'})
-      else if(s.kind==='quarter')
-        draw('path',{d:'M'+(x-2)+' 69 l6 8 -6 7 6 8 q-12 0 -7 11 q-8 -8 0 -12 l-4 -7 5 -8 -5 -6',
-          fill:'none',stroke:'currentColor','stroke-width':2.25,
-          'stroke-linejoin':'round','stroke-linecap':'round'})
-      else {
-        const n=s.kind==='eighth'?1:s.kind==='sixteenth'?2:3
-        line(x+3,70,x-5,103,{'stroke-width':2})
-        for(let i=0;i<n;i++){
-          const y=73+i*8
-          draw('circle',{cx:x+3,cy:y,r:3,fill:'currentColor'})
-          draw('path',{d:'M'+(x+3)+' '+y+' Q'+(x+14)+' '+(y-1)+' '+(x+5)+' '+(y+10),
-            fill:'none',stroke:'currentColor','stroke-width':2.2})
-        }
+      let pointer=null,ignoreClick=false
+      hit.style.cursor='grab'
+      hit.style.touchAction='none'
+      hit.onpointerdown=event=>{
+        if(event.button!==undefined&&event.button!==0)return
+        if(event.isPrimary===false)return
+        ignoreClick=false
+        pointer={id:event.pointerId,startX:event.clientX,
+          startY:event.clientY,dragged:false}
+        hit.setPointerCapture?.(event.pointerId)
+        event.stopPropagation()
       }
-      dots(x,89,s.dots)
+      hit.onpointermove=event=>{
+        if(!pointer||pointer.id!==event.pointerId)return
+        if(!pointer.dragged&&Math.hypot(
+          event.clientX-pointer.startX,event.clientY-pointer.startY)<5)return
+        pointer.dragged=true
+        hit.style.cursor='grabbing'
+        showDragPreview(dragDestination(event,null,true))
+        event.preventDefault?.()
+      }
+      hit.onpointerup=event=>{
+        if(!pointer||pointer.id!==event.pointerId)return
+        const dragged=pointer.dragged
+        pointer=null
+        ignoreClick=true
+        if(hit.hasPointerCapture?.(event.pointerId))
+          hit.releasePointerCapture(event.pointerId)
+        hit.style.cursor='grab'
+        if(dragged){
+          const destination=dragDestination(event,null,true)
+          showDragPreview(null)
+          if(destination)moveRest?.(source,destination.slot)
+        }
+        event.stopPropagation()
+      }
+      hit.onpointercancel=event=>{
+        if(pointer?.id!==event.pointerId)return
+        pointer=null
+        ignoreClick=true
+        hit.style.cursor='grab'
+        showDragPreview(null)
+        event.stopPropagation()
+      }
+      hit.onlostpointercapture=()=>{
+        if(!pointer)return
+        pointer=null
+        hit.style.cursor='grab'
+        showDragPreview(null)
+      }
+      hit.onclick=event=>{
+        event.stopPropagation()
+        if(ignoreClick)ignoreClick=false
+      }
     }
     const note=({note:n,index},x,onset=n.at)=>{
       const visual=Number.isInteger(n.staffM)?n.staffM:n.m
@@ -455,7 +532,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
         }
       }
     }
-    if(tool==='select'&&move){
+    if(tool==='select'&&(move||moveRest)){
       // A passive ghost shows the snapped pitch/position during dragging.
       // It is separate from the original notehead and never captures input.
       const group=document.createElementNS(ns,'g')
@@ -480,7 +557,12 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
         rx:6.8,ry:4.8,fill:'var(--accent)','fill-opacity':.25,
         stroke:'var(--accent)','stroke-opacity':.8,'stroke-width':1.3
       })
-      dragMarkers[rowIndex]={group,guide,ledger,head}
+      const rest=markerElement('rect',{
+        width:14,height:4,fill:'var(--accent)','fill-opacity':.72,
+        stroke:'var(--accent)','stroke-width':.6
+      })
+      rest.setAttribute('display','none')
+      dragMarkers[rowIndex]={group,guide,ledger,head,rest}
     }
     if(tool==='pen'){
       // A ghost note communicates BOTH the exact snapped pitch and which
