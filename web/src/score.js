@@ -153,18 +153,26 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
   const dragMarkers = []
   function dragSlot(rowIndex,x,sourceIndex){
     const row=rows[rowIndex]
+    // A rest is an independent notation event in Free too, NOT an
+    // invisible gap skipped by the horizontal drag/ordinal sequence.
     const slots=row.items.filter(item=>
-      item.type==='notes'||(measured&&item.type==='rest'))
+      item.type==='notes'||item.type==='rest')
     if(!slots.length)return null
     const nearest=slots.reduce((best,item)=>
       !best||Math.abs(item.x-x)<Math.abs(best.x-x)?item:best,null)
     const same=nearest.type==='notes'&&nearest.entries.some(
       entry=>entry.index===sourceIndex)
+    // In Free the left/right side of the target means insert BEFORE/AFTER
+    // this note OR rest. We never replace that existing event.
+    const position=!measured&&x>nearest.x+Math.min(16,nearest.span*.35)
+      ?'after':'before'
     return {
       type:nearest.type==='notes'?'note':'rest',
       at:same?e.notes[sourceIndex].at:nearest.at,
       barIndex:measured?nearest.barIndex:null,
-      x:nearest.x
+      position,
+      x:measured?nearest.x:nearest.x+(position==='after'
+        ?Math.min(23,nearest.span*.55):-14)
     }
   }
   function dragDestination(ev,source){
@@ -187,7 +195,8 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
     const slot=dragSlot(index,x,e.notes.indexOf(source))
     if(!slot)return null
     return {rowIndex:index,m,slot:{
-        type:slot.type,at:slot.at,barIndex:slot.barIndex
+        type:slot.type,at:slot.at,barIndex:slot.barIndex,
+        position:slot.position
       },
       x:Math.max(12,Math.min(nearest.row.width-12,slot.x)),
       y:104-step(m)*4.5}
