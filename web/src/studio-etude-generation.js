@@ -1,7 +1,7 @@
 import { loadPracticeCatalog } from './studio-practice.js?v=practice-flow-2';
 import { loadMusicSystems } from './music-catalog.js';
 import { newPracticeStep, localized } from './practice-model.js';
-import { generateStudioEtude } from './ai-etude.js?v=practice-goal-flow-1';
+import { generateStudioEtude } from './ai-etude.js?v=practice-flow-2';
 import { confirmStudioAction, showStudioMessage } from './studio-dialog.js';
 
 // The score remains canonical; composerMode and pending user selection are only
