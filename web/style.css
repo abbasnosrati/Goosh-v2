@@ -1025,3 +1025,42 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+
+
+/* One metering control for the existing Score in Manual and AI. */
+#app[data-page="studio"] .score-meter-control,
+#app[data-page="studio"] .score-pen-length {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: .86rem;
+  font-weight: 600;
+}
+#app[data-page="studio"] .score-meter-control select,
+#app[data-page="studio"] .score-pen-length select {
+  min-height: 38px;
+  max-width: 225px;
+}
+#app[data-page="studio"] .score-meter-status,
+#app[data-page="studio"] .score-meter-record-hint {
+  flex: 1 1 100%;
+  margin: 2px 0 0;
+  font-size: .83rem;
+  color: var(--muted);
+}
+#app[data-page="studio"] .score-meter-status:not([hidden]),
+#app[data-page="studio"] .score-meter-warning {
+  color: var(--accent);
+  font-weight: 600;
+}
+#app[data-page="studio"] .score-meter-control[hidden],
+#app[data-page="studio"] .score-pen-length[hidden],
+#app[data-page="studio"] .score-meter-record-hint[hidden],
+#app[data-page="studio"] .score-meter-status[hidden] {
+  display: none !important;
+}
+#app[data-page="studio"] .score-meter-warning {
+  margin: 4px 0 8px;
+  font-size: .84rem;
+}
