@@ -1081,6 +1081,7 @@ function studio() {
     scoreActions.querySelectorAll('.score-zoom-button').forEach(button=>button.hidden=true);
 
   const transportActions = el('div', scoreActions, undefined, 'score-transport-actions');
+  transportActions.hidden = signatureMode;
   const playButton = btn(transportActions, '', () => {
     if (scoreTransport) stopScorePlayback();
     else startScorePlayback();
