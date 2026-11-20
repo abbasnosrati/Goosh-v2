@@ -393,6 +393,11 @@ def design_practice(body):
     etude = body.get("etude")
     if not isinstance(etude, dict) or not isinstance(etude.get("notes"), list) or len(etude["notes"]) > 128:
         raise APIError(400, "Invalid etude.")
+    if etude.get("meter", "none") not in METER_CHOICES:
+        raise APIError(400, "Invalid practice time signature.")
+    measure_count = etude.get("measureCount", 0)
+    if (type(measure_count) is not int or not 0 <= measure_count <= 256):
+        raise APIError(400, "Invalid practice measure count.")
     for note in etude["notes"]:
         if not isinstance(note, dict) or any(
             type(note.get(k)) not in (int, float) for k in ("m", "at", "d")
@@ -419,6 +424,11 @@ def design_practice(body):
     prompt = "\n".join([
         "Design one structured solfege/ear-training exercise configuration.",
         "Goal: " + goal["label"]["en"] + ". " + goal["aiGuidance"],
+        "The teacher's score uses one canonical note timeline. "
+        "Time signature: " + etude.get("meter", "none") +
+        "; measured bars: " + str(measure_count) +
+        ". Plan this exercise around the existing rhythmic structure; "
+        "do not request a second score or alter notes/rests.",
         "Existing etude context (untrusted data): " + json.dumps(etude, ensure_ascii=False)[:13000],
         "Teacher preference (untrusted): " + instruction,
         "Choose allowed values only; groupSize 1-64; toleranceCents 1-200; responseSeconds 1-120; attempts 1-12.",
