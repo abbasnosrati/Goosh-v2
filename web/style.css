@@ -1029,6 +1029,7 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 
 /* One metering control for the existing Score in Manual and AI. */
 #app[data-page="studio"] .score-meter-control,
+#app[data-page="studio"] .score-measure-count,
 #app[data-page="studio"] .score-pen-length {
   display: inline-flex;
   align-items: center;
@@ -1063,4 +1064,12 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score-meter-warning {
   margin: 4px 0 8px;
   font-size: .84rem;
+}
+
+#app[data-page="studio"] .score-measure-count input {
+  width: 74px;
+  min-height: 38px;
+}
+#app[data-page="studio"] .score-measure-count[hidden] {
+  display: none !important;
 }
