@@ -1037,11 +1037,30 @@ function studio() {
   });
   // The Manual/AI choice lives beside the existing score. The notes stay
   // canonical on this etude; generated exercises only store practice settings.
+  const showSignatureEditor = editing => {
+    stopSignaturePreview();
+    if (editing) {
+      stopScorePlayback();
+      signaturePitch = SIGNATURE_PITCHES.find(p => e.key[p.pc])?.pc ?? 0;
+      scoreTool = 'select';
+    }
+    signatureMode = editing;
+    render();
+    // After the Studio rerender, take the user to the editor/score heading.
+    const heading = document.querySelector('#app[data-page="studio"] .score-heading');
+    heading?.scrollIntoView({
+      behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start'
+    });
+  };
   const composeHost = el('div', panel, undefined, 'studio-compose-host');
   const composerTarget = e, composerId = activeId;
   let practiceHost = null;
   const composer = mountEtudeComposer(composeHost, {
     etude: composerTarget, fa,
+    signatureEditing: signatureMode,
+    signatureIcon: scoreSignatureIcon,
+    onEditKeySignature: () => showSignatureEditor(true),
     isRecording: () => Boolean(rec),
     isCurrent: () => page === 'studio' && activeId === composerId && e === composerTarget,
     onModeChange: locked => {
@@ -1079,31 +1098,22 @@ function studio() {
     }
   });
   const scoreHeading = el('div', panel, undefined, 'score-heading');
-  const signatureAction = signatureMode
-    ? t('Back to Score', 'بازگشت به خط حامل')
-    : t('Edit Key Signature', 'ویرایش سرکلید');
-  const keyButton = btn(scoreHeading, '', () => {
-    stopSignaturePreview();
-    if (!signatureMode) {
-      stopScorePlayback();
-      signaturePitch = SIGNATURE_PITCHES.find(p => e.key[p.pc])?.pc ?? 0;
-      scoreTool = 'select';
-    }
-    signatureMode = !signatureMode;
-    render();
-  }, signatureAction);
-  keyButton.className = 'score-tool-button signature-toggle';
-  keyButton.dataset.signatureToggle = '';
-  keyButton.setAttribute('aria-label', signatureAction);
-  keyButton.setAttribute('aria-pressed', String(signatureMode));
-  const signatureSymbol = signatureMode ? scoreReturnStaffIcon() : scoreSignatureIcon();
-  signatureSymbol.classList.add('score-switch-symbol');
-  keyButton.append(signatureSymbol);
-  const switchLabel = el('span', keyButton, signatureAction, 'signature-toggle-label');
-  switchLabel.dir = 'auto';
-  el('h2',panel,signatureMode
+  el('h2',scoreHeading,signatureMode
     ? t('Key Signature Editor','تنظیم سرکلید')
     : t('Score','خط حامل'),'score-title');
+  // Return is visible only while editing, beside the editor itself.
+  // The entry control now belongs to Musical System (in both composer modes).
+  if (signatureMode) {
+    const returnLabel = t('Back to Score', 'بازگشت به خط حامل');
+    const returnButton = btn(scoreHeading, '', () => showSignatureEditor(false), returnLabel);
+    returnButton.className = 'score-tool-button signature-toggle score-back-button';
+    returnButton.setAttribute('aria-label', returnLabel);
+    const symbol = scoreReturnStaffIcon();
+    symbol.classList.add('score-switch-symbol');
+    returnButton.append(symbol);
+    const label = el('span', returnButton, returnLabel, 'signature-toggle-label');
+    label.dir = 'auto';
+  }
   const scoreActions = row(panel);
   scoreActions.classList.add('score-actions');
   for (const [mode, en, ir] of [
