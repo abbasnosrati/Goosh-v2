@@ -463,6 +463,13 @@ details[open]>summary{margin-bottom:12px}
 #app[data-page="studio"] .score-heading .signature-toggle-label {
   white-space: nowrap;
 }
+/* The current editor name sits beneath the switch and above its tools. */
+#app[data-page="studio"] .score-heading + .score-title {
+  margin: 4px 0 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
 @media print {
   #app[data-page="studio"] .score-heading { display: none !important; }
 }
