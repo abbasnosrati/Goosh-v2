@@ -1640,3 +1640,11 @@ The new URL structure does not create authenticated sharing, Universal Links, An
 **Preserve:** Existing Etude Studio composition rules, key-signature editor, audio and AI logic; Practice runner logic and `e.rule`; canonical `etude.notes` plus multiple `practiceSequence` steps; the ten-goal catalog; existing design tokens; and all functionality outside navigation. No additional page component or second repository is required.
 
 - Final server rewrite refinement: the route fallback now also accepts percent-encoded single-segment IDs (e.g. `%20` in a URL path), while still excluding file extensions (literal `.`) and nested routes. This aligns the Python server more closely with `encodeURIComponent`-based URL generation. Automatically generated local etude IDs remain UUID-compatible and do not need escaping.
+
+
+### Final route regression checks (same branch)
+
+- An isolated, executable JavaScript mock of the new Router passed clean-path creation and reading, legacy Studio/Practice hash upgrades (including `/index.html#studio`), single-entry history pushes, no duplicate navigation and correct URL encoding/decoding for route IDs. No hash URL is produced for newly selected routes.
+- An isolated, executable mock of the Android App-plugin callback passed priority handling for an open dialog, `history.back()` when `canGoBack=true`, replacement navigation to Home on a direct-start nested route without history, exit only at Home without history, and no Android Back listener registration on iOS.
+- Re-read the pre-routing `redesign` version and the current feature-branch source: the body of `function practice()` is **byte-for-byte identical** (5,975 bytes). The routing listener immediately following that function changed, but exercise execution did not.
+- Parsed the changed JavaScript sources without syntax failures. The Python server logic was inspected at source level; no Python runtime compilation or network-backed server/device verification was possible. A container GitHub checkout attempt failed because the execution container could not resolve github.com; the connected GitHub source was the authoritative editing and inspection channel.
