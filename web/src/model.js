@@ -260,32 +260,50 @@ export function planScoreNoteReorder(etude, sourceIndex, target) {
   };
 
   if(!meter){
-    // In Free, "third note to eighth note" means reorder the note
-    // sequence, not nudge playback by milliseconds. Intentional silent
-    // gaps stay attached to their ordinal slots and are not manufactured
-    // by dragging a few pixels.
-    if(target.type!=='note')return unchanged();
+    // The user's Free notation is an ORDERED SEQUENCE OF EVENTS:
+    // sounding note/chord blocks AND intentional silence are ALL slots.
+    // A dragged note is REMOVED and INSERTED before/after the target,
+    // never swapped with it. Existing rests keep their own duration
+    // and place in this event sequence; they are not tied to array indices.
+    if(target.type!=='note'&&target.type!=='rest')
+      return invalid('missing-slot');
     const groups=groupNotes(all);
-    const src=groups.findIndex(g=>g.indices.includes(sourceIndex));
-    const dst=groups.findIndex(g=>Math.abs(g.at-target.at)<EPS);
-    if(src<0||dst<0)return invalid('missing-slot');
-    if(src===dst)return unchanged();
-    if(groups[src].indices.length>1||!validateGroups(groups))
-      return invalid('polyphony');
-    const gaps=groups.map((g,i)=>
-      Math.max(0,g.at-(i?groups[i-1].at+groups[i-1].duration:0)));
-    const order=groups.slice();
-    const [moving]=order.splice(src,1);
-    order.splice(dst,0,moving);
+    if(!validateGroups(groups))return invalid('polyphony');
+    const blocks=[];
+    let current=0;
+    for(const group of groups){
+      if(group.at>current+EPS)
+        blocks.push({kind:'rest',at:current,duration:group.at-current});
+      blocks.push(group);
+      current=group.at+group.duration;
+    }
+    const sourceSlot=blocks.findIndex(block=>block.kind==='note'&&
+      block.indices.includes(sourceIndex));
+    const destinationSlot=blocks.findIndex(block=>
+      block.kind===target.type&&Math.abs(block.at-target.at)<EPS);
+    if(sourceSlot<0||destinationSlot<0)return invalid('missing-slot');
+    if(sourceSlot===destinationSlot)return unchanged();
+    // Pulling a single voice from a chord without explicit multi-voice
+    // notation must not destroy the other voices.
+    if(blocks[sourceSlot].indices.length!==1)return invalid('polyphony');
+    const destination=blocks[destinationSlot];
+    const order=blocks.slice();
+    const [moving]=order.splice(sourceSlot,1);
+    const destinationPosition=order.indexOf(destination);
+    order.splice(destinationPosition+
+      (target.position==='after'?1:0),0,moving);
     const positions=new Map();
     let cursor=0;
-    order.forEach((g,i)=>{
-      cursor+=gaps[i];
-      for(const index of g.indices)positions.set(index,cursor);
-      cursor+=g.duration;
-    });
+    for(const block of order){
+      if(block.kind==='note')
+        for(const index of block.indices)positions.set(index,cursor);
+      cursor+=block.duration;
+    }
+    // Removing a note closes its former slot; inserting it opens a slot
+    // at the destination. Relative order and lengths of ALL other notes
+    // and rests remain intact, and the overall musical span stays fixed.
     const result=createMoves(positions);
-    if(result.ok)result.kind='reorder';
+    if(result.ok)result.kind='insert';
     return result;
   }
 
