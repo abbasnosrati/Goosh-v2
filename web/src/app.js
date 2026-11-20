@@ -1733,6 +1733,35 @@ function openDeleteEtudeDialog(id,name){
   cancelButton.focus();
 }
 
+// The Studio and Practice libraries share one card renderer and visual
+// component. Only the destination route differs; both retain their delete
+// action and the same imported/owned metadata.
+function renderLibraryEtudeCard(section, id, entry, destination) {
+  const card=el('div',section,undefined,'etude-card');
+  const item=el('button',card,undefined,'etude-item');
+  item.type='button';
+  const name=entry.data.title||t('Untitled etude','اتود بدون نام');
+  el('strong',item,name);
+  el('small',item,entry.data.notes.length.toLocaleString(fa?'fa':'en')+' '+t('notes','نت'));
+  item.onclick=()=>navigateTo(destination,id);
+  const remove=btn(card,'',()=>openDeleteEtudeDialog(id,name),t('Delete etude','حذف اتود'));
+  remove.className='etude-delete';
+  remove.setAttribute('aria-label',t('Delete etude','حذف اتود')+' · '+name);
+  const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  icon.setAttribute('viewBox','0 0 24 24');
+  icon.setAttribute('aria-hidden','true');
+  icon.setAttribute('focusable','false');
+  icon.setAttribute('fill','none');
+  icon.setAttribute('stroke','currentColor');
+  icon.setAttribute('stroke-width','1.8');
+  icon.setAttribute('stroke-linecap','round');
+  icon.setAttribute('stroke-linejoin','round');
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d','M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6');
+  icon.append(path);
+  remove.append(icon);
+}
+
 function etudeList(){
   const actions=row(app);
   if(page==='studio')btn(actions,t('New etude','ساخت اتود'),()=>{
@@ -1745,30 +1774,8 @@ function etudeList(){
     el('h2',section,title);
     const entries=[...collection.entries()].filter(([,entry])=>entry.origin===origin);
     if(!entries.length)el('p',section,origin==='own'?t('No etudes created yet.','هنوز اتودی نساخته‌اید.'):t('No files imported yet.','هنوز فایلی وارد نکرده‌اید.'));
-    for(const [id,entry] of entries.reverse()){
-      const card=el('div',section,undefined,'etude-card');
-      const item=el('button',card,undefined,'etude-item');
-      const name=entry.data.title||t('Untitled etude','اتود بدون نام');
-      el('strong',item,name);
-      el('small',item,entry.data.notes.length.toLocaleString(fa?'fa':'en')+' '+t('notes','نت'));
-      item.onclick=()=>navigateTo(page,id);
-      const remove=btn(card,'',()=>openDeleteEtudeDialog(id,name),t('Delete etude','حذف اتود'));
-      remove.className='etude-delete';
-      remove.setAttribute('aria-label',t('Delete etude','حذف اتود')+' · '+name);
-      const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
-      icon.setAttribute('viewBox','0 0 24 24');
-      icon.setAttribute('aria-hidden','true');
-      icon.setAttribute('focusable','false');
-      icon.setAttribute('fill','none');
-      icon.setAttribute('stroke','currentColor');
-      icon.setAttribute('stroke-width','1.8');
-      icon.setAttribute('stroke-linecap','round');
-      icon.setAttribute('stroke-linejoin','round');
-      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('d','M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6');
-      icon.append(path);
-      remove.append(icon);
-    }
+    for(const [id,entry] of entries.reverse())
+      renderLibraryEtudeCard(section,id,entry,page);
   }
 }
 
