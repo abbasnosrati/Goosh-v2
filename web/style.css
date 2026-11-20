@@ -374,11 +374,33 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   width: 100%;
   direction: ltr;
 }
-#app[data-page="studio"] .score-actions > button {
+#app[data-page="studio"] .score-actions > button,
+#app[data-page="studio"] .score-transport-actions > button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+}
+#app[data-page="studio"] .score-transport-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  direction: ltr;
+}
+#app[data-page="studio"] .score-actions .score-wrap-button,
+#app[data-page="studio"] .score-actions .score-zoom-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 9px;
+}
+#app[data-page="studio"] .score-actions .score-wrap-button svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 #app[data-page="studio"] .score-actions .score-transport-button {
   min-width: 44px;
@@ -393,7 +415,6 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   flex: none;
 }
 #app[data-page="studio"] .score-actions .score-record {
-  margin-left: auto;
   white-space: nowrap;
 }
 
@@ -432,10 +453,6 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   gap: 10px;
   margin-block: 8px 12px;
   direction: ltr;
-}
-#app[data-page="studio"] .score-below-actions > button {
-  min-width: 44px;
-  min-height: 44px;
 }
 #app[data-page="studio"] .score-tempo {
   display: inline-flex;
