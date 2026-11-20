@@ -55,7 +55,7 @@ export function valid(e) {
 // seconds; e.meter only describes how that timeline is engraved and checked.
 // This is NOT an independent playback engine or a second note collection.
 export const METER_PRESETS = Object.freeze([
-  'none','2/4','3/4','4/4','5/4','6/8','7/8','9/8','12/8'
+  'none','2/4','3/4','4/4','6/4','6/8','6/16','7/8','5/8'
 ]);
 export const RHYTHM_TICKS_PER_QUARTER = 960;
 const MIN_NOTATABLE_TICKS = 30; // double-dotted 32nd resolution
