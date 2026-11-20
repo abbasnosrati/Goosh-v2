@@ -42,7 +42,8 @@ let fa = localStorage.lang !== 'en',
   session = null,
   playback = null,
   scoreTransport = null,
-  scoreUndoStack = []
+  scoreUndoStack = [],
+  practiceToExpand = null
 const collection = new Map();
 const prefix = 'goosh.etude.';
 for(let i=0;i<localStorage.length;i++){
@@ -75,6 +76,7 @@ function loadRoute(){
   signatureMode=false;
   signaturePitch=0;
   scoreUndoStack.length=0;
+  practiceToExpand=null;
 }
 loadRoute();
 const t = (en, ir) => fa ? ir : en,
@@ -1038,6 +1040,7 @@ function studio() {
     onGenerated: next => {
       stopScorePlayback();
       Object.assign(composerTarget, next);
+      practiceToExpand = next.practiceSequence?.[0]?.id ?? null;
       // Regeneration begins a completely new practice plan, including the
       // legacy Practice settings; no second copy of notes is maintained.
       composerTarget.rule = fresh().rule;
@@ -1166,7 +1169,9 @@ function studio() {
   // Practice Sequence is authored here in Studio, not in the learner player.
   // The editor reads/writes the same e.practiceSequence used by AI and export.
   const practiceHost=el('div',app,undefined,'studio-practice-host');
-  renderStudioPractice(practiceHost,e,{fa,save});
+  const expanded = practiceToExpand ? [practiceToExpand] : [];
+  practiceToExpand = null;
+  renderStudioPractice(practiceHost,e,{fa,save,expanded});
   rules();
   sheet()
 }
