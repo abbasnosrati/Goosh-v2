@@ -1,5 +1,23 @@
 # Codex Handoff — OpenRouter Persian Etude Generator in Goosh v2
 
+## 2026-11-20 — Center the natural sign and try pitch-based preview-button labels
+
+**User scope:** Two *visual/wording* changes in the existing Studio Key Signature Editor only. First, the natural (bekar, ♮) symbol is not optically centered in its square selection button. Second, trial replacement of "Play original" with the selected natural note name + existing Play icon, and "Play tuned" with the selected note name, its **current** frequency in Hz, and the existing Play icon. The user explicitly reserves the option to revert if the experiment looks worse. No note staff, key tuning, audio or actual preview behavior was requested to change.
+
+**Exact changes in `web/src/app.js`:**
+1. Preserve `SIGNATURE_MARKS` and all button handlers, values, accessible descriptions and selected styling. For `option === ''` (natural/bekar) only, render its existing Unicode ♮ inside a dedicated `span.signature-natural-symbol` and add `signature-natural-mark` to its existing button. This isolates glyph centering from the flat/sharp and SVG Koron/Sori buttons. Clicking the existing button still removes the accidental and clears that pitch's offset exactly as before.
+2. On the original-sound preview, preserve the current Play SVG and `auditionSignature(440*2**((selected.midi-69)/12), true)` callback. Replace the text "Play original" with `selected.name` (e.g. A), and retain the full `Play original natural note` text as tooltip and accessible name so the semantic distinction isn't lost.
+3. On the tuned-sound preview, keep the Play SVG and `auditionSignature(freq(e,selected.midi), true)` callback. Replace the old "Play tuned" button text with a dedicated span updated through the **existing** `updateReadout()`: `selected.name + ' · ' + freq(e,selected.midi).toFixed(2) + ' Hz'`, e.g. `A · 427.47 Hz`. `updateReadout()` already runs on initial editor rendering, slider input, slider change, and ±/Reset/numeric updates, so the button's displayed frequency stays in sync with the same `freq()` data used for playback. Its `aria-label` dynamically identifies it as the tuned preview.
+4. No frequency calculations were invented: original still uses its existing 12-tone equal-tempered sample frequency; tuned still reads `freq(e,selected.midi)`. No alteration to `e.key`, `e.marks`, `e.offset`, engine, voice duration, preview throttling or transport.
+
+**CSS:** `web/style.css` adds only three narrowly scoped rules: inline-flex centering for the natural-mark button, a consistently centered 24×28 inner natural-sign span with a 1px optical correction, and no-wrap/tabular digits for the tuned button text. Existing button borders, theme, active states and other mark sizes remain unchanged. The optical 1px tweak is explicitly a visual experiment and can be reverted independently.
+
+**Cache and handoff:** `web/index.html` refreshes only the app and CSS import version tags. This section is added to `CODEX_AI_ETUDE_HANDOFF.md` **in the same commit**. No changes to `web/src/key-signature.js`, `web/src/persian-accidentals.js`, `web/src/score.js`, `web/src/model.js`, `web/src/audio.js`, Python, AI generation, saved etudes, other routes or functionality.
+
+**Verification / remaining QA:** Check natural button visually against flat/sharp on desktop and mobile; check its click still removes a mark. For selected A, confirm original-button text `A` and tuned-button text `A · 427.47 Hz` when tuned to -50 cents (rounded), updating instantly as the slider changes. Check both preview buttons still play the same original/tuned frequencies they played before. Source-level/mocked DOM tests do not certify cross-browser glyph placement or audible playback. If the trial is rejected, revert only these visual and label changes without altering core data/audio behavior.
+
+---
+
 ## 2026-11-20 — Correct Persian accidental sizes in mark buttons and actual pitch position in regular score
 
 **User's screenshots and scope:** The Koron rendered in the dedicated key-signature editor was already approved: **do not touch it**. In the row of mark-choice buttons, Koron and Sori were disproportionately large compared with the existing ♭/♯ buttons; in the **regular etude score staff** the Koron was oversized and its triangle pointed near **C5** when the configured mark was actually **A4**. Correct only visual SVG sizing and positioning, keeping the existing meaning, data, piano, frequency, staff interaction and approved editor layout unchanged.

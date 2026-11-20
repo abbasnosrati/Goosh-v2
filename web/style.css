@@ -945,3 +945,24 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   color: inherit;
   pointer-events: none;
 }
+
+/* Studio signature editor: center only the natural (bekar) symbol. */
+#app[data-page="studio"] .signature-editor-mark.signature-natural-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+#app[data-page="studio"] .signature-natural-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 28px;
+  font-size: 25px;
+  line-height: 1;
+  transform: translate(1px, 1px);
+}
+#app[data-page="studio"] .signature-preview-label {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}

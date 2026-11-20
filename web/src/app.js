@@ -363,6 +363,13 @@ function renderSignatureControls(){
     if(option===mark)button.classList.add('active')
     button.setAttribute('aria-label',t(en,ir))
     button.setAttribute('aria-pressed',String(option===mark))
+    if(option===''){
+      // Keep the natural sign optically centered without affecting any
+      // other symbol or the existing selection/clear-key behavior.
+      button.classList.add('signature-natural-mark')
+      button.textContent=''
+      el('span',button,glyph,'signature-natural-symbol')
+    }
     if(isPersianAccidental(option)){
       button.classList.add('signature-microtonal')
       // Match the optical height of the unchanged flat/sharp symbols.
@@ -403,24 +410,28 @@ function renderSignatureControls(){
   const reset=btn(actions,'↺ '+t('Reset','بازنشانی'),()=>setAndSave(base),
     t('Reset to this signature mark’s default tuning','بازگرداندن کوک پیش‌فرض علامت سرکلید'))
   reset.className='signature-tuner-reset'
-  const original=btn(actions,t('Play original','شنیدن صدای اصلی'),()=>{
+  // This is the pitch in its natural tuning, independent of e.key/e.offset.
+  const original=btn(actions,selected.name,()=>{
     auditionSignature(440*2**((selected.midi-69)/12),true)
   },t('Play original natural note','شنیدن صدای طبیعی نت'))
   original.className='signature-editor-listen signature-editor-original'
-  original.setAttribute('aria-label',t('Play original natural note','شنیدن صدای طبیعی نت'))
+  original.setAttribute('aria-label',t('Play original natural note','شنیدن صدای طبیعی نت')+' '+selected.name)
   original.prepend(scoreTransportIcon('play'))
-  const tuned=btn(actions,t('Play tuned','شنیدن صدای تنظیم‌شده'),()=>{
+  const tuned=btn(actions,'',()=>{
     auditionSignature(freq(e,selected.midi),true)
   },t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
   tuned.className='signature-editor-listen signature-editor-tuned'
-  tuned.setAttribute('aria-label',t('Listen to tuned note','شنیدن نت با کوک تنظیم‌شده'))
+  const tunedLabel=el('span',tuned,undefined,'signature-preview-label')
   tuned.prepend(scoreTransportIcon('play'))
 
   const currentCents=()=>base+(e.offset[pc]||0)
   const formatSigned=n=>(n>0?'+':'')+n
   const updateReadout=value=>{
     centsValue.textContent=formatSigned(value)+' ¢'
-    frequency.textContent=freq(e,selected.midi).toFixed(2)+' Hz'
+    const hz=freq(e,selected.midi).toFixed(2)
+    frequency.textContent=hz+' Hz'
+    tunedLabel.textContent=selected.name+' · '+hz+' Hz'
+    tuned.setAttribute('aria-label',t('Play tuned note','پخش نت کوک‌شده')+' '+selected.name+' · '+hz+' Hz')
     slider.style.setProperty('--tuning-progress',
       ((value-Number(slider.min))/(Number(slider.max)-Number(slider.min)||1)*100)+'%')
   }
