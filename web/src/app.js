@@ -510,19 +510,49 @@ function noteSettings(note) {
 }
 
 
-function scoreSignatureIcon(){
-  const ns='http://www.w3.org/2000/svg'
-  const svg=document.createElementNS(ns,'svg')
-  svg.setAttribute('viewBox','0 0 24 24')
-  svg.setAttribute('aria-hidden','true')
-  svg.setAttribute('focusable','false')
-  svg.setAttribute('fill','none')
-  svg.setAttribute('stroke','currentColor')
-  svg.setAttribute('stroke-width','1.7')
-  const path=document.createElementNS(ns,'path')
-  path.setAttribute('d','M3 6h18M3 10h18M3 14h18M3 18h18M8 2v20M15 4v16M12 8l6 8M18 8l-6 8')
-  svg.append(path)
-  return svg
+// One context-sensitive pictogram: a key signature on the notes view,
+// and a plain musical staff when already editing the key signature.
+function scoreSignatureIcon(view = 'signature') {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 32 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  const path = (d, width = 1.25) => {
+    const p = document.createElementNS(ns, 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('stroke-width', String(width));
+    svg.append(p);
+  };
+  // Five staff lines are shared by both icons.
+  path('M1 4.5H31 M1 8.25H31 M1 12H31 M1 15.75H31 M1 19.5H31', 0.9);
+  if (view === 'signature') {
+    // Conventional sharps on the staff make this read as a key signature.
+    path('M11 3V17 M14.5 2V16 M9.5 8.5L16 7 M9.5 12.5L16 11', 1.6);
+    path('M21 7V21 M24.5 6V20 M19.5 12.5L26 11 M19.5 16.5L26 15', 1.6);
+  } else {
+    // Unaltered staff with notes signifies returning to the score.
+    const head = (cx, cy) => {
+      const n = document.createElementNS(ns, 'ellipse');
+      n.setAttribute('cx', String(cx));
+      n.setAttribute('cy', String(cy));
+      n.setAttribute('rx', '3.1');
+      n.setAttribute('ry', '2.2');
+      n.setAttribute('transform', 'rotate(-22 ' + cx + ' ' + cy + ')');
+      n.setAttribute('fill', 'currentColor');
+      n.setAttribute('stroke', 'none');
+      svg.append(n);
+    };
+    head(11, 15.75);
+    path('M14 15.75V4.5', 1.45);
+    head(23, 12);
+    path('M26 12V2.5', 1.45);
+  }
+  return svg;
 }
 
 function studioFileIcon(type) {
@@ -866,6 +896,9 @@ function studio() {
     if (!signatureMode && scoreTool === mode) tool.classList.add('active');
     tool.append(scoreToolIcon(mode));
     if(mode==='select'){
+      const signatureAction = signatureMode
+        ? t('Return to score', 'بازگشت به خط حامل')
+        : t('Edit key signature', 'ویرایش سرکلید');
       const keyButton=btn(scoreActions,'',()=>{
         if(!signatureMode){
           stopScorePlayback();
@@ -874,13 +907,13 @@ function studio() {
         }
         signatureMode=!signatureMode;
         render();
-      },t('Edit key signature','ویرایش سرکلید'));
+      },signatureAction);
       keyButton.className='score-tool-button signature-toggle';
       keyButton.dataset.signatureToggle='';
-      keyButton.setAttribute('aria-label',t('Edit key signature','ویرایش سرکلید'));
+      keyButton.setAttribute('aria-label',signatureAction);
       keyButton.setAttribute('aria-pressed',String(signatureMode));
       if(signatureMode)keyButton.classList.add('active');
-      keyButton.append(scoreSignatureIcon());
+      keyButton.append(scoreSignatureIcon(signatureMode ? 'staff' : 'signature'));
     }
   }
   const wrapButton = btn(scoreActions, '', () => {
