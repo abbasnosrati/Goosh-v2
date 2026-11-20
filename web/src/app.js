@@ -581,6 +581,10 @@ function scoreTransportIcon(type) {
     circle.setAttribute('cy','12');
     circle.setAttribute('r','7');
     svg.append(circle);
+  } else if (type === 'generate') {
+    const sparkle = document.createElementNS(ns,'path');
+    sparkle.setAttribute('d','M12 2 14.3 8.7 21 11l-6.7 2.3L12 20l-2.3-6.7L3 11l6.7-2.3L12 2ZM19 17l.7 1.8L21.5 19.5l-1.8.7L19 22l-.7-1.8-1.8-.7 1.8-.7Z');
+    svg.append(sparkle);
   } else {
     rect(5,5,14,14);
   }
@@ -766,73 +770,6 @@ function studio() {
     wrap = prev;
     sheet()
   })
-  // Isolated AI generation control. Existing staff, piano and editor are reused.
-  if (window.matchMedia('(min-width: 768px)').matches) {
-    btn(top, 'Generate', () => {
-      if (rec) {
-        alert(t('Stop recording before generating.', 'قبل از تولید اتود، ضبط را متوقف کنید.'));
-        return;
-      }
-      const dialog = el('dialog', document.body);
-      el('h2', dialog, t('Generate etude with AI', 'تولید اتود با هوش مصنوعی'));
-      const pickerLabel = el('label', dialog, t('Dastgah', 'دستگاه'));
-      const picker = el('select', pickerLabel);
-      for (const [id, en, ir] of [
-        ['shur', 'Shur', 'شور'],
-        ['segah', 'Segah', 'سه‌گاه'],
-        ['mahur', 'Mahur', 'ماهور'],
-        ['homayun', 'Homayun', 'همایون']
-      ]) {
-        const option = el('option', picker, t(en, ir));
-        option.value = id;
-      }
-      const status = el('p', dialog, t(
-        'The new etude will appear on the existing staff.',
-        'اتود روی خط حامل فعلی استودیو قرار می‌گیرد.'
-      ));
-      status.setAttribute('role', 'status');
-      status.setAttribute('aria-live', 'polite');
-      const controls = row(dialog);
-      const controller = new AbortController();
-      const generate = btn(controls, t('Generate', 'تولید'), async () => {
-        if (e.notes.length && !confirm(t(
-          'Replace the notes in this etude with the generated notes?',
-          'نت‌های فعلی این اتود با نت‌های تولیدشده جایگزین شوند؟'
-        ))) return;
-        const target = e, targetId = activeId;
-        generate.disabled = true;
-        picker.disabled = true;
-        status.textContent = t('Generating...', 'در حال تولید اتود...');
-        try {
-          const result = await generateStudioEtude(picker.value, target, controller.signal);
-          if (controller.signal.aborted) return;
-          // A finished request must never modify a different etude or page.
-          if (page !== 'studio' || activeId !== targetId || e !== target) return;
-          Object.assign(target, result);
-          sel.clear();
-          save();
-          dialog.close();
-          render();
-        } catch (error) {
-          if (error.name !== 'AbortError')
-            status.textContent = t('Generation failed: ', 'خطای تولید: ') + error.message;
-        } finally {
-          generate.disabled = false;
-          picker.disabled = false;
-        }
-      });
-      generate.className = 'primary';
-      btn(controls, t('Cancel', 'انصراف'), () => dialog.close());
-      const closeOnRoute = () => dialog.close();
-      window.addEventListener('hashchange', closeOnRoute);
-      dialog.onclose = () => {
-        controller.abort();
-        window.removeEventListener('hashchange', closeOnRoute);
-        dialog.remove();
-      };
-      dialog.showModal();
-    }, t('Generate a Persian etude with OpenRouter', 'تولید اتود ایرانی با OpenRouter'));
-  }
   const panel = el('section', app);
 
   function toggle() {
@@ -936,11 +873,82 @@ function studio() {
   pauseButton.dataset.scorePause = '';
   pauseButton.classList.add('score-transport-button');
   updateScoreTransportButtons();
-  const record = btn(transportActions, '', toggle, t('Record / Stop', 'ضبط / توقف') + ' (R)');
+  const record = btn(transportActions, '', toggle,
+    (rec ? t('Stop recording', 'توقف ضبط') : t('Start recording', 'شروع ضبط')) + ' (R)');
   record.dataset.record = '';
   record.className = (rec ? 'recording' : 'primary') + ' score-record';
+  record.setAttribute('aria-label', rec ? t('Stop recording', 'توقف ضبط') : t('Start recording', 'شروع ضبط'));
   record.append(scoreTransportIcon(rec ? 'stop' : 'record'));
-  el('span', record, rec ? t('Stop', 'توقف') : t('Record', 'ضبط'));
+  // Isolated AI generation control. Existing staff, piano and editor are reused.
+  if (window.matchMedia('(min-width: 768px)').matches) {
+    const generateButton = btn(transportActions, '', () => {
+      if (rec) {
+        alert(t('Stop recording before generating.', 'قبل از تولید اتود، ضبط را متوقف کنید.'));
+        return;
+      }
+      const dialog = el('dialog', document.body);
+      el('h2', dialog, t('Generate etude with AI', 'تولید اتود با هوش مصنوعی'));
+      const pickerLabel = el('label', dialog, t('Dastgah', 'دستگاه'));
+      const picker = el('select', pickerLabel);
+      for (const [id, en, ir] of [
+        ['shur', 'Shur', 'شور'],
+        ['segah', 'Segah', 'سه‌گاه'],
+        ['mahur', 'Mahur', 'ماهور'],
+        ['homayun', 'Homayun', 'همایون']
+      ]) {
+        const option = el('option', picker, t(en, ir));
+        option.value = id;
+      }
+      const status = el('p', dialog, t(
+        'The new etude will appear on the existing staff.',
+        'اتود روی خط حامل فعلی استودیو قرار می‌گیرد.'
+      ));
+      status.setAttribute('role', 'status');
+      status.setAttribute('aria-live', 'polite');
+      const controls = row(dialog);
+      const controller = new AbortController();
+      const generate = btn(controls, t('Generate', 'تولید'), async () => {
+        if (e.notes.length && !confirm(t(
+          'Replace the notes in this etude with the generated notes?',
+          'نت‌های فعلی این اتود با نت‌های تولیدشده جایگزین شوند؟'
+        ))) return;
+        const target = e, targetId = activeId;
+        generate.disabled = true;
+        picker.disabled = true;
+        status.textContent = t('Generating...', 'در حال تولید اتود...');
+        try {
+          const result = await generateStudioEtude(picker.value, target, controller.signal);
+          if (controller.signal.aborted) return;
+          // A finished request must never modify a different etude or page.
+          if (page !== 'studio' || activeId !== targetId || e !== target) return;
+          Object.assign(target, result);
+          sel.clear();
+          save();
+          dialog.close();
+          render();
+        } catch (error) {
+          if (error.name !== 'AbortError')
+            status.textContent = t('Generation failed: ', 'خطای تولید: ') + error.message;
+        } finally {
+          generate.disabled = false;
+          picker.disabled = false;
+        }
+      });
+      generate.className = 'primary';
+      btn(controls, t('Cancel', 'انصراف'), () => dialog.close());
+      const closeOnRoute = () => dialog.close();
+      window.addEventListener('hashchange', closeOnRoute);
+      dialog.onclose = () => {
+        controller.abort();
+        window.removeEventListener('hashchange', closeOnRoute);
+        dialog.remove();
+      };
+      dialog.showModal();
+    }, t('Generate a Persian etude with OpenRouter', 'تولید اتود ایرانی با OpenRouter'));
+    generateButton.className = 'score-generate';
+    generateButton.setAttribute('aria-label', t('Generate AI etude', 'تولید اتود با هوش مصنوعی'));
+    generateButton.append(scoreTransportIcon('generate'));
+  }
   el('div', panel, undefined, 'score');
   const signatureControls=el('div',panel,undefined,'signature-editor-controls');
   signatureControls.hidden=true;
