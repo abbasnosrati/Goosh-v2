@@ -1,5 +1,6 @@
 import { loadPracticeCatalog } from './studio-practice.js?v=practice-flow-2';
 import { loadMusicSystems } from './music-catalog.js';
+import { signatureForMusic } from './music-signature.js';
 import { newPracticeStep, localized } from './practice-model.js';
 import { generateStudioEtude } from './ai-etude.js?v=practice-flow-2';
 import { confirmStudioAction, showStudioMessage } from './studio-dialog.js';
@@ -16,7 +17,7 @@ const create = (tag, parent, text, className) => {
 };
 
 export function mountEtudeComposer(host, {
-  etude, fa, isRecording, isCurrent, onGenerated, onModeChange
+  etude, fa, isRecording, isCurrent, onGenerated, onModeChange, onSignatureChange
 }) {
   const t = (en, ir) => fa ? ir : en;
   let state = states.get(etude);
@@ -64,6 +65,7 @@ export function mountEtudeComposer(host, {
       if (!radio.checked || busy) return;
       state.musicSystem = id;
       fillStyleOptions();
+      applySelectedSignature();
       showStudioMessage(status, '');
       sync();
     };
@@ -72,11 +74,19 @@ export function mountEtudeComposer(host, {
   const styleLabel = create('label', fields, null, 'practice-field');
   const styleHeading = create('span', styleLabel);
   const styleInput = create('select', styleLabel);
-  styleInput.onchange = () => {state.styles[state.musicSystem] = styleInput.value;};
+  styleInput.onchange = () => {
+    state.styles[state.musicSystem] = styleInput.value;
+    applySelectedSignature();
+    showStudioMessage(status, '');
+    sync();
+  };
   const tonicLabel = create('label', fields, null, 'practice-field');
   create('span', tonicLabel, t('Tonic', 'تونیک'));
   const tonicInput = create('select', tonicLabel);
-  tonicInput.onchange = () => {state.tonic = tonicInput.value;};
+  tonicInput.onchange = () => {
+    state.tonic = tonicInput.value;
+    applySelectedSignature();
+  };
   const goalLabel = create('label', fields, null, 'practice-field');
   create('span', goalLabel, t('Primary practice goal', 'هدف اصلی تمرین'));
   const goalInput = create('select', goalLabel);
@@ -85,18 +95,32 @@ export function mountEtudeComposer(host, {
 
   let musicCatalog = null;
   const currentSystem = () => musicCatalog?.systems.find(entry => entry.id === state.musicSystem);
+  const selectedContext = () => state.musicSystem === 'iranian'
+    ? {musicSystem:'iranian',dastgah:state.styles.iranian}
+    : {musicSystem:'western',scale:state.styles.western,tonic:state.tonic};
+  function applySelectedSignature() {
+    if (!musicCatalog || !state.styles[state.musicSystem]) return;
+    // A preset selection updates the canonical score and playback immediately.
+    // Initial data load does NOT overwrite previously custom-edited signatures.
+    const signature = signatureForMusic(musicCatalog, selectedContext());
+    onSignatureChange?.(signature);
+  }
   function fillStyleOptions() {
     const system = currentSystem();
     if (!system) return;
     styleHeading.textContent = localized(system.selector, fa);
     styleInput.replaceChildren();
+    const empty = create('option',styleInput,
+      state.musicSystem === 'iranian'
+        ? t('Select a Dastgah…','انتخاب دستگاه…')
+        : t('Select a scale or mode…','انتخاب گام یا مد…'));
+    empty.value = '';
     for (const entry of system.styles) {
       const option = create('option', styleInput, localized(entry.label, fa));
       option.value = entry.id;
     }
-    if (!system.styles.some(entry => entry.id === state.styles[state.musicSystem])) {
-      state.styles[state.musicSystem] = system.styles[0]?.id || '';
-    }
+    if (!system.styles.some(entry => entry.id === state.styles[state.musicSystem]))
+      state.styles[state.musicSystem] = '';
     styleInput.value = state.styles[state.musicSystem];
     tonicLabel.hidden = state.musicSystem !== 'western';
   }
@@ -217,12 +241,7 @@ export function mountEtudeComposer(host, {
       return;
     }
     const goal = state.goal;
-    const context = {
-      musicSystem: state.musicSystem,
-      ...(state.musicSystem === 'iranian'
-        ? {dastgah: state.styles.iranian}
-        : {scale: state.styles.western, tonic: state.tonic})
-    };
+    const context = selectedContext();
     if (isReplace()) {
       const approved = await confirmStudioAction({
         title: t('Replace this etude?', 'اتود فعلی جایگزین شود؟'),
