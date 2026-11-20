@@ -1159,3 +1159,16 @@ No changes to `web/src/key-signature.js`, `web/src/model.js`, `web/src/audio.js`
 5. **`web/index.html`:** Updated only the `app.js` query-string cache version to `signature-return-staff-1` to ensure browsers load the new conditional icon. No CSS change was necessary; existing `.signature-toggle svg` sizing handles both icons.
 
 **Manual QA still required:** In normal Studio Score view, the entry button must remain the user's treble-clef icon. Click to enter the key editor and confirm it switches to the five-line staff with two notes; clicking again must return to the user-approved treble clef. Check both themes and directions. Only JavaScript syntax/source checks were performed, no browser/device visual test.
+
+## Center cents readout above the tuning slider (2026-11-20)
+
+**Branch:** `redesign` only.
+
+**Request:** In the Studio Key Signature Editor's compact Tuning layout, the large signed cents readout (e.g. `−28 ¢`) was left-aligned. Center it horizontally with respect to the tuning slider (as the Hz readout already is). The user did not ask to move the slider, the numeric ± controls or the preview buttons.
+
+**Exact changes:**
+1. `web/style.css`: In the existing scoped `#app[data-page="studio"] .signature-tuner-readout` rule, changed `align-items: flex-start` to `align-items: center` and added `text-align: center`. The readout occupies the same CSS grid column as the slider (`grid-area: readout` above `grid-area: scale`), so this centers the large cents value over the slider rather than at the left edge.
+2. `web/index.html`: Bumped only the stylesheet cache query to `tuning-cents-centered-1` so the corrected alignment loads on refresh.
+3. The `web/src/app.js` DOM structure and all frequency/cents calculations, slider handlers, save logic, original/tuned audio and other controls were deliberately untouched.
+
+**Manual checks pending:** At desktop widths, the signed cents readout should be horizontally centered above the slider, visually aligned with the already-centered Hz label. Verify responsive layouts in both languages and themes. This was a source-level CSS alignment change; no live browser/device visual verification was performed.
