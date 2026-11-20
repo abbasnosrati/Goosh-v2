@@ -24,6 +24,7 @@ import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice
 import { renderHome } from './home.js?v=clean-routes-1';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
 import {installAndroidBackNavigation} from './native-navigation.js';
+import {applyMusicSignature} from './music-signature.js';
 
 // Canonicalize older /#studio and /#practice links before state initialization.
 upgradeLegacyHash();
@@ -1045,6 +1046,23 @@ function studio() {
     isCurrent: () => page === 'studio' && activeId === composerId && e === composerTarget,
     onModeChange: locked => {
       if (practiceHost) setStudioPracticeLocked(practiceHost, locked, fa);
+    },
+    onSignatureChange: signature => {
+      if (page !== 'studio' || activeId !== composerId || e !== composerTarget) return;
+      stopKeys();
+      stopSignaturePreview();
+      stopScorePlayback();
+      applyMusicSignature(composerTarget, signature);
+      save();
+      sheet(); // Repaint the staff and key-signature editor from e.key.
+      // Key down uses freq(e,m) live; refresh the tooltip's cached frequency too.
+      for (const pianoKey of document.querySelectorAll('.board button[data-midi]')) {
+        const midi = Number(pianoKey.dataset.midi);
+        const shortcut = pianoKey.dataset.shortcut?.replace(/^Key/,'');
+        pianoKey.title = (pianoKey.ariaLabel || label(midi)) + ' · ' +
+          freq(composerTarget,midi).toFixed(1) + ' Hz' +
+          (shortcut ? ' ('+shortcut+')' : '');
+      }
     },
     onGenerated: next => {
       stopScorePlayback();
