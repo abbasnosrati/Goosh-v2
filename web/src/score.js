@@ -226,7 +226,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
       }
       dots(x,89,s.dots)
     }
-    const note=({note:n,index},x)=>{
+    const note=({note:n,index},x,onset=n.at)=>{
       const visual=Number.isInteger(n.staffM)?n.staffM:n.m
       const y=104-step(visual)*4.5
       for(let l=113;l<=y;l+=9)line(x-9,l,x+9,l)
@@ -273,7 +273,8 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
           ' m-4 -4 4 4 4-4',
         fill:'none',stroke:'var(--accent)','stroke-width':2,
         'stroke-linecap':'round','stroke-linejoin':'round',opacity:0,
-        'pointer-events':'none','data-playback-note':index
+        'pointer-events':'none','data-playback-note':index,
+        'data-playback-from':onset,'data-playback-to':onset+n.d
       })
       draw('circle',{cx:x,cy:y,r:10,fill:'transparent'}).onclick=ev=>{
         // In Pen mode this bubbles to the shared placement planner. Clicking
@@ -284,7 +285,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
     }
     for(const ev of row.items){
       if(ev.type==='rest')rest(ev)
-      else if(ev.type==='notes')ev.entries.forEach(entry=>note(entry,ev.x))
+      else if(ev.type==='notes')ev.entries.forEach(entry=>note(entry,ev.x,ev.at))
       else if(ev.type==='barline'){
         line(ev.x,68,ev.x,104,{'stroke-width':1.4,
           'data-measure-end':String(ev.barIndex+1)})
