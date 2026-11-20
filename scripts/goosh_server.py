@@ -34,7 +34,7 @@ WESTERN_SCALES = {item["id"]: item for item in MUSIC_SYSTEMS["western"]["styles"
 WESTERN_TONICS = {item["id"]: item for item in MUSIC_CATALOG["tonics"]}
 
 RHYTHM = [1, 1, 1, 1, .5, .5, 1, 2, 1, .5, .5, 2, 1, 1, 1, 1]
-METER_CHOICES = {"none","2/4","3/4","4/4","5/4","6/8","7/8","9/8","12/8"}
+METER_CHOICES = {"none","2/4","3/4","4/4","6/4","6/8","6/16","7/8","5/8"}
 SEMITONES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 CENTS = {"": 0, "#": 100, "b": -100, "k": -50, "s": 50}
 ABC_MARKS = {"": "", "#": "^", "b": "_", "k": "_/", "s": "^/"}
