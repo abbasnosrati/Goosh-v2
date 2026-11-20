@@ -113,7 +113,7 @@ def response_schema(mode):
     }
 
 
-def normalise_etude(data, mode):
+def normalise_etude(data, mode, frequency_for_pitch=get_frequency):
     if not isinstance(data, dict) or not isinstance(data.get("notes"), list):
         raise ValueError("The model did not return an etude.")
     if len(data["notes"]) != 16:
@@ -134,7 +134,7 @@ def normalise_etude(data, mode):
     title = title.strip()[:80] if isinstance(title, str) else ""
     title = title or "اتود " + mode["name"]
     notes = [
-        {"pitch": pitch, "duration": RHYTHM[i], "frequency": get_frequency(pitch)}
+        {"pitch": pitch, "duration": RHYTHM[i], "frequency": frequency_for_pitch(pitch)}
         for i, pitch in enumerate(pitches)
     ]
     return {"title": title, "abcNotation": format_abc(title, notes), "notes": notes}
@@ -188,7 +188,7 @@ def make_western_mode(scale, tonic):
     }
 
 
-def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, tonic="C"):
+def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, tonic="C", tuning_cents=None):
     if music_system not in MUSIC_SYSTEMS:
         raise APIError(400, "Unsupported musical system.")
     if goals is None: goals = []
@@ -203,6 +203,33 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
         if mode is None:
             raise APIError(400, "Unsupported dastgah.")
         prompt_intro = "Compose a simple monophonic beginner etude inspired by Persian dastgah " + mode["name"] + "."
+    # The frontend's selected signature and any manual cent edits must match
+    # the actual playback of the eventual score. Only the seven natural
+    # staff pitch classes are sent, never an alternate MIDI interpretation.
+    natural_pcs = {str(SEMITONES[letter]) for letter in "CDEFGAB"}
+    if tuning_cents is not None:
+        if (not isinstance(tuning_cents, dict)
+                or set(tuning_cents) != natural_pcs
+                or any(type(value) not in (int, float) or
+                       not -1200 <= value <= 1200 or
+                       not __import__("math").isfinite(value)
+                       for value in tuning_cents.values())):
+            raise APIError(400, "Invalid staff tuning.")
+    def frequency_for_pitch(token):
+        if tuning_cents is None:
+            return get_frequency(token)
+        # Shur's alternate E-koron is an explicit accidental, alongside
+        # E-flat in the same signature. Preserve its unique half-flat pitch.
+        if music_system == "iranian" and dastgah == "shur" and token == "Ek4":
+            return get_frequency(token)
+        match = PITCH.fullmatch(token)
+        if match is None:
+            raise ValueError("Invalid pitch token.")
+        name, _, octave = match.groups()
+        natural = (int(octave) + 1) * 12 + SEMITONES[name]
+        cents = tuning_cents[str(SEMITONES[name])]
+        return round(440 * 2 ** ((natural - 69 + cents / 100) / 12), 4)
+
     model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 
     prompt = "\n".join([
@@ -222,6 +249,9 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
     ])
     teaching = "\n".join(PRACTICE_GOALS[g]["label"]["en"] + ": " + PRACTICE_GOALS[g]["aiGuidance"] for g in dict.fromkeys(goals))
     if teaching: prompt += "\nEducational objectives: " + teaching
+    if tuning_cents is not None:
+        prompt += "\nActive staff key/tuning (natural pitch class in semitones to cents): " + json.dumps(tuning_cents, sort_keys=True)
+        prompt += "\nUse the resulting tuned pitches and frequencies. Do not apply an accidental twice."
     payload = {
         "model": model,
         "temperature": .65,
@@ -247,7 +277,7 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
             "model": model,
             "temperature": .65,
             "max_tokens": 2800,
-            "messages": [{"role": "user", "content": SHUR_PROMPT + ("\nEducational objectives (preserve musical rules): " + teaching if teaching else "")}],
+            "messages": [{"role": "user", "content": SHUR_PROMPT + ("\nEducational objectives (preserve musical rules): " + teaching if teaching else "") + ("\nActive score tuning in cents by natural pitch class: " + json.dumps(tuning_cents, sort_keys=True) if tuning_cents is not None else "")}],
         }
 
     result = call_openrouter(payload)
@@ -255,9 +285,9 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
     try:
         content = result["choices"][0]["message"]["content"]
         if music_system == "iranian" and dastgah == "shur":
-            return parse_abc_etude(content, get_frequency)
+            return parse_abc_etude(content, frequency_for_pitch)
         parsed = json.loads(content)
-        return normalise_etude(parsed, mode)
+        return normalise_etude(parsed, mode, frequency_for_pitch)
     except (KeyError, IndexError, TypeError, json.JSONDecodeError, ValueError) as error:
         raise APIError(502, "Invalid AI etude response: " + str(error)) from None
 
@@ -416,7 +446,7 @@ class GooshHandler(SimpleHTTPRequestHandler):
         try:
             result = (generate_etude(body.get("dastgah"), body.get("practiceGoals"),
                                      body.get("musicSystem", "iranian"),
-                                     body.get("scale"), body.get("tonic", "C"))
+                                     body.get("scale"), body.get("tonic", "C"), body.get("tuningCents"))
                       if endpoint == "/api/generate-etude" else design_practice(body))
         except APIError as error:
             self.send_json(error.status, {"error": str(error)})
