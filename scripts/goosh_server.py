@@ -1,0 +1,280 @@
+#!/usr/bin/env python3
+"""Serve the existing Goosh web app and its local OpenRouter API on one port.
+
+Python standard library only; no Node/Express backend or extra Python packages.
+"""
+import json
+import os
+import re
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
+
+PROJECT = Path(__file__).resolve().parent.parent
+WEB_ROOT = PROJECT / "web"
+MODELS = {
+    "shur": {
+        "name": "شور", "tonic": "G4", "microtone": "Ak4",
+        "pitches": ["G4", "Ak4", "Bb4", "C5", "D5", "Eb5", "F5", "G5"],
+    },
+    "segah": {
+        "name": "سه‌گاه", "tonic": "Ek4", "microtone": "Ek4",
+        "pitches": ["Ek4", "F4", "G4", "Ak4", "B4", "C5", "D5", "Ek5"],
+    },
+    "mahur": {
+        "name": "ماهور", "tonic": "C4", "microtone": None,
+        "pitches": ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"],
+    },
+    "homayun": {
+        "name": "همایون", "tonic": "G4", "microtone": "Ak4",
+        "pitches": ["G4", "Ak4", "B4", "C5", "D5", "Ek5", "F5", "G5"],
+    },
+}
+RHYTHM = [1, 1, 1, 1, .5, .5, 1, 2, 1, .5, .5, 2, 1, 1, 1, 1]
+SEMITONES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+CENTS = {"": 0, "#": 100, "b": -100, "k": -50, "s": 50}
+ABC_MARKS = {"": "", "#": "^", "b": "_", "k": "_/", "s": "^/"}
+PITCH = re.compile(r"^([A-G])([#bks]?)([3-6])$")
+
+
+def load_environment():
+    """Read local dotenv values without overriding explicit environment variables."""
+    for path in (PROJECT / ".env", PROJECT / "poc" / ".env"):
+        if not path.is_file():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            item = line.strip()
+            if not item or item.startswith("#"):
+                continue
+            if item.startswith("export "):
+                item = item[7:].lstrip()
+            if "=" not in item:
+                continue
+            name, value = item.split("=", 1)
+            name = name.strip()
+            if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+                os.environ.setdefault(name, value.strip().strip("'\""))
+        break
+
+
+def get_frequency(token):
+    match = PITCH.fullmatch(token)
+    if match is None:
+        raise ValueError("Invalid pitch token.")
+    name, mark, octave_text = match.groups()
+    midi = (int(octave_text) + 1) * 12 + SEMITONES[name]
+    return round(440 * 2 ** ((midi - 69) / 12 + CENTS[mark] / 1200), 4)
+
+
+def abc_note(token):
+    name, mark, octave_text = PITCH.fullmatch(token).groups()
+    octave = int(octave_text)
+    head = name.lower() if octave >= 5 else name
+    suffix = "'" * max(0, octave - 5) or "," * max(0, 4 - octave)
+    return ABC_MARKS[mark] + head + suffix
+
+
+def format_abc(title, notes):
+    measures = []
+    for start in range(0, len(notes), 4):
+        tokens = []
+        for note in notes[start:start + 4]:
+            duration = note["duration"]
+            length = "" if duration == 1 else "/2" if duration == .5 else str(duration)
+            tokens.append(abc_note(note["pitch"]) + length)
+        measures.append(" ".join(tokens))
+    safe_title = re.sub(r"[\r\n%]", " ", title)[:80]
+    return "\n".join(("X:1", "T:" + safe_title, "M:4/4", "L:1/4",
+                      "K:none", " | ".join(measures) + " |]"))
+
+
+def response_schema(mode):
+    return {
+        "type": "object", "additionalProperties": False,
+        "required": ["title", "abcNotation", "notes"],
+        "properties": {
+            "title": {"type": "string"},
+            "abcNotation": {"type": "string"},
+            "notes": {
+                "type": "array", "minItems": 16, "maxItems": 16,
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["pitch", "duration", "frequency"],
+                    "properties": {
+                        "pitch": {"type": "string", "enum": mode["pitches"]},
+                        "duration": {"type": "number"},
+                        "frequency": {"type": "number"},
+                    },
+                },
+            },
+        },
+    }
+
+
+def normalise_etude(data, mode):
+    if not isinstance(data, dict) or not isinstance(data.get("notes"), list):
+        raise ValueError("The model did not return an etude.")
+    if len(data["notes"]) != 16:
+        raise ValueError("The model must return 16 notes.")
+    allowed = set(mode["pitches"])
+    pitches = []
+    for note in data["notes"]:
+        if not isinstance(note, dict) or note.get("pitch") not in allowed:
+            raise ValueError("The model returned an unsupported pitch.")
+        pitches.append(note["pitch"])
+
+    pitches[0] = mode["tonic"]
+    pitches[-1] = mode["tonic"]
+    if mode["microtone"] and not any(re.search(r"[ks][3-6]$", p) for p in pitches):
+        pitches[5] = mode["microtone"]
+
+    title = data.get("title", "")
+    title = title.strip()[:80] if isinstance(title, str) else ""
+    title = title or "اتود " + mode["name"]
+    notes = [
+        {"pitch": pitch, "duration": RHYTHM[i], "frequency": get_frequency(pitch)}
+        for i, pitch in enumerate(pitches)
+    ]
+    return {"title": title, "abcNotation": format_abc(title, notes), "notes": notes}
+
+
+class APIError(Exception):
+    def __init__(self, status, message):
+        self.status = status
+        super().__init__(message)
+
+
+def generate_etude(dastgah):
+    if not isinstance(dastgah, str):
+        raise APIError(400, "Unsupported dastgah.")
+    mode = MODELS.get(dastgah)
+    if mode is None:
+        raise APIError(400, "Unsupported dastgah.")
+    key = os.environ.get("OPENROUTER_API_KEY", "").strip()
+    if not key or key == "replace_with_your_key":
+        raise APIError(503, "Set OPENROUTER_API_KEY in the project .env.")
+    model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+
+    prompt = "\n".join([
+        "Compose a simple monophonic beginner etude inspired by Persian dastgah " + mode["name"] + ".",
+        "Write 4 bars of 4/4, exactly 16 notes and four notes per bar.",
+        "Use only these exact pitch tokens: " + ", ".join(mode["pitches"]) + ".",
+        "Start and end on the tonic " + mode["tonic"] + ".",
+        "Use a clear motif, small melodic movement, and a final cadence.",
+        "Quarter-note durations by bar: [1,1,1,1] [0.5,0.5,1,2] [1,0.5,0.5,2] [1,1,1,1].",
+        "k means koron (-50 cents), s means sori (+50 cents), b is a flat.",
+        "Return JSON fields title, abcNotation, and notes with pitch, duration, and frequency.",
+        "For ABC use X:, T:, M:4/4, L:1/4, K:none; _/ means koron and ^/ means sori.",
+        "C4 is middle C. This is a simplified POC, not an authentic performance tuning.",
+        "Return only the requested JSON.",
+    ])
+    payload = {
+        "model": model,
+        "temperature": .65,
+        "max_tokens": 1900,
+        "provider": {"require_parameters": True},
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "persian_etude",
+                "strict": True,
+                "schema": response_schema(mode),
+            },
+        },
+        "messages": [
+            {"role": "system", "content": "Compose Persian-inspired beginner etudes as structured JSON."},
+            {"role": "user", "content": prompt},
+        ],
+    }
+    request = Request(
+        "https://openrouter.ai/api/v1/chat/completions",
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "Authorization": "Bearer " + key,
+            "Content-Type": "application/json",
+            "X-Title": "Goosh Persian Etude",
+        },
+        method="POST",
+    )
+    try:
+        with urlopen(request, timeout=45) as response:
+            result = json.load(response)
+    except HTTPError as error:
+        detail = "OpenRouter returned HTTP " + str(error.code)
+        try:
+            payload = json.loads(error.read(4096))
+            message = payload.get("error", {}).get("message")
+            if isinstance(message, str):
+                detail += ": " + message[:180]
+        except (ValueError, AttributeError, TypeError):
+            pass
+        raise APIError(502, detail) from None
+    except (URLError, TimeoutError, OSError) as error:
+        raise APIError(502, "OpenRouter connection failed: " + str(error.reason if isinstance(error, URLError) else error)) from None
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise APIError(502, "OpenRouter returned invalid JSON.") from None
+
+    try:
+        content = result["choices"][0]["message"]["content"]
+        parsed = json.loads(content)
+        return normalise_etude(parsed, mode)
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError, ValueError) as error:
+        raise APIError(502, "Invalid AI etude response: " + str(error)) from None
+
+
+class GooshHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(WEB_ROOT), **kwargs)
+
+    def do_POST(self):
+        if urlsplit(self.path).path != "/api/generate-etude":
+            self.send_json(404, {"error": "Not found."})
+            return
+        if self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower() != "application/json":
+            self.send_json(415, {"error": "Content-Type must be application/json."})
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            self.send_json(400, {"error": "Invalid Content-Length."})
+            return
+        if length <= 0 or length > 2048:
+            self.send_json(413, {"error": "Request body size must be 1–2048 bytes."})
+            return
+        try:
+            body = json.loads(self.rfile.read(length))
+            if not isinstance(body, dict):
+                raise ValueError()
+        except (ValueError, UnicodeDecodeError):
+            self.send_json(400, {"error": "Invalid JSON body."})
+            return
+        try:
+            result = generate_etude(body.get("dastgah"))
+        except APIError as error:
+            self.send_json(error.status, {"error": str(error)})
+            return
+        self.send_json(200, result)
+
+    def send_json(self, status, data):
+        body = json.dumps(data, ensure_ascii=False).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+
+if __name__ == "__main__":
+    load_environment()
+    port = int(os.environ.get("GOOSH_PORT", "8080"))
+    with ThreadingHTTPServer(("127.0.0.1", port), GooshHandler) as server:
+        print("Goosh + AI API: http://127.0.0.1:" + str(port), flush=True)
+        if not os.environ.get("OPENROUTER_API_KEY"):
+            print("Note: set OPENROUTER_API_KEY in .env before using Generate.", flush=True)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            print("\nStopping Goosh server.")
