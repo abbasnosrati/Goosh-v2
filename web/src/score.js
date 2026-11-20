@@ -187,6 +187,12 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,to
     }
     const rest=ev=>{
       const x=ev.x,beats=ev.duration/second,s=symbol(beats)
+      if(ev.wholeMeasure){
+        // One centered standard full-measure rest represents any entirely
+        // empty measure, including compound meters such as 6/8.
+        draw('rect',{x:x-7,y:76,width:14,height:4,fill:'currentColor'})
+        return
+      }
       if(s.kind==='whole'||s.kind==='half')
         draw('rect',{x:x-7,y:s.kind==='whole'?76:82,
           width:14,height:4,fill:'currentColor'})
