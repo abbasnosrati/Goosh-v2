@@ -798,6 +798,33 @@ window.addEventListener('hashchange',()=>{
   cancel();page=route;loadRoute();render();window.scrollTo(0,0);
 });
 
+function openDeleteEtudeDialog(id,name){
+  const dialog=el('dialog',document.body,undefined,'etude-delete-dialog');
+  dialog.setAttribute('aria-labelledby','etude-delete-dialog-title');
+  dialog.setAttribute('aria-describedby','etude-delete-dialog-description');
+  const title=el('h2',dialog,t('Delete this etude?','این اتود حذف شود؟'));
+  title.id='etude-delete-dialog-title';
+  el('div',dialog,name,'etude-delete-name');
+  const description=el('p',dialog,t(
+    'This etude will be permanently removed from your collection. This action cannot be undone.',
+    'این اتود برای همیشه از مجموعه شما حذف می‌شود و قابل بازگردانی نیست.'
+  ));
+  description.id='etude-delete-dialog-description';
+  const actions=el('div',dialog,undefined,'etude-delete-actions');
+  const cancelButton=btn(actions,t('Cancel','انصراف'),()=>dialog.close());
+  cancelButton.className='etude-delete-cancel';
+  const deleteButton=btn(actions,t('Delete etude','حذف اتود'),()=>{
+    dialog.close();
+    localStorage.removeItem(prefix+id);
+    collection.delete(id);
+    render();
+  });
+  deleteButton.className='etude-delete-confirm';
+  dialog.onclose=()=>dialog.remove();
+  dialog.showModal();
+  cancelButton.focus();
+}
+
 function etudeList(){
   const actions=row(app);
   if(page==='studio')btn(actions,t('New etude','ساخت اتود'),()=>{
@@ -817,17 +844,18 @@ function etudeList(){
       el('strong',item,name);
       el('small',item,entry.data.notes.length.toLocaleString(fa?'fa':'en')+' '+t('notes','نت'));
       item.onclick=()=>{location.hash=page+'/'+id};
-      const remove=btn(card,'',()=>{
-        if(!confirm(t('Delete "'+name+'"? This cannot be undone.','اتود «'+name+'» حذف شود؟ این کار قابل بازگشت نیست.')))return;
-        localStorage.removeItem(prefix+id);
-        collection.delete(id);
-        render();
-      },t('Delete etude','حذف اتود'));
+      const remove=btn(card,'',()=>openDeleteEtudeDialog(id,name),t('Delete etude','حذف اتود'));
       remove.className='etude-delete';
       remove.setAttribute('aria-label',t('Delete etude','حذف اتود')+' · '+name);
       const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
       icon.setAttribute('viewBox','0 0 24 24');
       icon.setAttribute('aria-hidden','true');
+      icon.setAttribute('focusable','false');
+      icon.setAttribute('fill','none');
+      icon.setAttribute('stroke','currentColor');
+      icon.setAttribute('stroke-width','1.8');
+      icon.setAttribute('stroke-linecap','round');
+      icon.setAttribute('stroke-linejoin','round');
       const path=document.createElementNS('http://www.w3.org/2000/svg','path');
       path.setAttribute('d','M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6');
       icon.append(path);
