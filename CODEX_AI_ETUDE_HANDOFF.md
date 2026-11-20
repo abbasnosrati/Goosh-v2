@@ -500,3 +500,17 @@ Do not fix or extend these issues speculatively. Ask for or follow a **specific 
 - **This handoff document:** documentation only; no runtime files should be modified as part of creating it.
 
 **Summary for the next Codex session:** Continue on redesign, keep the single Python server and existing Studio architecture, treat the OpenRouter response as untrusted input, preserve the Goosh {m,at,d} + key-signature representation, never expose API credentials, and do not modify unrelated functionality/design. Only make further code changes when the user explicitly directs them.
+
+## 14. UI/UX update — Delete etudes from the library (2026-11-20)
+
+- Target branch: **redesign**. This change does not belong on `main`.
+- Each etude card in the Studio and Practice library lists now has a separate trash icon button at its bottom-right corner.
+- The existing etude-opening button remains independent; selecting the trash icon does not open the etude.
+- Clicking delete displays a localized English/Persian confirmation that explicitly warns the operation cannot be undone.
+- Confirming deletes the matching `goosh.etude.<id>` entry from localStorage and removes the entry from the in-memory collection, then refreshes the list. Cancel leaves it intact.
+- The icon has an accessible name, and the card/list styling remains responsive to both themes and screen sizes.
+- Updated `web/src/app.js` for the UI control and minimal delete handler; updated `web/etudes.css` for card positioning and to preserve the existing filter selectors with the new wrapper.
+- No changes to piano/audio, recording, practice evaluation, AI generation, or underlying etude data format.
+- Follow-up changes must stay narrowly scoped to the user's explicit request. Do not modify unrelated behavior or styling.
+
+**Verification:** Source-level integration complete. Manual browser/device confirmation has not been performed, so do not report end-to-end UI verification as passed.
