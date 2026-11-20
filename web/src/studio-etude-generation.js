@@ -1,4 +1,5 @@
-import { loadPracticeCatalog } from './studio-practice.js?v=goal-first-1';
+import { loadPracticeCatalog } from './studio-practice.js?v=practice-flow-2';
+import { loadMusicSystems } from './music-catalog.js';
 import { newPracticeStep, localized } from './practice-model.js';
 import { generateStudioEtude } from './ai-etude.js?v=practice-goal-flow-1';
 import { confirmStudioAction, showStudioMessage } from './studio-dialog.js';
@@ -15,12 +16,12 @@ const create = (tag, parent, text, className) => {
 };
 
 export function mountEtudeComposer(host, {
-  etude, fa, isRecording, isCurrent, onGenerated
+  etude, fa, isRecording, isCurrent, onGenerated, onModeChange
 }) {
   const t = (en, ir) => fa ? ir : en;
   let state = states.get(etude);
   if (!state) {
-    state = { mode: 'manual', goal: '', dastgah: 'shur', controller: null };
+    state = { mode: 'manual', goal: '', musicSystem: 'iranian', styles: {}, tonic: 'C', controller: null };
     states.set(etude, state);
   }
   // A full Studio rerender or route change invalidates in-flight generation.
@@ -44,26 +45,61 @@ export function mountEtudeComposer(host, {
     'Choose a learning goal before generating the notes. One score can then support multiple practices.',
     'قبل از تولید نت‌ها، هدف آموزشی را انتخاب کنید. سپس می‌توانید چند تمرین مختلف روی همان نت‌ها بسازید.'
   ), 'studio-compose-description');
+  const musicSystem = create('fieldset', content, null, 'studio-music-system');
+  create('legend', musicSystem, t('Musical system', 'سیستم موسیقایی'));
+  const musicOptions = create('div', musicSystem, null, 'studio-music-choices');
+  const radios = new Map();
+  for (const [id, en, ir] of [
+    ['iranian', 'Iranian Music', 'موسیقی ایرانی'],
+    ['western', 'Western Music', 'موسیقی غربی']
+  ]) {
+    const label = create('label', musicOptions, null, 'studio-music-choice');
+    const radio = create('input', label);
+    radio.type = 'radio';
+    radio.name = 'studio-music-system';
+    radio.value = id;
+    const name = create('span', label, t(en, ir));
+    radios.set(id, {radio, name});
+    radio.onchange = () => {
+      if (!radio.checked || busy) return;
+      state.musicSystem = id;
+      fillStyleOptions();
+      showStudioMessage(status, '');
+      sync();
+    };
+  }
   const fields = create('div', content, null, 'studio-compose-fields');
+  const styleLabel = create('label', fields, null, 'practice-field');
+  const styleHeading = create('span', styleLabel);
+  const styleInput = create('select', styleLabel);
+  styleInput.onchange = () => {state.styles[state.musicSystem] = styleInput.value;};
+  const tonicLabel = create('label', fields, null, 'practice-field');
+  create('span', tonicLabel, t('Tonic', 'تونیک'));
+  const tonicInput = create('select', tonicLabel);
+  tonicInput.onchange = () => {state.tonic = tonicInput.value;};
   const goalLabel = create('label', fields, null, 'practice-field');
-  create('span', goalLabel, t('Learning goal', 'هدف آموزشی'));
+  create('span', goalLabel, t('Primary practice goal', 'هدف اصلی تمرین'));
   const goalInput = create('select', goalLabel);
   const placeholder = create('option', goalInput, t('Select a goal…', 'انتخاب هدف تمرین…'));
   placeholder.value = '';
-  const dastgahLabel = create('label', fields, null, 'practice-field');
-  create('span', dastgahLabel, t('Dastgah', 'دستگاه'));
-  const dastgahInput = create('select', dastgahLabel);
-  for (const [value, en, ir] of [
-    ['shur', 'Shur', 'شور'],
-    ['segah', 'Segah', 'سه‌گاه'],
-    ['mahur', 'Mahur', 'ماهور'],
-    ['homayun', 'Homayun', 'همایون']
-  ]) {
-    const option = create('option', dastgahInput, t(en, ir));
-    option.value = value;
+
+  let musicCatalog = null;
+  const currentSystem = () => musicCatalog?.systems.find(entry => entry.id === state.musicSystem);
+  function fillStyleOptions() {
+    const system = currentSystem();
+    if (!system) return;
+    styleHeading.textContent = localized(system.selector, fa);
+    styleInput.replaceChildren();
+    for (const entry of system.styles) {
+      const option = create('option', styleInput, localized(entry.label, fa));
+      option.value = entry.id;
+    }
+    if (!system.styles.some(entry => entry.id === state.styles[state.musicSystem])) {
+      state.styles[state.musicSystem] = system.styles[0]?.id || '';
+    }
+    styleInput.value = state.styles[state.musicSystem];
+    tonicLabel.hidden = state.musicSystem !== 'western';
   }
-  dastgahInput.value = state.dastgah;
-  dastgahInput.onchange = () => { state.dastgah = dastgahInput.value; };
 
   const actions = create('div', content, null, 'studio-compose-actions');
   const generate = create('button', actions, null, 'primary studio-compose-generate');
@@ -76,6 +112,8 @@ export function mountEtudeComposer(host, {
 
   let catalog = null;
   let busy = false;
+  const practiceLocked = () => state.mode === 'ai' &&
+    !etude.notes?.length && !etude.practiceSequence?.length;
   let previouslyUnsupported = false;
   const isReplace = () => Boolean(etude.notes?.length || etude.practiceSequence?.length);
   const sync = () => {
@@ -84,13 +122,20 @@ export function mountEtudeComposer(host, {
     manual.setAttribute('aria-pressed', String(state.mode === 'manual'));
     ai.setAttribute('aria-pressed', String(state.mode === 'ai'));
     content.hidden = state.mode !== 'ai';
+    for (const [id, entry] of radios) {
+      entry.radio.checked = state.musicSystem === id;
+      entry.radio.disabled = busy;
+    }
+    styleInput.disabled = busy || !musicCatalog;
+    tonicInput.disabled = busy || !musicCatalog;
+    tonicLabel.hidden = state.musicSystem !== 'western';
     const unsupported = state.goal === 'chord-recognition';
     generate.textContent = isReplace()
       ? t('Regenerate Etude', 'تولید مجدد اتود')
       : t('Generate Etude', 'تولید اتود');
-    generate.disabled = busy || !catalog || !state.goal || unsupported;
+    generate.disabled = busy || !catalog || !musicCatalog || !state.goal ||
+      !state.styles[state.musicSystem] || unsupported;
     goalInput.disabled = busy;
-    dastgahInput.disabled = busy;
     manual.disabled = ai.disabled = busy;
     if (unsupported) showStudioMessage(status, t(
       'Chord recognition needs polyphonic notation, which the current score does not support.',
@@ -103,6 +148,7 @@ export function mountEtudeComposer(host, {
     if (busy) return;
     state.mode = value;
     sync();
+    onModeChange?.(practiceLocked());
   };
   manual.onclick = () => changeMode('manual');
   ai.onclick = () => changeMode('ai');
@@ -113,6 +159,29 @@ export function mountEtudeComposer(host, {
   };
 
   sync();
+  loadMusicSystems().then(data => {
+    if (!host.isConnected) return;
+    musicCatalog = data;
+    for (const system of data.systems) {
+      const entry = radios.get(system.id);
+      if (entry) entry.name.textContent = localized(system.label, fa);
+    }
+    tonicInput.replaceChildren();
+    for (const tonic of data.tonics) {
+      const option = create('option', tonicInput, tonic.label);
+      option.value = tonic.id;
+    }
+    if (!data.tonics.some(tonic => tonic.id === state.tonic)) {
+      state.tonic = data.tonics[0]?.id || 'C';
+    }
+    tonicInput.value = state.tonic;
+    fillStyleOptions();
+    sync();
+  }).catch(error => {
+    if (host.isConnected) showStudioMessage(status,
+      t('Could not load musical systems: ', 'بارگیری سیستم‌های موسیقایی ناموفق بود: ') +
+        error.message, 'error');
+  });
   loadPracticeCatalog().then(data => {
     if (!host.isConnected) return;
     catalog = data;
@@ -133,7 +202,8 @@ export function mountEtudeComposer(host, {
   });
 
   generate.onclick = async () => {
-    if (busy || !catalog || !state.goal || state.goal === 'chord-recognition') return;
+    if (busy || !catalog || !musicCatalog || !state.goal ||
+        !state.styles[state.musicSystem] || state.goal === 'chord-recognition') return;
     if (isRecording()) {
       showStudioMessage(status, t(
         'Stop recording before generating an etude.',
@@ -142,7 +212,12 @@ export function mountEtudeComposer(host, {
       return;
     }
     const goal = state.goal;
-    const dastgah = state.dastgah;
+    const context = {
+      musicSystem: state.musicSystem,
+      ...(state.musicSystem === 'iranian'
+        ? {dastgah: state.styles.iranian}
+        : {scale: state.styles.western, tonic: state.tonic})
+    };
     if (isReplace()) {
       const approved = await confirmStudioAction({
         title: t('Replace this etude?', 'اتود فعلی جایگزین شود؟'),
@@ -164,7 +239,7 @@ export function mountEtudeComposer(host, {
     try {
       // Pass only the explicitly selected goal. The old plan must never leak
       // into an entirely new composition request.
-      const result = await generateStudioEtude(dastgah, etude, controller.signal, [goal]);
+      const result = await generateStudioEtude(context, etude, controller.signal, [goal]);
       if (controller.signal.aborted || !host.isConnected || !isCurrent()) return;
       onGenerated({
         ...result,
@@ -181,5 +256,5 @@ export function mountEtudeComposer(host, {
     }
   };
 
-  return { selectAI: () => changeMode('ai') };
+  return { selectAI: () => changeMode('ai'), isPracticeLocked: practiceLocked };
 }
