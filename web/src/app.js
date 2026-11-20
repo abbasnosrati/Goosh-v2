@@ -14,6 +14,7 @@ import {
 import {
   score
 } from './score.js'
+import { generateStudioEtude } from './ai-etude.js'
 const $ = s => document.querySelector(s),
   app = $('#app');
 let fa = localStorage.lang !== 'en',
@@ -341,6 +342,73 @@ function studio() {
     wrap = prev;
     sheet()
   })
+
+  // Isolated AI generation control. Existing staff, piano and editor are reused.
+  if (window.matchMedia('(min-width: 768px)').matches) {
+    btn(top, 'Generate', () => {
+      if (rec) {
+        alert(t('Stop recording before generating.', 'قبل از تولید اتود، ضبط را متوقف کنید.'));
+        return;
+      }
+      const dialog = el('dialog', document.body);
+      el('h2', dialog, t('Generate etude with AI', 'تولید اتود با هوش مصنوعی'));
+      const pickerLabel = el('label', dialog, t('Dastgah', 'دستگاه'));
+      const picker = el('select', pickerLabel);
+      for (const [id, en, ir] of [
+        ['shur', 'Shur', 'شور'],
+        ['segah', 'Segah', 'سه‌گاه'],
+        ['mahur', 'Mahur', 'ماهور'],
+        ['homayun', 'Homayun', 'همایون']
+      ]) {
+        const option = el('option', picker, t(en, ir));
+        option.value = id;
+      }
+      const status = el('p', dialog, t(
+        'The new etude will appear on the existing staff.',
+        'اتود روی خط حامل فعلی استودیو قرار می‌گیرد.'
+      ));
+      status.setAttribute('role', 'status');
+      status.setAttribute('aria-live', 'polite');
+      const controls = row(dialog);
+      const controller = new AbortController();
+      const generate = btn(controls, t('Generate', 'تولید'), async () => {
+        if (e.notes.length && !confirm(t(
+          'Replace the notes in this etude with the generated notes?',
+          'نت‌های فعلی این اتود با نت‌های تولیدشده جایگزین شوند؟'
+        ))) return;
+        const target = e, targetId = activeId;
+        generate.disabled = true;
+        picker.disabled = true;
+        status.textContent = t('Generating...', 'در حال تولید اتود...');
+        try {
+          const result = await generateStudioEtude(picker.value, target, controller.signal);
+          // A finished request must never modify a different etude or page.
+          if (page !== 'studio' || activeId !== targetId || e !== target) return;
+          Object.assign(target, result);
+          sel.clear();
+          save();
+          dialog.close();
+          render();
+        } catch (error) {
+          if (error.name !== 'AbortError')
+            status.textContent = t('Generation failed: ', 'خطای تولید: ') + error.message;
+        } finally {
+          generate.disabled = false;
+          picker.disabled = false;
+        }
+      });
+      generate.className = 'primary';
+      btn(controls, t('Cancel', 'انصراف'), () => dialog.close());
+      const closeOnRoute = () => dialog.close();
+      window.addEventListener('hashchange', closeOnRoute);
+      dialog.onclose = () => {
+        controller.abort();
+        window.removeEventListener('hashchange', closeOnRoute);
+        dialog.remove();
+      };
+      dialog.showModal();
+    }, t('Generate a Persian etude with OpenRouter', 'تولید اتود ایرانی با OpenRouter'));
+  }
   const panel = el('section', app),
     r = row(panel);
   const record = btn(r, rec ? t('■ Stop', '■ توقف') : t('● Record', '● ضبط'), toggle, t('Record / Stop', 'ضبط / توقف') + ' (R)');

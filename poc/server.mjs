@@ -11,6 +11,7 @@ const HOST = '127.0.0.1';
 const PORT = Number(process.env.ETUDE_POC_PORT || 8787);
 const MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
 const KEY = process.env.OPENROUTER_API_KEY;
+const STUDIO_ORIGINS = new Set(['http://localhost:8080', 'http://127.0.0.1:8080']);
 
 // Fixed demo pitch sets. k = koron (-50c), s = sori (+50c).
 const MODES = Object.freeze({
@@ -20,7 +21,7 @@ const MODES = Object.freeze({
   },
   segah: {
     name: 'سه‌گاه', tonic: 'Ek4', microtone: 'Ek4',
-    pitches: ['Ek4', 'F4', 'Fs4', 'G4', 'Ak4', 'Bb4', 'C5', 'D5']
+    pitches: ['Ek4', 'F4', 'G4', 'Ak4', 'B4', 'C5', 'D5', 'Ek5']
   },
   mahur: {
     name: 'ماهور', tonic: 'C4', microtone: null,
@@ -210,7 +211,23 @@ async function generate(key) {
 
 createServer(async (request, response) => {
   const path = new URL(request.url || '/', 'http://localhost').pathname;
+  if (path === '/api/generate-etude' && STUDIO_ORIGINS.has(request.headers.origin)) {
+    response.setHeader('Access-Control-Allow-Origin', request.headers.origin);
+    response.setHeader('Vary', 'Origin');
+  }
   try {
+    if (request.method === 'OPTIONS' && path === '/api/generate-etude') {
+      if (!STUDIO_ORIGINS.has(request.headers.origin)) {
+        send(response, 403, { error: 'Origin not allowed.' });
+        return;
+      }
+      response.writeHead(204, {
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      });
+      response.end();
+      return;
+    }
     if (request.method === 'GET' && path === '/') {
       response.writeHead(302, { Location: '/test-etude' });
       response.end();
