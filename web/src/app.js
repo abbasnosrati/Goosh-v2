@@ -309,21 +309,29 @@ function refreshTake(take) {
 function paintPlaybackMarker(force = false) {
   if (!playback) return;
   const elapsed = playback.clock.currentTime - playback.started;
-  const active = new Set(playback.notes.filter(n =>
-    elapsed >= n.at && elapsed < n.at + n.d).map(n => n.index));
-  const signature = [...active].join(',');
-  if (!force && signature === playback.markerSignature) return;
-  playback.markerSignature = signature;
+  // Follow the latest note attack, not the releases of older notes that
+  // can still overlap it (especially after a live piano recording).
+  // Notes with the same onset are a chord and may share the indicator.
+  let currentOnset = -Infinity;
+  for (const note of playback.notes)
+    if (note.at <= elapsed + 1e-7 && note.at > currentOnset)
+      currentOnset = note.at;
+  const active = new Set(playback.notes.filter(note =>
+    Math.abs(note.at - currentOnset) < 1e-7 &&
+    elapsed < note.at + note.d).map(note => note.index));
+  // Check each engraved segment even when the active note stays the same:
+  // a long note tied across a barline has multiple arrow positions.
   $('.score')?.querySelectorAll('[data-playback-note]').forEach(marker => {
     const index = Number(marker.getAttribute('data-playback-note'));
-    const from=Number(marker.getAttribute('data-playback-from'));
-    const to=Number(marker.getAttribute('data-playback-to'));
-    const segmentMatches=Number.isFinite(from)&&Number.isFinite(to)
-      ?elapsed>=from-1e-7&&elapsed<to: true;
-    marker.setAttribute('opacity',active.has(index)&&segmentMatches?'1':'0');
+    const from = Number(marker.getAttribute('data-playback-from'));
+    const to = Number(marker.getAttribute('data-playback-to'));
+    const segmentMatches = Number.isFinite(from) && Number.isFinite(to)
+      ? elapsed >= from - 1e-7 && elapsed < to : true;
+    const opacity = active.has(index) && segmentMatches ? '1' : '0';
+    if (force || marker.getAttribute('opacity') !== opacity)
+      marker.setAttribute('opacity', opacity);
   });
 }
-
 function clearPlaybackMarker() {
   if (!playback) return;
   cancelAnimationFrame(playback.frame);
@@ -1215,7 +1223,7 @@ async function startScorePlayback() {
   playback = {
     clock, started:transport.anchor,
     notes:notes.map(n => ({index:n.index, at:n.at, d:n.d})),
-    end, markerSignature:null, frame:null
+    end, frame:null
   };
   paintPlaybackMarker(true);
   playback.frame = requestAnimationFrame(advancePlaybackMarker);
@@ -1250,7 +1258,6 @@ function resumeScorePlayback() {
   if (playback) {
     playback.clock = transport.clock;
     playback.started = transport.anchor - transport.offset;
-    playback.markerSignature = null;
     paintPlaybackMarker(true);
     playback.frame = requestAnimationFrame(advancePlaybackMarker);
   }
@@ -1353,7 +1360,7 @@ function studio() {
       unlock();
       const meter=meterInfo(e);
       rec = {
-        start: unlock().currentTime,
+        start: null, // Anchor the take to the first played key, not Record.
         base: Math.max(0, ...e.notes.map(n => n.at + n.d)),
         step:meter?meter.quarterSeconds/8:0
       }
@@ -1362,6 +1369,8 @@ function studio() {
   }
   piano(panel, (m, at) => {
     if (!rec) return;
+    // Record-arm time is not musical time: first key-on defines zero.
+    if (rec.start === null) rec.start = at;
     const rawAt=rec.base+Math.max(0,at-rec.start);
     // Metered piano recording uses an explicit rhythmic 1/32-note grid;
     // free mode retains every original, unquantized performance timestamp.
