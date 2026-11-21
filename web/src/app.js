@@ -26,7 +26,7 @@ import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=mobile-signature-modal-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { mountEtudeComposer } from './studio-etude-generation.js?v=mobile-signature-modal-1'
+import { mountEtudeComposer } from './studio-etude-generation.js?v=signature-dialog-top-layer-2'
 import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=music-toggle-reuse-1'
 import { renderHome } from './home.js?v=mobile-home-ticker-speed-2';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
@@ -527,7 +527,7 @@ function auditionSignature(hz,force=false){
   signaturePreviewRelease(.55)
 }
 
-function renderSignatureControls(box=$('.signature-editor-controls'), inMobileDialog=false){
+function renderSignatureControls(box=$('.studio-score-surface > .signature-editor-controls'), inMobileDialog=false){
   if(!box)return
   box.hidden=!(signatureMode||inMobileDialog)
   box.replaceChildren()
@@ -785,7 +785,9 @@ function renderMobileSignatureDialog(){
 }
 
 function sheet() {
-  const h = $('.score');
+  // The dialog has its own score-styled SVG host. Always paint notes on
+  // the original Studio staff; do not accidentally replace the modal.
+  const h = $('.studio-score-surface > .score');
   if (!h) return;
   refreshPianoKeyLabels();
   if(signatureMode){
@@ -1533,17 +1535,21 @@ function studio() {
   });
   // The Manual/AI choice lives beside the existing score. The notes stay
   // canonical on this etude; generated exercises only store practice steps.
+  // This single predicate controls both mobile entry placement and modal display.
+  // Coarse-touch wider WebViews must not fall back to the desktop Score editor.
+  const isMobileSignatureView = () => window.matchMedia(
+    '(max-width: 767px), (pointer: coarse) and (max-width: 1100px)'
+  ).matches || ['android','ios'].includes(window.Capacitor?.getPlatform?.());
   const showSignatureEditor = editing => {
     stopSignaturePreview();
-    const mobile=window.matchMedia(
-      '(max-width: 700px), (pointer: coarse) and (orientation: landscape) and (max-height: 520px)'
-    ).matches;
-    if(mobile){
+    if(isMobileSignatureView()){
       if(!editing){mobileSignatureDialog?.close();return}
       if(mobileSignatureDialog?.open)return;
       stopScorePlayback();
       signaturePitch = SIGNATURE_PITCHES.find(p=>e.key[p.pc])?.pc ?? 0;
-      const dialog=el('dialog',panel,undefined,'studio-mobile-signature-dialog');
+      // Portal outside the styled Studio section so showModal paints above
+      // the Score rather than participating in the editor card layout.
+      const dialog=el('dialog',app,undefined,'studio-mobile-signature-dialog');
       const card=el('div',dialog,undefined,'studio-mobile-signature-card');
       const header=el('div',card,undefined,'studio-mobile-signature-header');
       const title=el('div',header,undefined,'studio-mobile-signature-title');
@@ -1595,6 +1601,7 @@ function studio() {
   const composer = mountEtudeComposer(composeHost, {
     etude: composerTarget, fa,
     signatureEditing: signatureMode,
+    isMobileSignatureView,
     signatureIcon: scoreSignatureIcon,
     returnSignatureIcon: scoreReturnStaffIcon,
     onToggleKeySignature: showSignatureEditor,

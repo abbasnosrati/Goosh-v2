@@ -154,7 +154,7 @@ function showMobileAIGuide(fa){
 export function mountEtudeComposer(host, {
   etude, fa, isRecording, isCurrent, onGenerated, onModeChange, onSignatureChange,
   onToggleKeySignature, signatureIcon, returnSignatureIcon, signatureEditing = false,
-  onMeterSelect
+  isMobileSignatureView = () => false, onMeterSelect
 }) {
   const t = (en, ir) => fa ? ir : en;
   let state = states.get(etude);
@@ -183,6 +183,7 @@ export function mountEtudeComposer(host, {
 
   host.replaceChildren();
   host.className = 'studio-compose';
+  host.classList.toggle('studio-mobile-signature-view', isMobileSignatureView());
   // Manual/AI and the musical choices share one settings surface.
   const sharedMusic = create('div', host, null, 'studio-compose-music');
   const tabs = create('div', sharedMusic, null, 'studio-compose-tabs');
@@ -257,9 +258,7 @@ export function mountEtudeComposer(host, {
   const signatureHint = create('p', sharedMusic, null, 'studio-compose-music-hint');
   // One persistent-position toggle beside the Iranian/Western radios:
   // it opens the existing editor and becomes Back to Score in-place.
-  const mobileSignaturePlacement = window.matchMedia(
-    '(max-width: 700px), (pointer: coarse) and (orientation: landscape) and (max-height: 520px)'
-  ).matches;
+  const mobileSignaturePlacement = isMobileSignatureView();
   const signatureActions = create('div',
     mobileSignaturePlacement ? fields : musicOptions, null, 'studio-signature-actions');
   const editSignature = create('button', signatureActions, null, 'signature-toggle studio-signature-entry');

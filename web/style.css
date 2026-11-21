@@ -1083,9 +1083,9 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 
 
 /* Mobile Key Signature: a floating view of the existing desktop editor.
-   Natural, flat, sharp, Koron and Sori use their canonical score controls. */
-@media screen and (max-width: 700px),
-       screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+   Styles apply to this mobile-only dialog whenever it is opened, even on
+   wide touch WebViews. The desktop editor never uses this modal class. */
+@media screen {
   #app[data-page="studio"] dialog.studio-mobile-signature-dialog {
     box-sizing: border-box;
     position: fixed;

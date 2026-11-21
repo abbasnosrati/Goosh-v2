@@ -129,6 +129,19 @@
   grid-template-columns: repeat(2,minmax(0,1fr));
   gap: 12px;
 }
+/* Keep the Dastgah action directly below its selector on touch/mobile UI. */
+#app[data-page="studio"] .studio-compose.studio-mobile-signature-view .studio-compose-fields {
+  grid-template-columns: minmax(0,1fr);
+}
+#app[data-page="studio"] .studio-compose.studio-mobile-signature-view .studio-compose-fields > .studio-signature-actions {
+  width: fit-content;
+  justify-self: start;
+  margin-top: -2px;
+}
+#app[data-page="studio"] .studio-compose.studio-mobile-signature-view .studio-compose-fields > .studio-signature-actions .studio-signature-entry {
+  width: auto;
+  min-height: 42px;
+}
 #app[data-page="studio"] .studio-compose-actions { display: flex;gap: 10px;flex-wrap: wrap;margin-top: 14px; }
 #app[data-page="studio"] .studio-compose-generate { min-width: 180px; }
 #app[data-page="studio"] .studio-compose-status { margin: 8px 0 0;font-size: .88rem;color: var(--muted); }
@@ -277,15 +290,6 @@
     width: 100%;
     min-width: 0;
     min-inline-size: 0;
-  }
-  #app[data-page="studio"] .studio-compose-fields > .studio-signature-actions {
-    width: fit-content;
-    justify-self: start;
-    margin-top: -2px;
-  }
-  #app[data-page="studio"] .studio-compose-fields > .studio-signature-actions .studio-signature-entry {
-    width: auto;
-    min-height: 42px;
   }
   #app[data-page="studio"] .studio-compose-fields,
   #app[data-page="studio"] .practice-fields {
