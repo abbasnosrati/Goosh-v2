@@ -786,3 +786,54 @@ html.dark .home-screen {--g-shadow:var(--glass-shadow);}
   .home-screen .g-hub-enter {font-size: 11px;gap: 5px;}
   .home-screen .g-hub-enter .g-icon {width: 14px;height: 14px;}
 }
+
+
+/* Three core product capabilities take the prominent position previously
+   used by "Your next melody starts here" in the Studio illustration.
+   Keep the mock score, controls, original hero text and glass styling. */
+.home-screen .g-sheet-capabilities {
+  display: grid;
+  gap: 7px;
+  margin: 2px 0 12px;
+}
+.home-screen .g-sheet-capability {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--g-hairline));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--glass-control));
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.45;
+  text-align: start;
+}
+.home-screen .g-sheet-capability:first-child {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--g-hairline));
+  background: color-mix(in srgb, var(--accent) 11%, var(--glass-control));
+}
+.home-screen .g-sheet-capability .g-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+@media screen and (max-width: 699px) {
+  .home-screen .g-sheet-capabilities {
+    gap: 5px;
+    margin-bottom: 8px;
+  }
+  .home-screen .g-sheet-capability {
+    gap: 7px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .home-screen .g-sheet-capability .g-icon {
+    width: 16px;
+    height: 16px;
+  }
+}

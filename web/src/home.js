@@ -102,23 +102,37 @@ function renderDesktop({el,app,t,collection,navigate}) {
     'بدون نیاز به حساب کاربری؛ اتودها روی دستگاه خودت نگهداری می‌شوند.'
   ),'g-hero-footnote');
   const art=el('div',hero,undefined,'g-hero-composition');
-  art.setAttribute('aria-hidden','true');
   const orbital=el('div',art,undefined,'g-orbit');
+  orbital.setAttribute('aria-hidden','true');
   icon(orbital,'music');
   const sheet=el('div',art,undefined,'g-sheet-mock');
   const sheetHeader=el('div',sheet,undefined,'g-sheet-header');
+  sheetHeader.setAttribute('aria-hidden','true');
   el('span',sheetHeader,'GOOSH / STUDIO');
   const dots=el('div',sheetHeader,undefined,'g-window-dots');
   for(let i=0;i<3;i++)el('i',dots);
-  el('strong',sheet,t('Your next melody starts here','ملودی بعدی از اینجا شروع می‌شود'));
+  const highlights=el('div',sheet,undefined,'g-sheet-capabilities');
+  highlights.setAttribute('role','list');
+  for(const [glyph,en,ir] of [
+    ['layers','Multiple practice methods for one etude','چندین روش تمرین برای یک اتود'],
+    ['sparkles','Create etudes with AI','ساخت اتود با هوش مصنوعی'],
+    ['pen','Design practice methods with AI','طراحی شیوهٔ تمرین با هوش مصنوعی']
+  ]){
+    const item=el('div',highlights,undefined,'g-sheet-capability');
+    item.setAttribute('role','listitem');
+    icon(item,glyph);
+    el('span',item,t(en,ir));
+  }
   noteArt(el,sheet,'hero');
   const mockTools=el('div',sheet,undefined,'g-sheet-tools');
+  mockTools.setAttribute('aria-hidden','true');
   for(const [glyph,label] of [['pen','WRITE'],['play','PLAY'],['waveform','LISTEN']]){
     const item=el('div',mockTools);
     icon(item,glyph);
     el('span',item,label);
   }
   const float=el('div',art,undefined,'g-float-card');
+  float.setAttribute('aria-hidden','true');
   icon(float,'headphones');
   const floatText=el('div',float);
   el('small',floatText,t('Learn by listening','یادگیری با شنیدن'));
