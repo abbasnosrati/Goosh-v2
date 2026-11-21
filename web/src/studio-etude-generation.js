@@ -221,6 +221,10 @@ export function mountEtudeComposer(host, {
       applySelectedSignature();
       showStudioMessage(status, '');
       sync();
+      // Western music has an automatic signature, not the manual Iranian editor.
+      // Leave the editor if the user changes systems while it is open.
+      if (id === 'western' && signatureEditing)
+        onToggleKeySignature?.(false);
     };
   }
   const fields = create('div', sharedMusic, null, 'studio-compose-fields');
@@ -249,10 +253,7 @@ export function mountEtudeComposer(host, {
   };
   const tonicPicker = attachMusicBottomSheet(tonicField, tonicInput, tonicHeading, fa);
   tonicField.hidden = state.musicSystem !== 'western';
-  create('p', sharedMusic, t(
-    'Selecting a mode sets the score and piano tuning. Use Edit Key Signature to fine-tune it.',
-    'با انتخاب دستگاه یا مد، سرکلید و کوک پیانو تنظیم می‌شود. برای تنظیم دقیق‌تر، از ویرایش سرکلید استفاده کنید.'
-  ), 'studio-compose-music-hint');
+  const signatureHint = create('p', sharedMusic, null, 'studio-compose-music-hint');
   // One persistent-position toggle beside the Iranian/Western radios:
   // it opens the existing editor and becomes Back to Score in-place.
   const signatureActions = create('div', musicOptions, null, 'studio-signature-actions');
@@ -269,7 +270,10 @@ export function mountEtudeComposer(host, {
     editSignature.append(editIcon);
   }
   create('span', editSignature, signatureLabel, 'signature-toggle-label');
-  editSignature.onclick = () => { if (!busy) onToggleKeySignature?.(!signatureEditing); };
+  editSignature.onclick = () => {
+    if (!busy && state.musicSystem === 'iranian')
+      onToggleKeySignature?.(!signatureEditing);
+  };
   // Primary Practice Goal and Generate are AI-only, unlike the music selector.
   const goalLabel = create('label', content, null, 'practice-field studio-compose-goal');
   create('span', goalLabel, t('Primary practice goal', 'هدف اصلی تمرین'));
@@ -374,6 +378,13 @@ export function mountEtudeComposer(host, {
       entry.radio.checked = state.musicSystem === id;
       entry.radio.disabled = busy || !musicCatalog;
     }
+    // Manual key-signature tuning is shown only for Iranian music.
+    signatureActions.hidden = state.musicSystem !== 'iranian';
+    signatureHint.textContent = state.musicSystem === 'iranian'
+      ? t('Selecting a Dastgah sets the Score key signature and piano tuning. Use Set Key Signature to fine-tune it.',
+          'با انتخاب دستگاه، سرکلید و کوک پیانو تنظیم می‌شود. برای تنظیم دقیق‌تر، از تنظیم سرکلید استفاده کنید.')
+      : t('Selecting a scale or mode automatically sets the Score key signature.',
+          'با انتخاب گام یا مد، سرکلید خط حامل به‌صورت خودکار تنظیم می‌شود.');
     editSignature.disabled = busy;
     styleInput.disabled = busy || !musicCatalog;
     tonicInput.disabled = busy || !musicCatalog;
