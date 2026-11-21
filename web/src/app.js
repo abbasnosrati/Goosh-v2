@@ -2364,7 +2364,7 @@ function render() {
   $('#lang').textContent = fa ? 'English' : 'فارسی';
   const nav = $('#nav');
   nav.replaceChildren();
-  const routes = [['home',t('Home','خانه')],['studio',t('Etude studio','استودیوی اتود')],['practice',t('Practice','تمرین')]];
+  const routes = [['home',t('Home','خانه')],['studio',t('Etudes','اتودها')],['practice',t('Practice','تمرین')]];
   const navigate = (key,id=null) => navigateTo(key,id);
   const footer=$('#footer') || el('footer',document.body);
   footer.id='footer';
