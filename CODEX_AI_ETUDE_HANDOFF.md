@@ -3156,3 +3156,17 @@ The user confirmed that the *area-selection icon itself works correctly*. Do not
 **Validation:** Actual `scoreEditingCursor('range')` output was executed and decoded to check SVG arrow plus dashed rectangle, 2,2 hotspot and no crosshair; confirmed shared `scoreEditingCursor()` still yields Pen and Eraser, CSS references active custom property, marquee selection handlers remain, cache keys match, and app JS parses. A 32px icon was also rasterized and inspected; **browser cursor rendering/real pointer interactions have not been independently tested**.
 
 Do not revert it to a crosshair/aiming reticle or an unadorned system pointer without new user instruction.
+
+
+---
+
+## UI REFINEMENT — Etude Setup heading without music icon; Manual/AI inline (2026-11-21)
+
+**User's screenshot request (Persian):** Remove the decorative musical note icon immediately beside **«تنظیمات اتود» / “Etude Setup”** at the upper right of the Etude Studio setup card; move the two existing **Manual/AI mode-selector buttons** from the far left of the card's header to sit **directly beside the title** (to its left in RTL Persian). Do not redesign or duplicate these controls or change behavior.
+
+**Implemented on `feature/practice-sequence-studio`:**
+- `web/src/studio-etude-generation.js`, commit `6219eaee6fffddb95655388485bf2bba24ecd7f6`: Remove only `appendSetupIcon(sharedMusic,'music','studio-setup-hero-icon')` at the setup title. Wrap the one existing title and one existing `studio-compose-tabs` element in a single `.studio-setup-header`; keep the same canonical `manual` and `ai` buttons, event handlers, conditional content, and state.
+- `web/practice-designer.css`, commits `03c747c468551ee2e90166be5fca39b45e12d337` and `0325b22dbc1740c98f3f758e876695848743a107`: For desktop `min-width:900px`, position the **one shared header row** along the same inline-leading edge as the title, with flex alignment and a 20px gap. Make title and the preexisting two-button tab group adjacent rather than positioning them on opposite ends of the card. Remove the obsolete decoration's desktop positioning/style. For small screens and tablets, set the wrapper to `display:contents`, preserving the old title-over-full-width-tabs flow. The guide panel, musical choices, Scale, Signature Editor and AI fields are unchanged.
+- `web/src/app.js`, commit `2d6e616055239911afc3f421f77e561b4ddeff63` updates only the composer import query suffix. `web/index.html`, commit `46c6f1a68ddb10661ba48b797294e870cc6a0071` refreshes only the app module and `practice-designer.css` cache suffixes to `etude-setup-inline-modes-1`. No other source modifications.
+
+**Validation performed:** Both JS modules parse, all nine source checks passed (single shared title/tabs row, no hero icon, no duplicated mode buttons, desktop alignment, unchanged mobile flow, unchanged existing mode state/handlers, correct cache keys), CSS braces balanced. **No physical browser, screenshot comparison on desktop, RTL/LTR real layout, or mobile device QA performed.** User visual acceptance pending.
