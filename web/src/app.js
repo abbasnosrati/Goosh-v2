@@ -2292,9 +2292,8 @@ function openDeleteEtudeDialog(id,name){
   cancelButton.focus();
 }
 
-// The Studio and Practice libraries share one card renderer and visual
-// component. Only the destination route differs; both retain their delete
-// action and the same imported/owned metadata.
+// Studio and Practice share one card renderer, but deleting an etude is
+// permitted only from its Etudes collection, never from the Practice list.
 function renderLibraryEtudeCard(section, id, entry, destination) {
   const card=el('div',section,undefined,'etude-card');
   const item=el('button',card,undefined,'etude-item');
@@ -2303,6 +2302,8 @@ function renderLibraryEtudeCard(section, id, entry, destination) {
   el('strong',item,name);
   el('small',item,entry.data.notes.length.toLocaleString(fa?'fa':'en')+' '+t('notes','نت'));
   item.onclick=()=>navigateTo(destination,id);
+  // Practice is learner-facing: its cards never offer the destructive action.
+  if(destination !== 'studio') return;
   const remove=btn(card,'',()=>openDeleteEtudeDialog(id,name),t('Delete etude','حذف اتود'));
   remove.className='etude-delete';
   remove.setAttribute('aria-label',t('Delete etude','حذف اتود')+' · '+name);

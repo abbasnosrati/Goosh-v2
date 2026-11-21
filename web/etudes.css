@@ -1192,3 +1192,17 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
     transform: translateY(-50%);
   }
 }
+
+/* Practice is a read/play entrypoint. No delete control is rendered there,
+   so its cards must not reserve the Etudes-only delete button's space. */
+#app[data-page="practice"]:has(> .shelves) .etude-card > .etude-item {
+  padding-right:17px;
+}
+@media screen and (max-width:719px) {
+  #app[data-page="practice"]:has(> .shelves) .etude-card > .etude-item {
+    padding-inline-end:14px;
+  }
+  html[lang="fa"][dir="rtl"] #app[data-page="practice"]:has(> .shelves) .etude-card > .etude-item {
+    grid-template-columns:48px minmax(0,1fr);
+  }
+}

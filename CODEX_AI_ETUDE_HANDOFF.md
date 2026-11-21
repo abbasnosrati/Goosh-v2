@@ -3220,3 +3220,13 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 **CSS-only solution:** In `web/practice-designer.css`, change the existing desktop-only `.studio-setup-guide-head` to a two-column CSS grid, with a flexible text column and a fixed 39px icon column separated by 12px. Place the existing heading and paragraph in the text column, the original icon in the icon column (no absolute positioning), and remove the obsolete paragraph padding. Grid direction follows the active document direction automatically: icon remains left of text in RTL and right in LTR, with no overlap. This also applies to the Manual Guide using the same shared component. All text, SVG paths, sizes, AI/Manual mode state, callbacks and mobile layout remain untouched. `web/index.html` only bumps the CSS cache key.
 
 **Verification:** Verified source-only that desktop guide fields occupy distinct grid columns and that the stylesheet reference points to the updated CSS. Browser/device visual QA not performed.
+
+---
+
+## 2026-11-21 — Remove Etude deletion from Practice library only
+
+**User rule:** Learners must not be able to delete an Etude from the Practice list. The destructive Delete Etude action belongs exclusively to the Etudes library; this applies to owned and imported Etudes, desktop and mobile.
+
+**Implementation:** `web/src/app.js` keeps the one shared `renderLibraryEtudeCard` renderer and navigational item, but exits before the existing delete-button creation when its destination is `practice`. Only `studio` list cards create the same existing delete action, dialog and handler. No data removal or new behavior is added. `web/etudes.css` removes the unused delete-button padding in Practice cards, including the unused third grid column for Persian mobile layout. `web/index.html` updates only the relevant JS and CSS cache keys. No other page, card action, import/export, or Practice runtime code changes.
+
+**Source review:** Confirmed `etudeList()` calls `renderLibraryEtudeCard(section,id,entry,page)` so the existing page value is the canonical route selector. Static checks ensure the deletion callback remains available in Studio only; no browser/device test was run.
