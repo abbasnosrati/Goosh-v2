@@ -268,7 +268,56 @@ export function planScoreNoteReorder(etude, sourceIndex, target) {
     if(target.type!=='note'&&target.type!=='rest')
       return invalid('missing-slot');
     const groups=groupNotes(all);
-    if(!validateGroups(groups))return invalid('polyphony');
+    if(!validateGroups(groups)){
+      // Free piano recordings can have overlapping note releases even
+      // when their onsets are sequential. Treat them as ordered musical
+      // events instead of rejecting every drag in the entire etude.
+      const blocks=[];
+      let soundingUntil=0;
+      for(const group of groups){
+        if(group.at>soundingUntil+EPS)
+          blocks.push({kind:'rest',at:soundingUntil,
+            duration:group.at-soundingUntil});
+        blocks.push(group);
+        soundingUntil=Math.max(soundingUntil,group.at+group.duration);
+      }
+      // Preserve onset-to-onset spacing for overlapping notes, and
+      // preserve each actual silence event's audible duration.
+      const events=blocks.map((block,index)=>({
+        ...block,
+        advance:block.kind==='rest'?block.duration:
+          blocks[index+1]?Math.max(0,blocks[index+1].at-block.at):
+          block.duration
+      }));
+      const sourceSlot=events.findIndex(block=>block.kind==='note'&&
+        block.indices.includes(sourceIndex));
+      const destinationSlot=events.findIndex(block=>
+        block.kind===target.type&&Math.abs(block.at-target.at)<EPS);
+      if(sourceSlot<0||destinationSlot<0)return invalid('missing-slot');
+      if(sourceSlot===destinationSlot)return unchanged();
+      // True simultaneous chords remain grouped; splitting a voice
+      // needs a separate, explicit musical editing operation.
+      if(events[sourceSlot].indices.length!==1)return invalid('polyphony');
+      const destination=events[destinationSlot];
+      const order=events.slice();
+      const [moving]=order.splice(sourceSlot,1);
+      order.splice(order.indexOf(destination)+
+        (target.position==='after'?1:0),0,moving);
+      const positions=new Map();
+      let cursor=0,activeUntil=0;
+      for(const block of order){
+        if(block.kind==='rest'){
+          cursor=Math.max(cursor,activeUntil)+block.duration;
+        }else{
+          for(const index of block.indices)positions.set(index,cursor);
+          activeUntil=Math.max(activeUntil,cursor+block.duration);
+          cursor+=block.advance;
+        }
+      }
+      const result=createMoves(positions);
+      if(result.ok)result.kind='insert';
+      return result;
+    }
     const blocks=[];
     let current=0;
     for(const group of groups){
