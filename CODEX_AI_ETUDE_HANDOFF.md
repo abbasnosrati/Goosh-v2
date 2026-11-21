@@ -2351,3 +2351,20 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 4. Free Drag is **remove + insert**, never swap. Preserve unrelated order, note durations, rests, and undo. Metered drag and bar capacity validation are separate and must remain constrained.
 5. Record's start clock is established by **the first actual piano key-on** after arming; `rec.base` remains the append point. Score arrows indicate **the latest performed/notated onset**, not every continuing voice/sample tail; simultaneous notes at identical onsets are an intentional exception.
 6. Every future user-reported bug fix must be appended to **this very handoff file** with reproduction, root cause, actual changed files, behavior/limits, commit(s), tests performed, and tests **not** performed. Do not present mocked tests as browser/device validation. Avoid unrelated code changes.
+
+
+---
+
+## Regression fix: piano sample decay was recorded as note length in Metered Etudes (2026-11-21)
+
+**User symptom:** While recording on-screen piano with a time signature, the staff produced unnaturally long notes, overlapping voices, bar-spanning ties, and confusing rest notation. Free handwritten note entry did not produce the same problem.
+
+**Root cause:** The existing piano handler deliberately lets a very short physical key tap ring for `PIANO_TAP_RING_SECONDS = 2` seconds, passing that sound-release duration into `liveVoice()`. The same callback was also fed to Studio's `onDuration` recorder, storing `e.notes[].d = 2` instead of the real ~100-ms key hold. `meterTimeline()` then faithfully engraved the incorrect two-second lengths in Metered notation. Re-striking a still-ringing sample could also trigger `onDuration` a second time and overwrite a previous note.
+
+**Minimal fix:** In **`web/src/app.js` only**, the existing `piano()` key handler uses a per-key `finishRecording` function that reports a physical key-hold duration (minimum 1 ms, maximum 6 s) to the unchanged `onStart` recording callback **once**. On release, it calls `finishRecording(heldSeconds)` before the existing sample-release function. The sample continues to ring for the **same** 2 seconds on sub-180-ms taps, or releases after the held duration otherwise. If the same key is re-attacked before key-up, the original `liveVoice` damp callback reports the interrupted hold once; later physical release or tail damping cannot overwrite that note. The one-off record gate exists in the current `piano()` function and does not introduce a second recorder or modify `liveVoice` itself.
+
+**Unchanged:** `web/src/audio.js`, `web/src/model.js`, `web/src/score.js`, note data schema, Free/Metered notation rules, 1/32 grid, original piano sample/envelope, existing transport/playback, pitch, Free Drag and rest editing, practice, Undo and first-key Record onset. The only other code file touched is **`web/index.html`**, solely to bump the app ESM cache key to `metered-piano-record-keyhold-1`. No new tools, UI, backend or dependencies.
+
+**Validation (isolated, not live-browser):** The actual modified keyboard handler was exercised together with the **original unmodified** `liveVoice` against mocked WebAudio controls. A 100-ms key-up recorded 100 ms while the acoustic release remained 2 s; a 700-ms held key recorded/released 700 ms; over-6-second holds stayed capped; non-recording piano kept its existing sound; restriking a released tail did not rewrite the earlier note; restriking a still-held key recorded its elapsed time once. The unchanged `meterTimeline` accepted short snapped notes without ties in 2/4, 3/4, 4/4, 6/4, 6/8, 6/16, 7/8 and 5/8. JS syntax checked. **No actual browser, physical piano playing, audio-listening, touchscreen, or APK test was performed.**
+
+**Compatibility:** Affects **new recordings only**; previously saved long note durations are not silently rewritten. If future complaints concern sophisticated live MIDI transcription/quantization or legitimate simultaneous voices, address those as separate explicit tasks rather than changing sample playback or the canonical `e.notes` representation.

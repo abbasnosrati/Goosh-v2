@@ -226,14 +226,26 @@ function piano(parent, onStart) {
     b.begin = (id, at, audioTime = unlock().currentTime) => {
       pressed.add(id);
       const recordDuration = onStart(m, audioTime);
-      const off = liveVoice(freq(e, m), recordDuration, audioTime);
+      // A live piano's acoustic tail must never be saved as note length.
+      // Finalize each physical key hold once, including same-pitch retriggers.
+      let durationRecorded = false;
+      const finishRecording = duration => {
+        if (durationRecorded) return;
+        durationRecorded = true;
+        recordDuration?.(duration);
+      };
+      const off = liveVoice(freq(e, m), finishRecording, audioTime);
       b.classList.add('down');
       held.set(id, () => {
         held.delete(id);
         pressed.delete(id);
         if (!pressed.size) b.classList.remove('down');
-        const d = (performance.now() - at) / 1000;
-        off(d < .18 ? PIANO_TAP_RING_SECONDS : Math.min(6, d));
+        const heldSeconds = Math.max(.001,
+          Math.min(6, (performance.now() - at) / 1000));
+        finishRecording(heldSeconds);
+        // Preserve the existing piano sound envelope separately from
+        // the physical key-held duration recorded in the etude.
+        off(heldSeconds < .18 ? PIANO_TAP_RING_SECONDS : heldSeconds);
 
       })
     };
