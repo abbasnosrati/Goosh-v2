@@ -218,8 +218,11 @@ export function mountEtudeComposer(host, {
 
   host.replaceChildren();
   host.className = 'studio-compose';
+  // One content column keeps Music and AI settings tightly together regardless
+  // of the Guide's height. It is layout-neutral on mobile.
+  const mainColumn=create('div',host,null,'studio-setup-main');
   // Manual/AI and the musical choices share one settings surface.
-  const sharedMusic = create('div', host, null, 'studio-compose-music');
+  const sharedMusic = create('div', mainColumn, null, 'studio-compose-music');
   appendSetupIcon(sharedMusic,'music','studio-setup-hero-icon');
   create('h2', sharedMusic, t('Etude Setup', 'تنظیمات اتود'), 'studio-compose-heading');
   const tabs = create('div', sharedMusic, null, 'studio-compose-tabs');
@@ -232,7 +235,7 @@ export function mountEtudeComposer(host, {
 
   // A shared musical foundation: Manual and AI always use the same
   // canonical Etude key signature, piano and score playback frequencies.
-  const content = create('div', host, null, 'studio-compose-ai');
+  const content = create('div', mainColumn, null, 'studio-compose-ai');
   const intro = create('p', content, t(
     'Choose a learning goal before generating the notes. One score can then support multiple practices.',
     'قبل از تولید نت‌ها، هدف آموزشی را انتخاب کنید. سپس می‌توانید چند تمرین مختلف روی همان نت‌ها بسازید.'
