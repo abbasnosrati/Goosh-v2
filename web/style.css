@@ -2326,7 +2326,7 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   outline-offset: -2px;
 }
 #app[data-page="studio"] .score svg [data-score-seek] {
-  cursor: pointer;
+  cursor: pointer !important;
   touch-action: none;
 }
 @media print {
