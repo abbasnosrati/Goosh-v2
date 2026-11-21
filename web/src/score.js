@@ -17,7 +17,7 @@ function symbol(beats) {
     Math.abs(Math.log(beats/a.value))?b:a)
   return {...best,exact:Math.abs(beats-best.value)<Math.max(.005,best.value*.012)}
 }
-export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,move,moveRest,eraseRest,tool='select',fa=false}={}) {
+export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,pick,insert,move,moveRest,eraseRest,tool='select',fa=false}={}) {
   host.replaceChildren()
   const second=60/(e.bpm||90),width=Math.max(240,host.clientWidth||700)
   const timeline=meterTimeline(e)
@@ -151,6 +151,9 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
   // The shared model decides whether that slot means a swap, Free reorder
   // or an inter-measure transfer, before ANY change is saved.
   const dragMarkers = []
+  // The same canonical note indices are used for marquee, eraser and Play.
+  // Repeated tied noteheads share an index, never duplicate note state.
+  const rangeHeads = []
   function dragSlot(rowIndex,x,sourceIndex){
     const row=rows[rowIndex]
     // A rest is an independent notation event in Free too, NOT an
@@ -444,6 +447,9 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
       })
       const hit=draw('circle',{cx:x,cy:y,r:10,fill:'transparent',
         'data-score-note':index})
+      if(tool==='range')rangeHeads.push({
+        index,head,hit,baseStroke:hollow?1.8:1.1
+      })
       let pointer=null,ignoreClick=false
       if(tool==='select'&&move){
         hit.style.touchAction='none'
@@ -641,6 +647,94 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),pick,insert,mo
       if(y<4||y>161)return
       const placement=planPlacement(rowIndex,x,ev.shiftKey)
       insert?.(pitchFromY(y),placement)
+    }
+  }
+
+  if(tool==='range'&&selectRange){
+    // One marquee covers ALL rendered staff rows, including wrapped lines.
+    // Intersect the actual SVG note hitboxes in viewport coordinates; the
+    // saved result is only the existing e.notes indices (not a second score).
+    const marquee=document.createElement('div')
+    marquee.className='score-range-marquee'
+    marquee.setAttribute('aria-hidden','true')
+    marquee.hidden=true
+    host.append(marquee)
+    let pointer=null
+
+    const within=(value,min,max)=>Math.min(max,Math.max(min,value))
+    const point=ev=>{
+      const rect=host.getBoundingClientRect()
+      return {
+        x:within(ev.clientX,rect.left,rect.right),
+        y:within(ev.clientY,rect.top,rect.bottom)
+      }
+    }
+    const selectedIn=(a,b)=>{
+      const left=Math.min(a.x,b.x),right=Math.max(a.x,b.x)
+      const top=Math.min(a.y,b.y),bottom=Math.max(a.y,b.y)
+      const chosen=new Set()
+      for(const {index,hit} of rangeHeads){
+        const bounds=hit.getBoundingClientRect()
+        if(bounds.width&&bounds.height&&bounds.right>=left&&
+           bounds.left<=right&&bounds.bottom>=top&&bounds.top<=bottom)
+          chosen.add(index)
+      }
+      return chosen
+    }
+    const show=(a,b)=>{
+      const rect=host.getBoundingClientRect()
+      const left=Math.min(a.x,b.x),top=Math.min(a.y,b.y)
+      marquee.hidden=false
+      marquee.style.left=(left-rect.left+host.scrollLeft-host.clientLeft)+'px'
+      marquee.style.top=(top-rect.top+host.scrollTop-host.clientTop)+'px'
+      marquee.style.width=Math.abs(a.x-b.x)+'px'
+      marquee.style.height=Math.abs(a.y-b.y)+'px'
+      const chosen=selectedIn(a,b)
+      for(const item of rangeHeads)
+        item.head.setAttribute('stroke-width',
+          chosen.has(item.index)?3:item.baseStroke)
+      return chosen
+    }
+    const clear=()=>{
+      marquee.hidden=true
+      for(const item of rangeHeads)
+        item.head.setAttribute('stroke-width',
+          selected.has(item.index)?3:item.baseStroke)
+    }
+    host.onpointerdown=ev=>{
+      if(ev.button!==undefined&&ev.button!==0)return
+      if(ev.isPrimary===false)return
+      ev.preventDefault()
+      const start=point(ev)
+      pointer={id:ev.pointerId,start,chosen:new Set()}
+      host.setPointerCapture?.(ev.pointerId)
+      pointer.chosen=show(start,start)
+    }
+    host.onpointermove=ev=>{
+      if(!pointer||pointer.id!==ev.pointerId)return
+      ev.preventDefault()
+      pointer.chosen=show(pointer.start,point(ev))
+    }
+    host.onpointerup=ev=>{
+      if(!pointer||pointer.id!==ev.pointerId)return
+      const current=pointer
+      current.chosen=show(current.start,point(ev))
+      pointer=null
+      if(host.hasPointerCapture?.(ev.pointerId))
+        host.releasePointerCapture(ev.pointerId)
+      marquee.hidden=true
+      ev.preventDefault()
+      selectRange(current.chosen)
+    }
+    host.onpointercancel=ev=>{
+      if(!pointer||pointer.id!==ev.pointerId)return
+      pointer=null
+      clear()
+    }
+    host.onlostpointercapture=()=>{
+      if(!pointer)return
+      pointer=null
+      clear()
     }
   }
 }
