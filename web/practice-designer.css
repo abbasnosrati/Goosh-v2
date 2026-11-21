@@ -80,6 +80,7 @@
   align-items: center;
   margin-inline-start: 0;
 }
+#app[data-page="studio"] .studio-signature-actions[hidden] {display:none!important}
 #app[data-page="studio"] .studio-signature-entry {
   display: inline-flex;
   align-items: center;
