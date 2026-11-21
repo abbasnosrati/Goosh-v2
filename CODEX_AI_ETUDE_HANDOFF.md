@@ -3170,3 +3170,21 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 - `web/src/app.js`, commit `2d6e616055239911afc3f421f77e561b4ddeff63` updates only the composer import query suffix. `web/index.html`, commit `46c6f1a68ddb10661ba48b797294e870cc6a0071` refreshes only the app module and `practice-designer.css` cache suffixes to `etude-setup-inline-modes-1`. No other source modifications.
 
 **Validation performed:** Both JS modules parse, all nine source checks passed (single shared title/tabs row, no hero icon, no duplicated mode buttons, desktop alignment, unchanged mobile flow, unchanged existing mode state/handlers, correct cache keys), CSS braces balanced. **No physical browser, screenshot comparison on desktop, RTL/LTR real layout, or mobile device QA performed.** User visual acceptance pending.
+
+
+---
+
+## UI REFINEMENT — Localized Pen note values and shared designed dropdown (2026-11-21)
+
+**User screenshot and request:** The Pen note-value selector below the Score incorrectly displays both languages simultaneously (e.g., `Quarter / سیاه`), and looks like an unstyled browser dropdown. Display **Persian only when the interface is Persian**, **English only when it is English**, and match the existing styled dropdowns already implemented for Etude Setup. Retain the exact note-length values and original Pen functionality.
+
+**Implemented on `feature/practice-sequence-studio`:**
+
+- `web/src/app.js`, commit `52cb3ae4b398ec59fca4d6f9a9ba4f3911579a6b`: Replace bilingual option strings with a shared ten-entry `[beats,english,persian]` mapping and render each option's text via the existing `t(en,fa)` locale helper. Values are unchanged: `4,3,2,1.5,1,.75,.5,.375,.25,.125`, so the persisted `penQuarterBeats`, Pen insertion durations, Free/Metered and every musical rule are unchanged. Change only the `score-pen-length` wrapper from `label` to `div` (to support an interactive button without nesting it inside a label), retain its visible heading, and add an accessible name to the existing one canonical `penSelect` native select. Reuse the existing designed Etude Setup chooser via `attachStudioSelectDialog(penValue,penSelect,penLabel,fa)`; no second chooser logic or selection model.
+- `web/src/studio-etude-generation.js`, commit `6f10554ec6c60743845bfd4d65a39ca694ac3ddf`: Only export the **already-existing** `attachStudioSelectDialog` helper so the Score Pen control and music/goal pickers share the exact same implementation. Picker choices always read their labels and IDs from the canonical native select, dispatch the existing native change event, and use the same accessible dialog.
+- `web/style.css`, commit `e2ee739cdbf321e0ee9a0572e81c23d7cfc44c2d`: Scope desktop/native Pen selector styling to match the current Etude Setup look (49px, subtle border radius, `--dropdown-control-surface`, `--glass-border` theme tokens). For mobile/coarse landscape, hide the canonical native select visually and show the shared custom trigger with existing chevron and text styles; the picker uses the existing `dialog.studio-mobile-picker-dialog` from `practice-designer.css`. No duplicate dialog or separate numerical values, no other Score settings or page styling modified.
+- `web/index.html`, commit `8893a444d17da9990a738ae3b57e051871b4056b`: Refresh stylesheet and app-entry query suffixes to `pen-localized-picker-1`. The app's composer import suffix is `shared-pen-picker-1` to refresh the exported helper.
+
+**Verification completed:** Both JS modules parsed successfully. Fourteen static and extracted-function checks passed, including locale-exclusive text for all ten Pen options, exact preserved numerical values, changing the native select still updates `penQuarterBeats`, one invocation of the shared picker per editor, correct mobile/desktop styling and cache keys, and balanced CSS braces. **No actual browser, responsive visual comparison, touch popup, Android APK or audio test performed**, and the user has not yet accepted this particular visual change.
+
+**Do not** change time signatures, the rhythm engine, the selected-note UI, recording or playback as a side effect of this copy/dropdown-only request.
