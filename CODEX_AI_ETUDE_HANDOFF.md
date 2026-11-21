@@ -2467,3 +2467,20 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 **Safety/verification:** New JS parsed successfully; source checks confirm existing route callbacks, keyboard/audio, piano recording, metronome, Score, Practice and key signature functions were not edited. New CSS appended to previous stylesheet; desktop page styles remain byte-for-byte unchanged, apart from intentional hide rules for newly created mobile-only DOM. Settings option actions require separate real-device check for focus/backdrop/soft keyboard and Persian/English / Light/Dark. Static media review covers 320/375/430/700px plus landscape small-height. No physical browser/mobile screenshot, actual visual regression, or APK test has been performed.
 
 **Unrelated unresolved:** Metered live piano Record -> rhythmic transcription remains **NOT FIXED**, and Codex must still get the user's explicit approval on understanding and proposed plan before any changes to that recording logic.
+
+
+---
+
+## Mobile navigation visual refinement: borderless Goosh logo and floating bottom dock (2026-11-21)
+
+**User design feedback:** Remove the visual line/border beneath the Goosh logo on mobile, and replace the previous plain full-width four-column bottom menu with a polished, modern dock. **No redesign of Desktop** and no change to navigation or Settings functionality.
+
+**Change strictly in `web/style.css`:** The existing **mobile-only media block** now sets `border:0`/`box-shadow:none` on the logo-only header. The same mobile bottom `#nav` becomes an inset floating rounded rectangle with a subtle translucent theme-aware background, softened border, restrained shadow, and backdrop blur. Four route buttons stay at least 58px high, with appropriately sized icons and small legible labels. Active route / opened Settings use an accent-colored icon tile and active label instead of filling the entire button. Touch feedback is subtle. A <=359px guard keeps four choices usable. Reduced-motion preference disables only mobile icon/button transitions. All accents use existing light/dark CSS theme variables; no new color scheme or asset.
+- Updated Settings dialog bottom offset to clear the taller floating dock.
+- On Home, existing dashboard-local tabs remain above the shared dock, with enough gap and page bottom padding.
+- **`web/index.html`** updates only the `style.css` version query to `mobile-floating-nav-2` to bypass old cached styling.
+- `web/src/app.js`, `web/src/model.js`, `web/src/audio.js`, `web/src/score.js`, `web/home.css`, all controls and data remain untouched. No new assets or dependencies.
+
+**Verification:** Source/static review only: all changed UI declarations are inside existing mobile media or tiny additional <=359px mobile/reduced-motion blocks, no desktop selector changes, CSS braces balanced, and existing app script unchanged. No browser screenshots, physical mobile, APK, or desktop visual testing was performed.
+
+**Unrelated open issue:** The metered piano live-recording transcription remains UNRESOLVED, and Codex must ask the user for explicit understanding/plan approval before changing it.
