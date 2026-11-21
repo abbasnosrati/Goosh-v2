@@ -459,9 +459,9 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
       const isSelected=selected.has(index)
       const latest=index===recordingIndex
       const accent=latest?'var(--danger)':'var(--accent)'
-      // Visible ring around selected notes; red ring on the latest note
-      // while recording. A transparent ring also supports live marquee preview.
-      const halo=(tool==='range'||isSelected||latest)
+      // Selection is distinguished by its colored notehead/stem alone.
+      // Keep the separate ring only for the latest live-recorded note.
+      const halo=latest
         ?draw('ellipse',{cx:x,cy:y,rx:14,ry:10.5,
           fill:accent,'fill-opacity':0,stroke:accent,
           'stroke-width':2.3,'stroke-opacity':0,
