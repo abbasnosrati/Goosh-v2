@@ -1,6 +1,6 @@
 
 /* Practice Sequence editor — Studio only. Theme tokens come from style.css. */
-#app[data-page="studio"] .practice-designer{margin-block:18px;border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:clamp(14px,2.4vw,24px)}
+#app[data-page="studio"] .practice-designer{margin-block:18px;border:1px solid var(--line);background:var(--glass-surface);border-radius:16px;padding:clamp(14px,2.4vw,24px)}
 #app[data-page="studio"] .practice-heading{display:flex;justify-content:space-between;align-items:center}
 #app[data-page="studio"] .practice-heading h2{font-size:1.28rem;margin:0}
 #app[data-page="studio"] .practice-heading p{margin:.25rem 0 1rem;color:var(--muted,var(--ink));font-size:.91rem;opacity:.83}
@@ -10,7 +10,7 @@
 #app[data-page="studio"] .practice-ai{padding:12px 14px;margin:12px 0;background:transparent}
 #app[data-page="studio"] .practice-ai>summary{font-weight:600}
 #app[data-page="studio"] .practice-ai p{margin:10px 0;color:var(--muted,var(--ink));font-size:.88rem}
-#app[data-page="studio"] .practice-ai textarea{display:block;width:100%;min-height:82px;resize:vertical;border:1px solid var(--line);border-radius:9px;padding:12px;background:var(--panel);color:var(--ink);font:inherit}
+#app[data-page="studio"] .practice-ai textarea{display:block;width:100%;min-height:82px;resize:vertical;border:1px solid var(--line);border-radius:9px;padding:12px;background:var(--glass-surface);color:var(--ink);font:inherit}
 #app[data-page="studio"] .practice-ai-button{margin-top:10px;border-color:var(--accent);color:var(--accent)}
 #app[data-page="studio"] .practice-step-list{display:grid;gap:10px}
 #app[data-page="studio"] .practice-step{margin:0;padding:14px;border-radius:12px}
@@ -30,7 +30,7 @@
 #app[data-page="studio"] .practice-check input{width:18px;height:18px;min-height:18px;flex-shrink:0}
 #app[data-page="studio"] .practice-advanced{grid-column:1/-1;background:transparent;padding:10px 12px;margin:12px 0 0}
 #app[data-page="studio"] .practice-advanced>summary{font-weight:600}
-#app[data-page="studio"] .practice-warning{padding:9px 12px;border-inline-start:3px solid var(--accent);background:var(--bg);border-radius:6px;font-size:.85rem}
+#app[data-page="studio"] .practice-warning{padding:9px 12px;border-inline-start:3px solid var(--accent);background:var(--glass-control);border-radius:6px;font-size:.85rem}
 #app[data-page="studio"] .practice-footnote,#app[data-page="studio"] .practice-empty{opacity:.7;font-size:.82rem;margin:12px 0 0}
 @media(max-width:560px){#app[data-page="studio"] .practice-add-row button{width:100%}#app[data-page="studio"] .practice-fields{grid-template-columns:1fr}#app[data-page="studio"] .practice-step{padding:11px}#app[data-page="studio"] .practice-step-actions button{min-height:40px}}
 
@@ -38,11 +38,13 @@
 
 /* Goal-first Etude Studio composer: reuses Goosh theme tokens and native controls. */
 #app[data-page="studio"] .studio-compose {
+  -webkit-backdrop-filter:var(--glass-blur);
+  backdrop-filter:var(--glass-blur);
   margin-block: 14px 18px;
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: var(--panel);
+  background: var(--glass-surface);
 }
 #app[data-page="studio"] .studio-compose-tabs {
   display: flex;
@@ -51,7 +53,7 @@
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: var(--bg);
+  background: var(--glass-control);
 }
 #app[data-page="studio"] .studio-compose-tab {
   min-width: 102px;
@@ -62,9 +64,9 @@
 }
 #app[data-page="studio"] .studio-compose-tab.active {
   border-color: var(--accent);
-  background: var(--panel);
+  background: var(--glass-selected);
   color: var(--accent);
-  box-shadow: var(--shadow);
+  box-shadow: var(--glass-soft-shadow);
 }
 /* Musical system and scale selection are shared by Manual and AI. */
 #app[data-page="studio"] .studio-compose-music {
@@ -165,7 +167,7 @@
 }
 #app[data-page="studio"] .practice-add-button {background:var(--accent);color:var(--panel);}
 #app[data-page="studio"] .practice-add-actions .practice-ai-button {
-  margin:0;border-color:var(--line);background:var(--panel);color:var(--ink);
+  margin:0;border-color:var(--line);background:var(--glass-surface);color:var(--ink);
 }
 #app[data-page="studio"] .practice-action-wrap button:disabled {
   opacity:.45;cursor:not-allowed;pointer-events:none;
@@ -176,7 +178,7 @@
 #app[data-page="studio"] .practice-goal-tooltip {
   display:none;position:absolute;inset-block-end:calc(100% + 8px);inset-inline-start:0;
   width:max-content;max-width:min(240px,80vw);padding:9px 11px;
-  background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  background:var(--glass-surface);color:var(--ink);border:1px solid var(--line);
   border-radius:9px;box-shadow:var(--shadow);z-index:5;
   font-size:.82rem;white-space:normal;pointer-events:none;
 }
@@ -185,7 +187,7 @@
   display:block;
 }
 #app[data-page="studio"] .practice-frozen-message {
-  border:1px solid var(--line);background:var(--soft);border-radius:12px;
+  border:1px solid var(--line);background:var(--glass-control);border-radius:12px;
   color:var(--ink);padding:13px 16px;font-size:.91rem;margin:16px 0 4px;
 }
 #app[data-page="studio"] .practice-frozen-message[hidden] {display:none;}
@@ -202,12 +204,13 @@
   display:flex;flex-wrap:wrap;gap:9px;
 }
 #app[data-page="studio"] .studio-music-choice {
+  box-shadow:var(--glass-soft-shadow);
   display:inline-flex;align-items:center;gap:9px;margin:0;
   padding:10px 13px;border:1px solid var(--line);border-radius:10px;
-  background:var(--panel);color:var(--ink);cursor:pointer;font-size:.9rem;
+  background:var(--glass-surface);color:var(--ink);cursor:pointer;font-size:.9rem;
 }
 #app[data-page="studio"] .studio-music-choice:has(input:checked) {
-  border-color:var(--accent);color:var(--accent);background:var(--bg);
+  border-color:var(--accent);color:var(--accent);background:var(--glass-selected);
 }
 #app[data-page="studio"] .studio-music-choice input {
   accent-color:var(--accent);width:17px;height:17px;min-height:17px;margin:0;
@@ -221,7 +224,7 @@
 }
 .practice-ai-dialog textarea {
   width:100%;min-height:100px;box-sizing:border-box;
-  background:var(--panel);color:var(--ink);
+  background:var(--glass-surface);color:var(--ink);
   border:1px solid var(--line);border-radius:9px;
   padding:12px;font:inherit;resize:vertical;
 }
@@ -350,8 +353,8 @@
     padding: 9px;
     border: 1px solid var(--line);
     border-radius: 14px;
-    background: var(--soft);
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+    background: var(--glass-control);
+    box-shadow: var(--glass-soft-shadow);
   }
   /* AI-only goals attach visually to the method selector; the shared
      musical system stays below it in both Manual and AI modes. */
@@ -369,8 +372,8 @@
     border: 1px solid var(--line);
     border-top: 0;
     border-radius: 0 0 14px 14px;
-    background: var(--soft);
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+    background: var(--glass-control);
+    box-shadow: var(--glass-soft-shadow);
   }
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-description {
     margin-top: 4px;
@@ -382,8 +385,8 @@
     padding: 12px 10px 13px;
     border: 1px solid var(--line);
     border-radius: 14px;
-    background: color-mix(in srgb, var(--accent) 4%, var(--panel));
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+    background: var(--glass-surface);
+    box-shadow: var(--glass-soft-shadow);
   }
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music .studio-music-system {
     margin-top: 0;
@@ -394,8 +397,8 @@
     margin-block: 16px 18px;
     border: 1px solid var(--line);
     border-radius: 15px;
-    background: color-mix(in srgb, var(--accent) 4%, var(--panel));
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+    background: var(--glass-surface);
+    box-shadow: var(--glass-soft-shadow);
   }
 }
 
@@ -448,13 +451,13 @@
     padding:9px 10px;
     border:1px solid color-mix(in srgb,var(--line) 82%,var(--accent));
     border-radius:11px;
-    background:var(--panel);
+    background:var(--glass-surface);
     color:var(--ink);
     font-size:13px;
     font-weight:650;
     line-height:1.3;
     text-align:start;
-    box-shadow:0 2px 8px color-mix(in srgb,var(--ink) 4%,transparent);
+    box-shadow:var(--glass-soft-shadow);
   }
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-mobile-select-trigger.is-placeholder {color:var(--muted);font-weight:500}
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-mobile-select-value {
@@ -490,10 +493,10 @@
     border:1px solid var(--line);
     border-bottom:0;
     border-radius:22px 22px 0 0;
-    background:var(--panel);
+    background:var(--glass-surface);
     color:var(--ink);
     overflow:hidden;
-    box-shadow:0 -14px 48px rgb(0 0 0 / 22%);
+    box-shadow:var(--glass-shadow);
   }
   dialog.studio-mobile-picker-dialog::backdrop {background:rgb(4 17 25 / 47%)}
   .studio-mobile-picker-header {
@@ -553,7 +556,7 @@
   }
   .studio-mobile-picker-option[aria-pressed="true"] {
     border-color:color-mix(in srgb,var(--accent) 36%,var(--line));
-    background:color-mix(in srgb,var(--accent) 11%,var(--panel));
+    background:var(--glass-selected);
     color:var(--accent);
     font-weight:750;
   }
@@ -582,14 +585,14 @@
     border: 1px solid var(--line);
     border-top: 0;
     border-radius: 0 0 14px 14px;
-    background: color-mix(in srgb, var(--accent) 4%, var(--panel));
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+    background: var(--glass-surface);
+    box-shadow: var(--glass-soft-shadow);
   }
   /* The Manual/AI selector remains its own tidy card. */
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-compose-tabs {
     border-bottom: 1px solid var(--line);
     border-radius: 14px;
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+    box-shadow: var(--glass-soft-shadow);
   }
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-compose-music {
     margin-top: 12px;
@@ -653,10 +656,10 @@
     border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
     border-radius: 25px;
     background:
-      radial-gradient(ellipse at 80% -15%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%),
-      var(--panel);
+      radial-gradient(ellipse at 80% -15%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%),
+      var(--glass-elevated);
     color: var(--ink);
-    box-shadow: 0 26px 76px rgb(0 0 0 / 31%), 0 3px 16px rgb(0 0 0 / 9%);
+    box-shadow:var(--glass-shadow);
     text-align: start;
     animation: studio-ai-guide-enter .24s ease-out both;
   }
@@ -712,7 +715,7 @@
   }
   @media (hover: hover) {
     .studio-ai-guide-close:hover {
-      background: var(--soft);
+      background: var(--glass-control);
       border-color: var(--line);
       color: var(--ink);
     }
@@ -804,7 +807,7 @@
     padding:10px 12px;
     border:1px solid var(--line);
     border-radius:12px;
-    background:var(--panel);
+    background:var(--glass-surface);
     color:var(--ink);
     font:inherit;
     text-align:start;

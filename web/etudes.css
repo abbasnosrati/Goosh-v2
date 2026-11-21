@@ -4,8 +4,8 @@
   max-width: 1424px;
   margin-inline: auto;
   padding: clamp(22px, 4vw, 60px) clamp(18px, 4.5vw, 64px) 90px;
-  --etudes-hairline: color-mix(in srgb, var(--line) 55%, transparent);
-  --etudes-quiet: color-mix(in srgb, var(--panel) 85%, var(--bg));
+  --etudes-hairline: var(--glass-border);
+  --etudes-quiet: var(--glass-control);
 }
 #app:has(> .shelves) > h1 {
   font-weight: 800;
@@ -102,11 +102,14 @@ html[lang="fa"] #app:has(> .shelves) .shelves::before {
     repeating-linear-gradient(to bottom,
       transparent 0 15px,
       color-mix(in srgb, var(--ink) 19%, transparent) 15px 16px,
-      transparent 16px 24px);
-  background-size: calc(100% - 50px) 66px;
-  background-repeat: no-repeat;
-  background-position: center 64px;
-  box-shadow: 0 7px 24px color-mix(in srgb, var(--ink) 5%, transparent);
+      transparent 16px 24px),
+    var(--glass-surface);
+  background-size: calc(100% - 50px) 66px, cover;
+  background-repeat: no-repeat, no-repeat;
+  background-position: center 64px, center;
+  box-shadow: var(--glass-soft-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
 #app:has(> .shelves) .etude-item::before {
@@ -127,7 +130,7 @@ html[lang="fa"] #app:has(> .shelves) .shelves::before {
   position: absolute;
   inset: 149px 0 0;
   border-top: 1px solid var(--etudes-hairline);
-  background: var(--panel);
+  background: var(--glass-surface);
   pointer-events: none;
 }
 #app:has(> .shelves) .etude-card:nth-of-type(3n+2) > .etude-item {
@@ -280,7 +283,7 @@ html[lang="fa"] #etudes-design-controls .etudes-design-eyebrow { letter-spacing:
   border: 1px solid color-mix(in srgb,var(--line) 70%,transparent);
   border-radius: 12px;
   color: var(--muted);
-  background: var(--panel);
+  background: var(--glass-surface);
 }
 #etudes-design-controls .etudes-design-search > span {
   font-size: 25px;
@@ -327,7 +330,7 @@ html[lang="fa"] #etudes-design-controls .etudes-design-eyebrow { letter-spacing:
   transition: background .16s ease, color .16s ease;
 }
 #etudes-design-controls .etudes-design-tabs > input:checked + label {
-  background: var(--panel);
+  background: var(--glass-surface);
   color: var(--accent);
   box-shadow: 0 1px 5px color-mix(in srgb,var(--ink) 8%,transparent);
 }
@@ -606,7 +609,7 @@ html[lang="fa"] #practice-design-controls .practice-design-eyebrow { letter-spac
   border: 1px solid color-mix(in srgb,var(--line) 70%,transparent);
   border-radius: 12px;
   color: var(--muted);
-  background: var(--panel);
+  background: var(--glass-surface);
 }
 #practice-design-controls .practice-design-search > span {
   font-size: 25px;
@@ -653,7 +656,7 @@ html[lang="fa"] #practice-design-controls .practice-design-eyebrow { letter-spac
   transition: background .16s ease, color .16s ease;
 }
 #practice-design-controls .practice-design-tabs > input:checked + label {
-  background: var(--panel);
+  background: var(--glass-surface);
   color: var(--accent);
   box-shadow: 0 1px 5px color-mix(in srgb,var(--ink) 8%,transparent);
 }
@@ -842,7 +845,7 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
   padding: 9px;
   border: 1px solid var(--line);
   border-radius: 11px;
-  background: var(--panel);
+  background: var(--glass-surface);
   color: var(--muted);
 }
 .etude-delete svg {
@@ -870,9 +873,9 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
   padding: clamp(20px, 5vw, 28px);
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: var(--panel);
+  background: var(--glass-surface);
   color: var(--ink);
-  box-shadow: 0 24px 72px rgb(0 0 0 / 25%);
+  box-shadow: var(--glass-shadow);
   text-align: start;
 }
 .etude-delete-dialog::backdrop {
@@ -914,7 +917,7 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
   font-weight: 700;
 }
 .etude-delete-cancel {
-  background: var(--panel);
+  background: var(--glass-surface);
   border: 1px solid var(--line);
   color: var(--ink);
 }
@@ -1038,7 +1041,7 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
         color-mix(in srgb,var(--accent) 6%,transparent),transparent 84%);
     background-size: 100% 100%;
     background-position: center;
-    box-shadow: 0 5px 18px color-mix(in srgb,var(--ink) 6%,transparent);
+    box-shadow: var(--glass-soft-shadow);
   }
   #app:has(> .shelves) .shelves > section .etude-item::before {
     content: '♫' !important;
@@ -1101,7 +1104,7 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
     padding: 10px;
     border-radius: 12px;
     border-color: color-mix(in srgb,var(--line) 77%,transparent);
-    background: var(--panel);
+    background: var(--glass-surface);
     color: var(--muted);
     box-shadow: none;
   }
