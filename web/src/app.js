@@ -26,7 +26,7 @@ import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=koron-align-a4-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { mountEtudeComposer } from './studio-etude-generation.js?v=mobile-ai-guide-close-icon-1'
+import { mountEtudeComposer } from './studio-etude-generation.js?v=ai-meter-measure-choice-1'
 import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=music-toggle-reuse-1'
 import { renderHome } from './home.js?v=mobile-home-ticker-speed-2';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
@@ -1529,6 +1529,7 @@ function studio() {
   const composeHost = el('div', panel, undefined, 'studio-compose-host');
   const composerTarget = e, composerId = activeId;
   let practiceHost = null;
+  let meterSelect = null;
   const composer = mountEtudeComposer(composeHost, {
     etude: composerTarget, fa,
     signatureEditing: signatureMode,
@@ -1537,8 +1538,15 @@ function studio() {
     onToggleKeySignature: showSignatureEditor,
     isRecording: () => Boolean(rec),
     isCurrent: () => page === 'studio' && activeId === composerId && e === composerTarget,
-    onModeChange: locked => {
+    onModeChange: (locked, needsMeterChoice) => {
       if (practiceHost) setStudioPracticeLocked(practiceHost, locked, fa);
+      if (meterSelect) meterSelect.value = needsMeterChoice ? '' : (e.meter || 'none');
+    },
+    onMeterSelect: selected => {
+      if (!meterSelect || meterSelect.disabled) return;
+      // Route the mobile mirror through Score's existing validation and save.
+      meterSelect.value = selected;
+      meterSelect.dispatchEvent(new Event('change', {bubbles:true}));
     },
     onSignatureChange: (signature, musicContext) => {
       if (page !== 'studio' || activeId !== composerId || e !== composerTarget) return;
@@ -1670,24 +1678,30 @@ function studio() {
 
   const meterWrap=el('label',scoreBelowActions,undefined,'score-meter-control');
   el('span',meterWrap,t('Time signature','میزان‌نما'));
-  const meterSelect=el('select',meterWrap);
+  meterSelect=el('select',meterWrap);
   meterSelect.setAttribute('aria-label',t('Time signature','میزان‌نما'));
+  const meterPlaceholder=el('option',meterSelect,
+    t('Select a time signature…','انتخاب میزان‌نما…'));
+  meterPlaceholder.value='';
+  meterPlaceholder.disabled=true;
   for(const meter of METER_PRESETS){
     const name=meter==='none'?t('Free (no meter)','آزاد (بدون میزان)'):meter;
     const option=el('option',meterSelect,name);
     option.value=meter;
   }
-  meterSelect.value=e.meter||'none';
+  meterSelect.value=composer.needsMeterChoice() ? '' : (e.meter||'none');
   meterSelect.disabled=Boolean(rec);
   meterSelect.onchange=()=>{
     const selected=meterSelect.value;
+    if (!selected) return;
     const proposed={...e,meter:selected};
     if(meterTimeline(proposed).issues.length){
       meterMessage(
         'This etude contains timing that cannot be written exactly in '+selected+'. Adjust note/rest durations first or use Free.',
         'زمان‌بندی این اتود در میزان‌نما '+selected+' قابل نت‌نویسی دقیق نیست. ابتدا کشش نت‌ها و سکوت‌ها را اصلاح کنید یا حالت آزاد را نگه دارید.'
       );
-      meterSelect.value=e.meter||'none';
+      meterSelect.value=composer.needsMeterChoice() ? '' : (e.meter||'none');
+      composer.syncMeter();
       return;
     }
     stopScorePlayback();
@@ -1705,6 +1719,7 @@ function studio() {
     recordingHint.hidden=!meterInfo(e);
     const metronomeToggle=$('.score-metronome');
     if(metronomeToggle)metronomeToggle.hidden=!meterInfo(e);
+    composer.confirmMeterSelection();
     sheet();
   };
   const measureField=el('label',scoreBelowActions,undefined,'score-measure-count');
