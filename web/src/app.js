@@ -871,6 +871,8 @@ function sheet() {
     tool: scoreTool,
     fa,
     selected: sel,
+    // Only a visual pointer into the existing note list; never persisted.
+    recordingIndex: rec?.latestNote ? e.notes.indexOf(rec.latestNote) : -1,
     selectRange: rec ? undefined : indices => {
       stopScorePlayback();
       sel.clear();
@@ -1663,6 +1665,8 @@ function studio() {
     };
     const take = rec;
     e.notes.push(n);
+    // Follow the latest piano attack in Free and Metered recording alike.
+    take.latestNote=n;
     if(take.step){
       take.events.push({note:n});
       reconcileMeteredTake(take);
