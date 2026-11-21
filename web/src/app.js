@@ -21,7 +21,7 @@ import {
 } from './audio.js?v=score-piano-sample-articulation-1'
 import {
   score
-} from './score.js?v=free-piano-overlap-drag-2'
+} from './score.js?v=score-marquee-select-1'
 import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=mobile-signature-modal-1'
 import {isPersianAccidental, appendPersianAccidental}
