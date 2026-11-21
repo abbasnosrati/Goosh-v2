@@ -141,17 +141,22 @@ function stopKeys() {
   for (const f of [...held.values()]) f()
 }
 
-// The keyboard displays the same per-letter alterations already used for
-// sound by freq(e,m). Only natural-letter keys are altered by e.key; the
-// separate black-key MIDI pitches retain their existing spelling and sound.
+// A Western scale changes the written key signature, not the physical
+// 12-key equal-tempered piano. Reuse freq() with no signature for Western;
+// Iranian/legacy keyboards retain the full etude's tuning and offsets.
+const naturalPianoTuning = {key:{},offset:{},marks:{}};
+const pianoFrequency = midi => freq(
+  e.musicContext?.musicSystem === 'western' ? naturalPianoTuning : e, midi
+);
 const pianoMarkNames = {'♭':'Flat','♯':'Sharp','کرن':'Koron','سری':'Sori'};
 function updatePianoKey(key, shortcut) {
   const midi = Number(key.dataset.midi);
   const pc = midi % 12;
   const black = names[pc].includes('♯');
-  const mark = black ? '' : (e.key[pc] || '');
-  const hasTuning = !black && Boolean(mark || e.offset[pc]);
-  const hz = freq(e,midi).toFixed(2);
+  const western = e.musicContext?.musicSystem === 'western';
+  const mark = black || western ? '' : (e.key[pc] || '');
+  const hasTuning = !western && !black && Boolean(mark || e.offset[pc]);
+  const hz = pianoFrequency(midi).toFixed(2);
   const octave = String(Math.floor(midi / 12) - 1);
   key.replaceChildren();
   if (mark) {
@@ -237,7 +242,7 @@ function piano(parent, onStart) {
         durationRecorded = true;
         recordDuration?.(duration);
       };
-      const off = liveVoice(freq(e, m), finishRecording, audioTime);
+      const off = liveVoice(pianoFrequency(m), finishRecording, audioTime);
       b.classList.add('down');
       held.set(id, () => {
         held.delete(id);
