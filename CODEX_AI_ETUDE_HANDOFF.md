@@ -3119,3 +3119,16 @@ The user confirmed that the *area-selection icon itself works correctly*. Do not
 **Validation actually completed:** Fresh GitHub source inspection confirmed exactly one Tempo input, both controls in one wrapper and DOM order Tempo then Meter, the obsolete bilingual hint and references absent, unchanged BPM/meter handlers, the input's inner borderless style, mobile two-column layout rules, correct asset-cache query strings, and balanced CSS brace count. Current app JavaScript parsed successfully after stripping ES module imports; no actual browser/mobile/RTL visual or audio acceptance test performed.
 
 **Scope restriction:** This is strictly a Studio layout/copy update. Do not change Metered piano transcription or add other Tempo/Meter business logic without separate user instruction.
+
+
+---
+
+## UI spacing follow-up — Piano/Score desktop separation (2026-11-21)
+
+**User screenshot feedback:** The piano's rounded bottom edge visually nearly touches the Score editor's first toolbar row (“یه فاصله اینجا بذار نرن تو هم”). The request is for a small vertical **gap**, not a redesign or toolbar reflow.
+
+**Change applied**, branch `feature/practice-sequence-studio`: `web/style.css` commit `f5805bf4c2af27916a806d25f4d42611ab524a8d` adds `margin-block-start:18px` on the existing direct child `.studio-score-surface > .score-actions`, scoped to Studio and desktop viewport width **min-width:701px**. Since the desktop `.studio-score-surface` already uses `display:contents`, this separates the toolbar from the preceding piano card without modifying any DOM, toolbar buttons, piano keys, Score renderer, music data, or logic. The **mobile** card keeps its original padding/margins and explicit `margin-block:0` on the toolbar.
+
+`web/index.html` commit `67fbb36201cbc96712d6473d9ecceef7606d14af` updates only the stylesheet cache key to `studio-piano-score-spacing-1`.
+
+**Validation:** Verified desktop-only selector and 18px rule, unchanged mobile overrides, CSS brace balance, unchanged piano baseline styles, and updated cache key. **No live browser/screenshot comparison** of rendered result performed. User visual acceptance is pending.
