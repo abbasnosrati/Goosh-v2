@@ -1944,6 +1944,7 @@ function studio() {
     timelineToggle.hidden=Boolean(meterInfo(e));
     if(meterInfo(e))freeTimelineOpen=false;
     timelineToggle.setAttribute('aria-pressed',String(freeTimelineOpen));
+    timelineToggle.classList.toggle('active',freeTimelineOpen);
     measureField.hidden=!meterInfo(e);
     measureNumber.value=String(e.measureCount||4);
     recordingHint.hidden=!meterInfo(e);
