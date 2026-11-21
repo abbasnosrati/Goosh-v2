@@ -922,6 +922,8 @@ dialog.studio-mobile-picker-dialog {
 /* Keep the existing mobile DOM flow: the new grouping is layout-neutral
    until the desktop two-column arrangement activates. */
 #app[data-page="studio"] .studio-setup-main {display:contents}
+/* Keep the established mobile/tablet stack; only desktop uses a shared header row. */
+#app[data-page="studio"] .studio-setup-header {display:contents}
 
 /* Approved Etude Setup reference: Desktop presentation only.
    Original Manual/AI, music, Goal, meter and generator handlers are unchanged. */
