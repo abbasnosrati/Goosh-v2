@@ -313,6 +313,8 @@ function piano(parent, onStart) {
   box.onlostpointercapture = box.onpointerup = box.onpointercancel = ev => {
     if (fingers.delete(ev.pointerId)) held.get(ev.pointerId)?.();
   };
+  // Use the original octave jump when this piano is reopened after AI mode.
+  p.recenterOctave = () => jump(oct);
 }
 
 
@@ -1552,6 +1554,7 @@ function studio() {
   pianoToggle.className = 'studio-piano-toggle';
   const setPianoExpanded = expanded => {
     const open = Boolean(expanded);
+    const wasHidden = pianoKeys.hidden;
     pianoKeys.hidden = !open;
     if(pianoOctaveLabel)pianoOctaveLabel.hidden = !open;
     studioPiano.classList.toggle('studio-piano-collapsed', !open);
@@ -1559,6 +1562,8 @@ function studio() {
     pianoToggle.setAttribute('aria-expanded',String(open));
     pianoToggle.setAttribute('aria-label',pianoToggle.textContent);
     studioPianoExpanded.set(e,open);
+    if(open && wasHidden)
+      requestAnimationFrame(() => {if(!pianoKeys.hidden)studioPiano.recenterOctave?.()});
   };
   // Single Set Key Signature dialog for every viewport.
   const showSignatureEditor = () => {
