@@ -186,6 +186,7 @@ export function mountEtudeComposer(host, {
   host.classList.toggle('studio-mobile-signature-view', isMobileSignatureView());
   // Manual/AI and the musical choices share one settings surface.
   const sharedMusic = create('div', host, null, 'studio-compose-music');
+  create('h2', sharedMusic, t('Etude Setup', 'تنظیمات اتود'), 'studio-compose-heading');
   const tabs = create('div', sharedMusic, null, 'studio-compose-tabs');
   tabs.setAttribute('role', 'group');
   tabs.setAttribute('aria-label', t('Etude creation method', 'روش ساخت اتود'));

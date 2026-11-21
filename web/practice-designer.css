@@ -72,6 +72,13 @@
 #app[data-page="studio"] .studio-compose-music {
   margin-top: 0;
 }
+#app[data-page="studio"] .studio-compose-heading {
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
 #app[data-page="studio"] .studio-compose-music-hint {
   margin: 9px 0 0;
   color: var(--muted);
