@@ -2181,3 +2181,173 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+
+/* Free-meter note-length timeline and per-row score playhead (Studio only). */
+#app[data-page="studio"] .score-free-timeline-toggle,
+#app[data-page="studio"] .score-free-timeline-toggle[hidden] {
+  /* Existing button typography and theme variables remain canonical. */
+}
+#app[data-page="studio"] .score-free-timeline-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 13px;
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+#app[data-page="studio"] .score-free-timeline-toggle[hidden],
+#app[data-page="studio"] .score-free-timeline[hidden] {
+  display: none !important;
+}
+#app[data-page="studio"] .score-free-timeline-toggle.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+#app[data-page="studio"] .score-free-timeline-toggle svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+#app[data-page="studio"] .score-free-timeline {
+  min-width: 0;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  background: var(--glass-surface);
+}
+#app[data-page="studio"] .free-timeline-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 9px 16px;
+  margin-bottom: 12px;
+}
+#app[data-page="studio"] .free-timeline-heading strong {
+  font-size: .95rem;
+}
+#app[data-page="studio"] .free-timeline-heading small {
+  color: var(--ink);
+  opacity: .76;
+}
+#app[data-page="studio"] .free-timeline-empty {
+  margin: 0;
+  opacity: .72;
+}
+#app[data-page="studio"] .free-timeline-scroll {
+  width: 100%;
+  overflow: auto hidden;
+  scrollbar-width: none;
+  direction: ltr;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  background: var(--glass-control);
+}
+#app[data-page="studio"] .free-timeline-scroll::-webkit-scrollbar {
+  display: none;
+}
+#app[data-page="studio"] .free-timeline-track {
+  position: relative;
+  min-width: 100%;
+}
+#app[data-page="studio"] .free-timeline-tick {
+  position: absolute;
+  top: 15px;
+  bottom: 4px;
+  width: 1px;
+  background: color-mix(in srgb, var(--line) 50%, transparent);
+  pointer-events: none;
+}
+#app[data-page="studio"] .free-timeline-tick span {
+  position: absolute;
+  top: -13px;
+  left: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  color: var(--ink);
+  opacity: .78;
+}
+#app[data-page="studio"] .free-timeline-note {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  gap: 7px;
+  height: 33px;
+  padding: 0 14px 0 9px;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  color: var(--ink);
+  background: var(--glass-selected);
+  box-shadow: var(--glass-soft-shadow);
+  direction: ltr;
+  white-space: nowrap;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+#app[data-page="studio"] .free-timeline-note-name {
+  font-weight: 750;
+  flex: 0 0 auto;
+}
+#app[data-page="studio"] .free-timeline-note-duration {
+  overflow: hidden;
+  opacity: .85;
+  text-overflow: ellipsis;
+}
+#app[data-page="studio"] .free-timeline-resize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 13px;
+  min-width: 13px;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  background: var(--glass-elevated);
+  color: var(--accent);
+  cursor: ew-resize;
+  touch-action: none;
+}
+#app[data-page="studio"] .free-timeline-resize::after {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 15px;
+  border-inline: 1px solid currentColor;
+  margin: auto;
+}
+#app[data-page="studio"] .free-timeline-resize:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+#app[data-page="studio"] .score svg [data-score-seek] {
+  cursor: pointer;
+  touch-action: none;
+}
+@media print {
+  #app[data-page="studio"] .score-free-timeline,
+  #app[data-page="studio"] .score-free-timeline-toggle,
+  #app[data-page="studio"] .score .score-ruler-art {
+    display: none !important;
+  }
+}
+@media screen and (max-width: 700px) {
+  #app[data-page="studio"] .score-free-timeline {
+    padding: 10px;
+  }
+  #app[data-page="studio"] .free-timeline-heading {
+    gap: 4px;
+  }
+  #app[data-page="studio"] .free-timeline-heading small {
+    flex-basis: 100%;
+  }
+}
