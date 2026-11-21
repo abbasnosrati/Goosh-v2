@@ -1031,71 +1031,64 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
 }
 
 
-/* Desktop Etude Setup: one shared frame, independent raised surfaces.
-   No horizontal line below the Setup title. A shorter vertical rule alone
-   separates Settings and Guide without splitting them into separate cards. */
+/* Desktop Etude Setup: the shared outer frame contains two raised surfaces.
+   Restore the original visual separation of Settings and Guide through their
+   distinct tinted glass backgrounds, spacing and theme-aware soft shadows.
+   No inner outlines and no vertical divider; the Setup header stays untouched. */
 @media screen and (min-width: 900px) {
   html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose,
   html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose {
-    gap: 0;
-    padding: 0;
+    column-gap: 18px;
+    row-gap: 0;
+    padding: 0 18px 18px;
     border: 1px solid var(--visual-border);
     border-radius: 19px;
     background: var(--visual-shell);
     box-shadow: var(--visual-shadow);
-    overflow: hidden;
+    overflow: visible;
   }
-  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music,
-  #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide {
+
+  /* The music controls and optional AI fields form ONE raised left surface. */
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-main {
     margin-top: 95px;
-    border-top: 0;
-    border-radius: 0;
+    border-radius: 16px;
+    background: var(--visual-inner);
+    box-shadow: var(--visual-inner-shadow);
   }
   html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music,
   html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music {
-    border-inline: 0;
-    border-bottom: 0;
-    background: var(--visual-inner);
-    box-shadow:
-      inset 6px 0 15px color-mix(in srgb, var(--accent) 5%, transparent),
-      0 9px 22px color-mix(in srgb, var(--ink) 9%, transparent);
+    margin-top: 0;
+    border: 0;
+    border-radius: 16px 16px 0 0;
+    background: transparent;
+    box-shadow: none;
   }
   html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]),
   html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]) {
-    border-inline: 0;
-    border-bottom: 0;
-    border-radius: 0;
-    background: var(--visual-inner);
-    box-shadow:
-      inset 6px 0 15px color-mix(in srgb, var(--accent) 5%, transparent),
-      0 9px 22px color-mix(in srgb, var(--ink) 9%, transparent);
+    border: 0;
+    border-radius: 0 0 16px 16px;
+    background: transparent;
+    box-shadow: none;
   }
   html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose:has(.studio-compose-ai[hidden]) .studio-compose-music,
   html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose:has(.studio-compose-ai[hidden]) .studio-compose-music {
-    border-radius: 0;
-    border-bottom: 0;
-    box-shadow:
-      inset 6px 0 15px color-mix(in srgb, var(--accent) 5%, transparent),
-      0 9px 22px color-mix(in srgb, var(--ink) 9%, transparent);
+    border: 0;
+    border-radius: 16px;
+    background: transparent;
+    box-shadow: none;
   }
+
+  /* Guide keeps its own light/dark glass tint and depth, without a border. */
   html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide,
   html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide {
-    position: relative;
-    border-inline: 0;
-    border-bottom: 0;
-    background: var(--visual-inner);
-    box-shadow:
-      inset -6px 0 15px color-mix(in srgb, var(--accent) 5%, transparent),
-      0 9px 22px color-mix(in srgb, var(--ink) 9%, transparent);
+    margin-top: 95px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--glass-control);
+    box-shadow: var(--visual-inner-shadow);
   }
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide::before {
-    content: "";
-    position: absolute;
-    inset-inline-start: 0;
-    inset-block-start: 22px;
-    inset-block-end: 22px;
-    width: 1px;
-    background: var(--visual-border);
-    pointer-events: none;
+    content: none;
+    display: none;
   }
 }
