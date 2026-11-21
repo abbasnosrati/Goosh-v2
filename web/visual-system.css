@@ -915,3 +915,18 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
 @media (prefers-reduced-motion: reduce) {
   .board button { transition: none; }
 }
+
+
+/* Etude Setup desktop: remove only the redundant outer frame.
+   Retain its top clearance for the title/tabs and let the two inner cards
+   share the same horizontal edges as the Piano card immediately below. */
+@media screen and (min-width: 900px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose {
+    padding-inline: 0;
+    padding-block-end: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
