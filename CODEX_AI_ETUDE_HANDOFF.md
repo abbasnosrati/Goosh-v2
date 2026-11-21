@@ -3100,3 +3100,22 @@ The user confirmed that the *area-selection icon itself works correctly*. Do not
 **Code applied** on `feature/practice-sequence-studio`: `web/src/app.js` commit `c5e21b9e2b9c3be7b739e05e677c46bfe9193ae7` only creates the existing `.score-heading` and `Key Signature Editor / تنظیم سرکلید` heading if `signatureMode` is active; normal Score mode has **no title and no empty title wrapper/gap** below the piano. `web/index.html` commit `bad30af2da750afcb6330b2efafd4842635e2744` only refreshes the entrypoint cache key (`studio-score-title-cleanup-1`). All Score tools, music, selection, seek ruler, layout and keyboard behavior are otherwise unchanged. The preceding Select cursor refinement remains in effect.
 
 **Checks actually performed:** Current app JS syntax parses, normal Score title string is absent, the contextual Key Signature Editor title remains, no wrapper appears in normal mode, and the entrypoint cache key matches. No browser/device visual test performed.
+
+
+---
+
+## UI REFINEMENT — Tempo left of meter; no recording hint or inner number border (2026-11-21)
+
+**User request (Persian):** “جمله ی در ضبط میزان دار کشش هر نت تا شروع و ... این رو پاک کن. سرعت رو بیار کنار و سمت چپ میزان نما یعنی شروع سرعت باشه. دییزانش هم اون border های داخلی که عددتوش هست رو بردار”
+
+**Implemented on branch `feature/practice-sequence-studio`:**
+
+- **`web/src/app.js`, commit `618e7bd49984c6b80db6359e85237cd9cfa15f29`:** Completely remove the bilingual Metered recording hint paragraph (the text explaining that a note extends to the next attack), including the now-dead `recordingHint.hidden` update in the meter-change handler. This is deletion of explanatory UI copy only; the approved onset-to-onset recording rule is **not** reverted or changed.
+- Place Tempo **at the physical LEFT, as the first control**, directly beside Time signature / میزان‌نما to its RIGHT. Create a single `score-time-controls` wrapper as the first child of the pre-existing `score-below-actions`. Move the one and only existing `score-tempo` DOM control into this wrapper *before* the existing `score-meter-control`. Do **not** instantiate duplicate Tempo inputs or modify `setEtudeTempo()`, BPM validation, `meterSelect.onchange`, or musical timing.
+- **`web/style.css`, commit `d7461dc6851a33d916efbec0400a09573e2860c0`:** The shared Tempo/Meter pair uses `direction:ltr` to guarantee Tempo is physically LEFT of Meter in English and Persian UIs. Keep the Tempo container's existing outer border and theme colors, but remove the **inner border, radius, background and shadow** around the editable numeric BPM field. On phones, the pair remains a two-column group in a single row, with compact labels and adjustable grid widths; no horizontal scrolling is introduced intentionally. Remove unused CSS for `score-meter-record-hint` only.
+- **`web/index.html`, commit `aca964beb5a1d0770928fde9a5e6fb1702fa81bf`:** Bump both app and stylesheet cache query strings to `tempo-meter-row-clean-1` so changes load without stale assets.
+- Other controls below Score (Measure count, Pen note duration, Free Timeline) remain in the same original order and behavior after the new group. No other page or interaction is modified.
+
+**Validation actually completed:** Fresh GitHub source inspection confirmed exactly one Tempo input, both controls in one wrapper and DOM order Tempo then Meter, the obsolete bilingual hint and references absent, unchanged BPM/meter handlers, the input's inner borderless style, mobile two-column layout rules, correct asset-cache query strings, and balanced CSS brace count. Current app JavaScript parsed successfully after stripping ES module imports; no actual browser/mobile/RTL visual or audio acceptance test performed.
+
+**Scope restriction:** This is strictly a Studio layout/copy update. Do not change Metered piano transcription or add other Tempo/Meter business logic without separate user instruction.
