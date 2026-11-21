@@ -702,35 +702,40 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,se
         last?last.at+Math.max(last.duration,0):second)
       points.push({at:endAt,x:endX})
       svg.setAttribute('data-score-ruler',String(rowIndex))
-      const bg=draw('rect',{x:startX-6,y:5,width:endX-startX+12,
+      const drawRuler=(tag,attrs,content)=>{
+        const element=draw(tag,attrs,content)
+        element.setAttribute('class','score-ruler-art')
+        return element
+      }
+      const bg=drawRuler('rect',{x:startX-6,y:5,width:endX-startX+12,
         height:27,rx:8,fill:'var(--glass-control)',
         stroke:'var(--glass-border)','stroke-width':.75,
         'pointer-events':'none'})
-      draw('line',{x1:startX,y1:22,x2:endX,y2:22,
+      drawRuler('line',{x1:startX,y1:22,x2:endX,y2:22,
         stroke:'currentColor','stroke-opacity':.3,'stroke-width':2,
         'pointer-events':'none'})
       for(const item of points){
-        draw('line',{x1:item.x,y1:18,x2:item.x,y2:26,
+        drawRuler('line',{x1:item.x,y1:18,x2:item.x,y2:26,
           stroke:'currentColor','stroke-opacity':.36,'stroke-width':1,
           'pointer-events':'none'})
       }
-      draw('text',{x:startX+3,y:14,'font-size':9,
+      drawRuler('text',{x:startX+3,y:14,'font-size':9,
         fill:'currentColor','fill-opacity':.8,'pointer-events':'none'},
         points[0].at.toFixed(1)+'s')
-      draw('text',{x:endX-3,y:14,'font-size':9,
+      drawRuler('text',{x:endX-3,y:14,'font-size':9,
         fill:'currentColor','fill-opacity':.8,'text-anchor':'end',
         'pointer-events':'none'},endAt.toFixed(1)+'s')
-      const progress=draw('line',{x1:startX,y1:22,x2:startX,y2:22,
+      const progress=drawRuler('line',{x1:startX,y1:22,x2:startX,y2:22,
         stroke:'var(--accent)','stroke-width':2.5,
         'stroke-linecap':'round','pointer-events':'none'})
-      const cursor=draw('line',{x1:startX,y1:10,x2:startX,y2:151,
+      const cursor=drawRuler('line',{x1:startX,y1:10,x2:startX,y2:151,
         stroke:'var(--accent)','stroke-width':1.5,
         'stroke-dasharray':'3 3','stroke-opacity':.75,
         'pointer-events':'none'})
-      const thumb=draw('circle',{cx:startX,cy:22,r:4.1,
+      const thumb=drawRuler('circle',{cx:startX,cy:22,r:4.1,
         fill:'var(--accent)',stroke:'var(--panel)','stroke-width':1.1,
         'pointer-events':'none'})
-      const hit=draw('rect',{x:startX-7,y:3,width:endX-startX+14,
+      const hit=drawRuler('rect',{x:startX-7,y:3,width:endX-startX+14,
         height:32,rx:8,fill:'transparent',
         'data-score-seek':String(rowIndex),
         role:'slider',tabindex:0,
