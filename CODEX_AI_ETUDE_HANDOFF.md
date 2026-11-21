@@ -2626,3 +2626,18 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 - **Other code unchanged:** `web/src/app.js`, score, piano, metered record logic, key signatures, note deletion, desktop, both libraries, Home, and native code.
 
 **Static validation:** Confirmed accent stripe root selector, distinct Studio EDITOR vs list DOM, mobile-only selectors, no change to existing base/desktop CSS, preserved original CSS as byte prefix, stylesheet braces, and HTML cache-only edit. **No live phone or browser visual test was performed; user must verify new mobile spacing / top menu.** Metered piano live-recording transcription is a separate still-open issue requiring explicit user approval before changes. The Persian mobile cards were user-confirmed FIXED earlier and remain closed.
+
+
+---
+
+## Remove transient blue touch flashes on mobile buttons (2026-11-21)
+
+**User report:** On mobile, touching a button briefly paints an unwanted blue / teal background that disappears. The user is currently refining the Etude Studio mobile UI. **Do not confuse this with a deliberately selected/toggled button.**
+
+**Root cause:** The global `web/style.css` rule `button.active, button:active { background:var(--accent); color:var(--panel) }` assigns the accent background to ANY momentary touch. Mobile WebKit/Chromium can ALSO render a transient blue native `-webkit-tap-highlight-color` overlay.
+
+**Fix, presentation only:** Preserve the original `button.active` persistent selected style. Preserve the original generic `button:active` accent response for desktop screens **>700px with hover support**, but do not apply it on a phone. Apply `-webkit-tap-highlight-color:transparent` to interactive controls in a mobile-only media block, including landscape coarse-touch cases. Existing component-specific `.active`, `.primary`, `.recording`, piano `.down` and `:focus-visible` styles are unchanged. Only `web/style.css` is edited for presentation. In `web/index.html`, only the style query version bumps to `mobile-no-tap-flash-1`. NO other CSS, any JS, piano audio/recording/notation logic, routing, page or Desktop layout changes.
+
+**Static validation:** Exact source reversal confirms the global selector change + added phone media rule are the entire CSS diff. CSS braces and cache-only HTML changes checked. Existing selected/keyboard focus state styles and desktop mouse click accent retained. No real device/browser tap validation performed.
+
+**Open issue separation:** The Persian/RTL compact Etudes/Practices cards were FIXED and verified by the user and must not be reopened without a new report. Metered live piano Record→Score rhythmic transcription remains an unrelated OPEN issue; Codex needs explicit user approval before changing it.

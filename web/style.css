@@ -78,10 +78,20 @@ summary {
   cursor: pointer
 }
 
-button.active,
-button:active {
+/* Keep persistent selected-button styling on all devices. */
+button.active {
   background: var(--accent);
   color: var(--panel)
+}
+
+/* The old generic :active accent flash is intended for mouse clicks,
+   not phone touches. Explicit .active, .primary, .recording and piano-key
+   states still use their own unchanged visual rules. */
+@media screen and (min-width: 701px) and (hover: hover) {
+  button:active {
+    background: var(--accent);
+    color: var(--panel)
+  }
 }
 
 button:disabled {
@@ -1614,5 +1624,22 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   #app[data-page="studio"]:not(:has(> .shelves)) .score,
   #app[data-page="studio"]:not(:has(> .shelves)) .board {
     max-width: 100%;
+  }
+}
+
+
+/* Phone touch: suppress the browser's transient blue tap overlay.
+   Focus-visible and intentional pressed/selected states remain intact. */
+@media screen and (max-width: 700px),
+       screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  button,
+  a,
+  summary,
+  label,
+  input,
+  select,
+  textarea,
+  [role="button"] {
+    -webkit-tap-highlight-color: transparent;
   }
 }
