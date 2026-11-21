@@ -1538,3 +1538,22 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   #nav .desktop-nav-label {display: none;}
   #nav .mobile-nav-label {display: inline;}
 }
+
+
+/* Mobile Settings: sun/moon choices, keeping the original theme handler. */
+@media screen and (max-width: 700px),
+       screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  .mobile-settings-appearance-choice {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+  }
+  .mobile-settings-appearance-choice .mobile-appearance-icon {
+    display: block;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    color: currentColor;
+  }
+}

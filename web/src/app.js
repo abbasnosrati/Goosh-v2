@@ -2127,6 +2127,36 @@ function mobileNavigationIcon(route) {
 
 // Mobile preferences delegate to the existing desktop actions. The
 // underlying language/theme state and persistence remain single-source.
+
+// Mobile Appearance icons are decorative; theme selection still uses the
+// existing #theme handler and persisted preference.
+function mobileAppearanceIcon(mode) {
+  const ns='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(ns,'svg');
+  svg.classList.add('mobile-appearance-icon');
+  svg.setAttribute('viewBox','0 0 24 24');
+  svg.setAttribute('fill','none');
+  svg.setAttribute('stroke','currentColor');
+  svg.setAttribute('stroke-width','1.8');
+  svg.setAttribute('stroke-linecap','round');
+  svg.setAttribute('stroke-linejoin','round');
+  svg.setAttribute('aria-hidden','true');
+  svg.setAttribute('focusable','false');
+  const path=document.createElementNS(ns,'path');
+  if(mode==='dark'){
+    path.setAttribute('d','M20.5 13.2A8.6 8.6 0 0 1 10.8 3.5a8.6 8.6 0 1 0 9.7 9.7Z');
+  }else{
+    const circle=document.createElementNS(ns,'circle');
+    circle.setAttribute('cx','12');
+    circle.setAttribute('cy','12');
+    circle.setAttribute('r','4');
+    svg.append(circle);
+    path.setAttribute('d','M12 2v2m0 16v2M4 12H2m20 0h-2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42m0-14.14-1.42 1.42M6.35 17.65l-1.42 1.42');
+  }
+  svg.append(path);
+  return svg;
+}
+
 function openMobileSettings(trigger) {
   document.querySelector('.mobile-settings-dialog')?.close();
   const dialog=el('dialog',document.body,undefined,'mobile-settings-dialog');
@@ -2166,7 +2196,8 @@ function openMobileSettings(trigger) {
         choice.button.setAttribute('aria-pressed',String(current));
       }
     });
-    option.className='mobile-settings-choice';
+    option.className='mobile-settings-choice mobile-settings-appearance-choice';
+    option.prepend(mobileAppearanceIcon(value));
     option.setAttribute('aria-pressed',String((value==='dark')===dark));
     option.classList.toggle('active',(value==='dark')===dark);
     choices.push({value,button:option});

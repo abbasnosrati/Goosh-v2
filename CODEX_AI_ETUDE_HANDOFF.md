@@ -2556,3 +2556,16 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 **Cache:** `web/src/app.js` changes only the `home.js` import version to `mobile-home-ticker-speed-2`. `web/index.html` changes only the `app.js` version to `mobile-home-ticker-speed-2`. No styling, Desktop rendering, audio, Score, recording, navigation or musical code edits.
 
 **Validation:** Compared before/after strings, checked exactly one speed expression change, JS parse and all remaining source preserved. No actual browser/APK playback test was performed. Metered recording transcription remains unresolved with a mandatory explicit user approval gate for future Codex modifications.
+
+
+---
+
+## Mobile Settings appearance buttons: Light/Dark sun and moon icons (2026-11-21)
+
+**User request:** In **mobile Settings only**, use a recognizable icon for each Light/Dark appearance choice rather than showing text alone. Desktop and the working theme toggle must not change.
+
+**Implementation:** `web/src/app.js` adds `mobileAppearanceIcon(mode)`, a presentation-only 24×24 inline SVG icon: **sun for Light**, **crescent moon for Dark**. Icons are `aria-hidden="true"` and non-focusable; existing localized labels remain visible and accessible. The two current `mobile-settings-choice` buttons prepend the appropriate icon and receive a dedicated mobile-only class. Their original `#theme` click delegation, `dark` state, `aria-pressed` updates and active styling remain unchanged. No duplicate theme storage or settings route.
+
+**Mobile-only CSS:** `web/style.css` appends mobile/coarse-landscape media rules for 22px icon sizing, flex centering and spacing. All previous CSS and the Desktop toolbar remain byte-for-byte unchanged. `web/index.html` updates only CSS and entry-JS cache-version query strings to `mobile-settings-appearance-icons-1`. No other code, navigation, piano/Score/recording, audio, theme persistence or data files were modified.
+
+**Validation:** Parsed the modified application JavaScript and checked both icons have distinct SVG paths, are decorative, and the same Light/Dark buttons still run their original theme handlers and preserve pressed state. Exact source diff and mobile media guard checked. Actual phone/browser screenshots and Android APK were **not** tested. The unrelated metered live piano transcription bug remains unresolved and requires Codex to seek user approval before any changes to that code path.
