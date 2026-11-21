@@ -2569,3 +2569,14 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 **Mobile-only CSS:** `web/style.css` appends mobile/coarse-landscape media rules for 22px icon sizing, flex centering and spacing. All previous CSS and the Desktop toolbar remain byte-for-byte unchanged. `web/index.html` updates only CSS and entry-JS cache-version query strings to `mobile-settings-appearance-icons-1`. No other code, navigation, piano/Score/recording, audio, theme persistence or data files were modified.
 
 **Validation:** Parsed the modified application JavaScript and checked both icons have distinct SVG paths, are decorative, and the same Light/Dark buttons still run their original theme handlers and preserve pressed state. Exact source diff and mobile media guard checked. Actual phone/browser screenshots and Android APK were **not** tested. The unrelated metered live piano transcription bug remains unresolved and requires Codex to seek user approval before any changes to that code path.
+
+
+---
+
+## Fix mobile Persian/RTL Etudes and Practices cards (2026-11-21)
+
+**User report:** The shared compact Etudes/Practices list renders correctly in English (LTR) but is still broken in Persian (RTL), especially the card decoration and delete/trash alignment. Keep English and Desktop unchanged.
+
+**Implementation:** `web/etudes.css` adds a narrowly scoped `@media screen and (max-width:719px)` block with `html[dir="rtl"]` selectors only. Position the existing notation tile **14px from the right** (logical start in RTL) and the existing 44px Delete action **12px from the left** (logical end in RTL), clearing inherited physical/logical inset conflicts. Explicit 78px right and 68px left content padding keeps text clear of both controls; the title and note count are right-aligned. Reuse the same card component, original height/background, original button callbacks and all original English CSS. `web/index.html` only increments `etudes.css` cache key to `mobile-rtl-list-1`. No JS or functional code modifications.
+
+**Verification:** Confirmed app sets `document.documentElement.dir = fa ? 'rtl' : 'ltr'`. Original CSS preserved byte-for-byte; new rules active only for RTL phone widths. Checked CSS brace balance and cache-only HTML edit. No actual mobile browser/screenshots or APK test; Persian visual result still needs device confirmation. Metered piano live-record bug remains unresolved and retains the explicit pre-fix user-approval requirement.

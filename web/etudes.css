@@ -1123,3 +1123,34 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
   #etudes-design-controls h1,
   #practice-design-controls h1 {font-size: 24px;}
 }
+
+
+/* Mobile Persian cards: physical anchors prevent legacy RTL offsets from
+   moving the notation tile or delete control. LTR stays untouched. */
+@media screen and (max-width: 719px) {
+  html[dir="rtl"] #app:has(> .shelves) .etude-card > .etude-item {
+    direction: rtl;
+    text-align: right;
+    padding-right: 78px;
+    padding-left: 68px;
+  }
+  html[dir="rtl"] #app:has(> .shelves) .shelves > section .etude-item::before {
+    inset-inline: auto;
+    left: auto;
+    right: 14px;
+  }
+  html[dir="rtl"] #app:has(> .shelves) .etude-item > strong,
+  html[dir="rtl"] #app:has(> .shelves) .etude-item > small {
+    text-align: right;
+    direction: rtl;
+  }
+  html[dir="rtl"] #app[data-page="studio"] .etude-card > .etude-delete,
+  html[dir="rtl"] #app[data-page="practice"] .etude-card > .etude-delete {
+    inset-inline: auto;
+    right: auto;
+    left: 12px;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+  }
+}
