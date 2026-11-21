@@ -53,7 +53,7 @@ export function paintScorePlayhead(host,time) {
   }
 }
 
-export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,seek,pick,insert,move,moveRest,eraseRest,tool='select',fa=false}={}) {
+export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex=-1,selectRange,seek,pick,insert,move,moveRest,eraseRest,tool='select',fa=false}={}) {
   host.replaceChildren()
   const second=60/(e.bpm||90),width=Math.max(240,host.clientWidth||700)
   const timeline=meterTimeline(e)
@@ -190,6 +190,28 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,se
   // The same canonical note indices are used for marquee, eraser and Play.
   // Repeated tied noteheads share an index, never duplicate note state.
   const rangeHeads = []
+  // One visual emphasis rule for Select, marquee preview and the most recent
+  // recorded piano note. Never alter pitch, duration, or selection state here.
+  const emphasizeNote=(item,chosen)=>{
+    const latest=item.index===recordingIndex
+    const emphasized=latest||chosen
+    const accent=latest?'var(--danger)':'var(--accent)'
+    if(item.halo){
+      item.halo.setAttribute('fill',accent)
+      item.halo.setAttribute('stroke',accent)
+      item.halo.setAttribute('fill-opacity',emphasized?'.22':'0')
+      item.halo.setAttribute('stroke-opacity',emphasized?'1':'0')
+    }
+    item.head.setAttribute('stroke',emphasized?accent:'currentColor')
+    // Keep a half/whole note hollow so a highlight never changes its
+    // apparent rhythmic value.
+    item.head.setAttribute('fill',emphasized
+      ?(item.hollow?'var(--panel)':accent)
+      :(item.hollow?'none':'currentColor'))
+    item.head.setAttribute('stroke-width',emphasized?2.7:item.baseStroke)
+    item.head.setAttribute('data-score-state',
+      latest?'recording':chosen?'selected':'normal')
+  }
   function dragSlot(rowIndex,x,sourceIndex){
     const row=rows[rowIndex]
     // A rest is an independent notation event in Free too, NOT an
@@ -438,21 +460,36 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,se
       for(let l=59;l>=y;l-=9)line(x-9,l,x+9,l)
       const beats=n.d/second,s=symbol(beats)
       const hollow=s.kind==='whole'||s.kind==='half'
+      const isSelected=selected.has(index)
+      const latest=index===recordingIndex
+      const accent=latest?'var(--danger)':'var(--accent)'
+      // Visible ring around selected notes; red ring on the latest note
+      // while recording. A transparent ring also supports live marquee preview.
+      const halo=(tool==='range'||isSelected||latest)
+        ?draw('ellipse',{cx:x,cy:y,rx:14,ry:10.5,
+          fill:accent,'fill-opacity':0,stroke:accent,
+          'stroke-width':2.3,'stroke-opacity':0,
+          'pointer-events':'none','data-score-emphasis':index})
+        :null
       const head=draw('ellipse',{cx:x,cy:y,
         rx:s.kind==='whole'?7.5:5.8,ry:s.kind==='whole'?4.5:3.9,
         transform:'rotate(-20 '+x+' '+y+')',
         fill:hollow?'none':'currentColor',stroke:'currentColor',
         'stroke-width':hollow?1.8:1.1,'data-note-type':s.kind})
+      const highlight={index,head,halo,hollow,baseStroke:hollow?1.8:1.1}
+      emphasizeNote(highlight,isSelected)
       if(s.kind!=='whole'){
         const up=y>=86,stemX=x+(up?5.8:-5.8),end=y+(up?-31:31)
-        line(stemX,y,stemX,end,{'stroke-width':1.6})
+        line(stemX,y,stemX,end,{'stroke-width':1.6,
+          stroke:latest||isSelected?accent:'currentColor'})
         const flags=s.kind==='eighth'?1:s.kind==='sixteenth'?2:s.kind==='thirty-second'?3:0
         for(let i=0;i<flags;i++){
           const yy=end+(up?8*i:-8*i)
           const path=up
             ? 'M'+stemX+' '+yy+' Q'+(stemX+20)+' '+(yy+3)+' '+(stemX+9)+' '+(yy+20)
             : 'M'+stemX+' '+yy+' Q'+(stemX-20)+' '+(yy-3)+' '+(stemX-9)+' '+(yy-20)
-          draw('path',{d:path,fill:'none',stroke:'currentColor',
+          draw('path',{d:path,fill:'none',
+            stroke:latest||isSelected?accent:'currentColor',
             'stroke-width':2.1,'stroke-linecap':'round'})
         }
       }
@@ -469,7 +506,6 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,se
       }else if(accidental){
         draw('text',{x:x-17,y:y+4,'font-size':16,fill:'currentColor'},accidental)
       }
-      if(selected.has(index))head.setAttribute('stroke-width',3)
       // Small arrow near (not around) the note. Keep the original index for
       // playback highlighting across sorted and wrapped score rows.
       const indicatorX = x + (y >= 86 ? -12 : 12);
@@ -483,9 +519,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,se
       })
       const hit=draw('circle',{cx:x,cy:y,r:10,fill:'transparent',
         'data-score-note':index})
-      if(tool==='range')rangeHeads.push({
-        index,head,hit,baseStroke:hollow?1.8:1.1
-      })
+      if(tool==='range')rangeHeads.push({...highlight,hit})
       let pointer=null,ignoreClick=false
       if(tool==='select'&&move){
         hit.style.touchAction='none'
@@ -814,15 +848,13 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,se
       marquee.style.height=Math.abs(a.y-b.y)+'px'
       const chosen=selectedIn(a,b)
       for(const item of rangeHeads)
-        item.head.setAttribute('stroke-width',
-          chosen.has(item.index)?3:item.baseStroke)
+        emphasizeNote(item,chosen.has(item.index))
       return chosen
     }
     const clear=()=>{
       marquee.hidden=true
       for(const item of rangeHeads)
-        item.head.setAttribute('stroke-width',
-          selected.has(item.index)?3:item.baseStroke)
+        emphasizeNote(item,selected.has(item.index))
     }
     host.onpointerdown=ev=>{
       if(ev.button!==undefined&&ev.button!==0)return
