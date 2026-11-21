@@ -399,7 +399,7 @@ export function mountEtudeComposer(host, {
   guide.setAttribute('aria-label',t('Etude Setup Guide','راهنمای تنظیمات اتود'));
   const guideHead=create('div',guide,null,'studio-setup-guide-head');
   create('h3',guideHead,t('Etude Setup Guide','راهنمای تنظیمات اتود'));
-  create('p',guideHead,t(
+  const guideIntroduction=create('p',guideHead,t(
     'Configure the musical context and practice goal to generate a tailored etude.',
     'سیستم موسیقی و هدف تمرین را مشخص کنید تا اتود متناسب با آن ساخته شود.'
   ));
@@ -413,29 +413,57 @@ export function mountEtudeComposer(host, {
     create('p',copy,description);
     return copy;
   }
-  addGuideStep('layers',t('Musical system','سیستم موسیقایی'),t(
-    'Choose the musical tradition for your etude (Iranian or Western).',
-    'موسیقی ایرانی یا غربی را برای اتود انتخاب کنید.'
-  ));
-  const guideSignature=addGuideStep('dastgah',
-    t('Dastgah & Key Signature','دستگاه و سرکلید'),t(
-    "Select a Dastgah, then fine-tune the score's key signature if needed.",
-    'دستگاه را انتخاب کنید و در صورت نیاز سرکلید را دقیق‌تر تنظیم کنید.'
-  ));
-  addGuideStep('target',t('Primary practice goal','هدف اصلی تمرین'),t(
-    'Set the main focus for the etude, such as technique or phrasing.',
-    'هدف اصلی اتود را مانند تکنیک یا جمله‌بندی مشخص کنید.'
-  ));
-  addGuideStep('metronome',t('Time signature','میزان‌نما'),t(
-    'Choose a meter, or keep it free for a more flexible etude.',
-    'میزان‌نما را انتخاب کنید یا برای اتود آزاد، بدون میزان نگه دارید.'
-  ));
-  addGuideStep('wand',t('Generate & Practice Design','تولید اتود و طراحی تمرین'),t(
-    'After AI generates or regenerates the etude, its notes appear on the Score below. Use Practice Design to create your exercises.',
-    'پس از تولید یا تولید مجدد اتود با هوش مصنوعی، نت‌های آن روی خط حامل پایین نمایش داده می‌شوند. سپس می‌توانید در بخش طراحی تمرین، تمرین‌های خود را بسازید.'
-  ));
-  const guideSignatureTitle=guideSignature.querySelector('strong');
-  const guideSignatureDescription=guideSignature.querySelector('p');
+  // Keep one guide and one step renderer. Only its instructions change
+  // between Manual and AI (and between Iranian and Western music).
+  let guideVersion='';
+  function syncGuide(){
+    const version=state.mode+':'+state.musicSystem;
+    if(guideVersion===version)return;
+    guideVersion=version;
+    const isManual=state.mode==='manual';
+    guideIntroduction.textContent=isManual
+      ? t('Choose your musical system, write or play your etude, then create exercises in Practice Design.',
+          'سیستم موسیقی را انتخاب کنید، اتودتان را بنویسید یا با پیانو اجرا کنید و سپس در طراحی تمرین، تمرین بسازید.')
+      : t('Configure the musical context and practice goal to generate a tailored etude.',
+          'سیستم موسیقی و هدف تمرین را مشخص کنید تا اتود متناسب با آن ساخته شود.');
+    guideSteps.replaceChildren();
+    addGuideStep('layers',t('Musical system','سیستم موسیقایی'),t(
+      'Choose the musical tradition for your etude (Iranian or Western).',
+      'موسیقی ایرانی یا غربی را برای اتود انتخاب کنید.'
+    ));
+    addGuideStep('dastgah',state.musicSystem==='iranian'
+      ? t('Dastgah & Key Signature','دستگاه و سرکلید')
+      : t('Scale/Mode & Key Signature','گام یا مد و سرکلید'),
+      state.musicSystem==='iranian'
+        ? t("Select a Dastgah, then fine-tune the score's key signature if needed.",
+            'دستگاه را انتخاب کنید و در صورت نیاز سرکلید را دقیق‌تر تنظیم کنید.')
+        : t('Select a scale or mode and a tonic to set the score key signature.',
+            'با انتخاب گام یا مد و نت پایه، سرکلید خط حامل تنظیم می‌شود.')
+    );
+    if(isManual){
+      addGuideStep('music',t('Compose & Edit Your Etude','نوشتن و ویرایش اتود'),t(
+        'Write notes directly on the Score or play them on the piano. Edit your etude as needed.',
+        'نت‌های اتود را روی خط حامل بنویسید یا با پیانو بنوازید و در صورت نیاز آن‌ها را ویرایش کنید.'
+      ));
+      addGuideStep('target',t('Design Your Practice','طراحی تمرین'),t(
+        'Use Practice Design below to create exercises based on your etude.',
+        'در بخش طراحی تمرین در پایین صفحه، تمرین‌های دلخواهتان را بر اساس این اتود بسازید.'
+      ));
+    }else{
+      addGuideStep('target',t('Primary practice goal','هدف اصلی تمرین'),t(
+        'Set the main focus for the etude, such as technique or phrasing.',
+        'هدف اصلی اتود را مانند تکنیک یا جمله‌بندی مشخص کنید.'
+      ));
+      addGuideStep('metronome',t('Time signature','میزان‌نما'),t(
+        'Choose a meter, or keep it free for a more flexible etude.',
+        'میزان‌نما را انتخاب کنید یا برای اتود آزاد، بدون میزان نگه دارید.'
+      ));
+      addGuideStep('wand',t('Generate & Practice Design','تولید اتود و طراحی تمرین'),t(
+        'After AI generates or regenerates the etude, its notes appear on the Score below. Use Practice Design to create your exercises.',
+        'پس از تولید یا تولید مجدد اتود با هوش مصنوعی، نت‌های آن روی خط حامل پایین نمایش داده می‌شوند. سپس می‌توانید در بخش طراحی تمرین، تمرین‌های خود را بسازید.'
+      ));
+    }
+  }
 
   let catalog = null;
   let busy = false;
@@ -461,14 +489,7 @@ export function mountEtudeComposer(host, {
           'با انتخاب دستگاه، سرکلید و کوک پیانو تنظیم می‌شود. برای تنظیم دقیق‌تر، از تنظیم سرکلید استفاده کنید.')
       : t('Selecting a scale or mode automatically sets the Score key signature.',
           'با انتخاب گام یا مد، سرکلید خط حامل به‌صورت خودکار تنظیم می‌شود.');
-    guideSignatureTitle.textContent=state.musicSystem==='iranian'
-      ? t('Dastgah & Key Signature','دستگاه و سرکلید')
-      : t('Scale/Mode & Key Signature','گام یا مد و سرکلید');
-    guideSignatureDescription.textContent=state.musicSystem==='iranian'
-      ? t("Select a Dastgah, then fine-tune the score's key signature if needed.",
-          'دستگاه را انتخاب کنید و در صورت نیاز سرکلید را دقیق‌تر تنظیم کنید.')
-      : t('Select a scale or mode and a tonic to set the score key signature.',
-          'با انتخاب گام یا مد و نت پایه، سرکلید خط حامل تنظیم می‌شود.');
+    syncGuide();
     editSignature.disabled = busy;
     styleInput.disabled = busy || !musicCatalog;
     tonicInput.disabled = busy || !musicCatalog;
