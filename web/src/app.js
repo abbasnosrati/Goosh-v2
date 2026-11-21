@@ -38,6 +38,9 @@ import {applyMusicSignature} from './music-signature.js';
 upgradeLegacyHash();
 const $ = s => document.querySelector(s),
   app = $('#app');
+// The single canonical Score host may be temporarily portaled above the
+// fullscreen piano; all existing Score drawing and playback use this accessor.
+const studioScoreHost = () => $('.studio-score-surface > .score, .studio-piano-score > .score');
 let fa = localStorage.lang !== 'en',
   dark = localStorage.theme === 'dark',
   page = readRoute().page,
@@ -434,13 +437,13 @@ function refreshTake(take) {
 function paintPlaybackMarker() {
   if (!playback) return;
   const elapsed = playback.clock.currentTime - playback.started;
-  paintScorePlayhead($('.studio-score-surface > .score'),elapsed);
+  paintScorePlayhead(studioScoreHost(),elapsed);
 }
 function clearPlaybackMarker() {
   if (!playback) return;
   cancelAnimationFrame(playback.frame);
   playback = null;
-  paintScorePlayhead($('.studio-score-surface > .score'),scoreSeekPosition);
+  paintScorePlayhead(studioScoreHost(),scoreSeekPosition);
 }
 
 function advancePlaybackMarker() {
@@ -825,7 +828,7 @@ function eraseScoreNotes(indices) {
 function sheet() {
   // The dialog has its own score-styled SVG host. Always paint notes on
   // the original Studio staff; do not accidentally replace the modal.
-  const h = $('.studio-score-surface > .score');
+  const h = studioScoreHost();
   if (!h) return;
   refreshPianoKeyLabels();
   if(signatureMode){
@@ -986,6 +989,30 @@ function sheet() {
       sheet();
     }
   });
+  // Compact fullscreen presentation only: use each original SVG's exact
+  // dimensions as its viewBox, without changing the score engraver.
+  // On a live recording keep the latest recorded note inside the preview.
+  const preview=h.closest('.studio-piano-score');
+  if(preview){
+    const height=Math.max(78,Math.min(112,preview.clientHeight-16));
+    for(const svg of h.querySelectorAll(':scope > svg')){
+      const w=Number(svg.getAttribute('width'));
+      const originalHeight=Number(svg.getAttribute('height'));
+      if(!w||!originalHeight)continue;
+      svg.setAttribute('viewBox',`0 0 ${w} ${originalHeight}`);
+      svg.style.width=`${w*height/originalHeight}px`;
+      svg.style.height=`${height}px`;
+    }
+    const latest=h.querySelector('[data-score-state="recording"]');
+    if(latest){
+      const noteRect=latest.getBoundingClientRect();
+      const area=h.getBoundingClientRect();
+      if(noteRect.right>area.right-18)h.scrollLeft+=noteRect.right-(area.right-18);
+      else if(noteRect.left<area.left+18)h.scrollLeft-=area.left+18-noteRect.left;
+      if(noteRect.bottom>area.bottom-8)h.scrollTop+=noteRect.bottom-(area.bottom-8);
+      else if(noteRect.top<area.top+8)h.scrollTop-=area.top+8-noteRect.top;
+    }
+  }
   if(playback)paintPlaybackMarker(true);
   else paintScorePlayhead(h,scoreSeekPosition);
   renderFreeTimeline($('.studio-score-surface > .score-free-timeline'));
@@ -1475,7 +1502,7 @@ function seekScorePlayback(seconds) {
   scoreSeekPosition=Math.max(0,Math.min(end,seconds));
   const wasPlaying=scorePlaybackPending||Boolean(scoreTransport&&!scoreTransport.paused);
   stopScorePlayback();
-  paintScorePlayhead($('.studio-score-surface > .score'),scoreSeekPosition);
+  paintScorePlayhead(studioScoreHost(),scoreSeekPosition);
   if(wasPlaying)startScorePlayback();
 }
 
@@ -1630,7 +1657,13 @@ function studio() {
       };
       startRecordingMetronome();
     }
-    render()
+    if(studioPiano.classList.contains('studio-piano-fullscreen')){
+      // Keep the landscape keyboard on screen while arming/stopping the
+      // SAME recording take. Reconcile the rest of the editor on exit.
+      fullscreenRecordChanged=true;
+      syncRecordButton();
+      sheet();
+    } else render();
   }
   piano(panel, (m, at) => {
     if (!rec) return;
@@ -1668,11 +1701,18 @@ function studio() {
   const pianoTools = studioPiano.querySelector(':scope > .row');
   const pianoKeys = studioPiano.querySelector(':scope > .keys');
   const pianoOctaveLabel = pianoTools.querySelector('label');
+  // Empty in the embedded editor. Only fullscreen displays the existing Score
+  // here, above the very same live piano keys.
+  const pianoScorePreview = el('div',studioPiano,undefined,'studio-piano-score');
+  pianoScorePreview.hidden=true;
+  studioPiano.insertBefore(pianoScorePreview,pianoKeys);
   const pianoViewControls = el('div',pianoTools,undefined,'studio-piano-view-controls');
   const pianoToggle = btn(pianoViewControls, '', () => {
     const wasOpen = !pianoKeys.hidden;
-    if (studioPiano.classList.contains('studio-piano-fullscreen')) exitPianoFullscreen();
+    const changed=studioPiano.classList.contains('studio-piano-fullscreen')
+      ?exitPianoFullscreen(false):false;
     setPianoExpanded(!wasOpen);
+    if(changed)render();
   }, t('Show or hide piano', 'نمایش یا جمع‌کردن پیانو'));
   pianoToggle.type = 'button';
   pianoToggle.className = 'studio-piano-toggle';
@@ -1709,6 +1749,9 @@ function studio() {
   fullscreenIcon.append(fullscreenShape);
   fullscreenButton.append(fullscreenIcon);
   let fullscreenAnchor=null;
+  let fullscreenScoreAnchor=null;
+  let fullscreenRecordAnchor=null;
+  let fullscreenRecordChanged=false;
   let wasCollapsedBeforeFullscreen=false;
   let pianoOrientationLock=null;
   let ownsBrowserFullscreen=false;
@@ -1736,10 +1779,26 @@ function studio() {
       ?'M9 3v6H3M15 21v-6h6'
       :'M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5');
   };
-  const exitPianoFullscreen = () => {
-    if(!fullscreenAnchor)return;
+  const exitPianoFullscreen = (refreshEditor=true) => {
+    if(!fullscreenAnchor)return false;
     stopKeys();
     const center=pianoScrollCenter();
+    // Restore both original controls to their original DOM slots before
+    // restoring the piano. No mirrored Score or second Record button exists.
+    const originalScore=pianoScorePreview.querySelector(':scope > .score');
+    if(fullscreenScoreAnchor){
+      if(fullscreenScoreAnchor.isConnected && originalScore)
+        fullscreenScoreAnchor.replaceWith(originalScore);
+      else originalScore?.remove();
+      fullscreenScoreAnchor=null;
+    }
+    if(fullscreenRecordAnchor){
+      if(fullscreenRecordAnchor.isConnected)
+        fullscreenRecordAnchor.replaceWith(record);
+      else record.remove();
+      fullscreenRecordAnchor=null;
+    }
+    pianoScorePreview.hidden=true;
     document.removeEventListener('fullscreenchange',onPianoBrowserFullscreenChange);
     if(ownsBrowserFullscreen && document.fullscreenElement===studioPiano)
       document.exitFullscreen?.().catch(()=>{});
@@ -1760,6 +1819,11 @@ function studio() {
     if(wasCollapsedBeforeFullscreen)setPianoExpanded(false);
     syncFullscreenButton(false);
     restorePianoScroll(center);
+    const changed=fullscreenRecordChanged;
+    fullscreenRecordChanged=false;
+    if(refreshEditor && changed && page==='studio' && activeId)render();
+    else if(refreshEditor)sheet();
+    return changed;
   };
   const requestPianoLandscape=async (anchor,center)=>{
     // Mobile apps lock orientation natively if the plugin exists. Browser
@@ -1808,6 +1872,22 @@ function studio() {
     if(wasCollapsedBeforeFullscreen)setPianoExpanded(true);
     fullscreenAnchor=document.createComment('studio piano return point');
     studioPiano.before(fullscreenAnchor);
+    // Move the canonical line of notation into a compact, read-only
+    // presentation above the keys; it continues receiving sheet() updates.
+    const staff=studioScoreHost();
+    if(staff){
+      fullscreenScoreAnchor=document.createComment('studio score return point');
+      staff.before(fullscreenScoreAnchor);
+      pianoScorePreview.append(staff);
+      pianoScorePreview.hidden=false;
+    }
+    // The original Record button keeps its original toggle() callback.
+    // It exists in exactly one place at a time.
+    if(!signatureMode){
+      fullscreenRecordAnchor=document.createComment('studio record return point');
+      record.before(fullscreenRecordAnchor);
+      pianoViewControls.append(record);
+    }
     document.body.append(studioPiano);
     studioPiano.classList.add('studio-piano-fullscreen');
     document.body.classList.add('studio-piano-fullscreen-open');
@@ -1815,6 +1895,7 @@ function studio() {
     syncFullscreenButton(true);
     document.addEventListener('fullscreenchange',onPianoBrowserFullscreenChange);
     restorePianoScroll(center);
+    sheet();
     if(isMobilePianoViewport())void requestPianoLandscape(fullscreenAnchor,center);
   };
   syncFullscreenButton(false);
@@ -1992,7 +2073,7 @@ function studio() {
     if (scoreTransport || scorePlaybackPending) {
       stopScorePlayback();
       scoreSeekPosition=0;
-      paintScorePlayhead($('.studio-score-surface > .score'),0);
+      paintScorePlayhead(studioScoreHost(),0);
     } else startScorePlayback();
   });
   playButton.dataset.scoreTransport = '';
@@ -2028,9 +2109,14 @@ function studio() {
   const record = btn(transportActions, '', toggle,
     (rec ? t('Stop recording', 'توقف ضبط') : t('Start recording', 'شروع ضبط')) + ' (R)');
   record.dataset.record = '';
-  record.className = (rec ? 'recording' : 'primary') + ' score-record';
-  record.setAttribute('aria-label', rec ? t('Stop recording', 'توقف ضبط') : t('Start recording', 'شروع ضبط'));
-  record.append(scoreTransportIcon(rec ? 'stop' : 'record'));
+  const syncRecordButton = () => {
+    const label=rec ? t('Stop recording','توقف ضبط') : t('Start recording','شروع ضبط');
+    record.className=(rec ? 'recording' : 'primary')+' score-record';
+    record.setAttribute('aria-label',label);
+    record.title=label+' (R)';
+    record.replaceChildren(scoreTransportIcon(rec ? 'stop' : 'record'));
+  };
+  syncRecordButton();
   el('div', scoreSurface, undefined, 'score');
   el('div',scoreSurface,undefined,'score-free-timeline');
   const signatureControls=el('div',scoreSurface,undefined,'signature-editor-controls');
@@ -2188,7 +2274,7 @@ function studio() {
 }
 
 function cancel() {
-  closeFullscreenPiano?.();
+  closeFullscreenPiano?.(false);
   stopRecordingMetronome();
   stopSignaturePreview();
   stopScorePlayback();
@@ -2642,7 +2728,7 @@ function syncMobileLibraryActions(){
 mobileLibraryLayout.addEventListener('change',syncMobileLibraryActions);
 
 function render() {
-  closeFullscreenPiano?.();
+  closeFullscreenPiano?.(false);
   if(mobileSignatureDialog){
     if(mobileSignatureDialog.open)mobileSignatureDialog.close();
     mobileSignatureDialog.remove();

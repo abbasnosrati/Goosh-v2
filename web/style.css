@@ -2819,3 +2819,84 @@ body > .instrument.studio-piano-fullscreen > .piano-scroll-hint {
     transition:none;
   }
 }
+
+/* Fullscreen Etude Piano: show the ONE original Score above the keys,
+   and move the ONE original Record action alongside piano view controls. */
+body > .instrument.studio-piano-fullscreen > .studio-piano-score {
+  display:block;
+  flex:0 0 clamp(105px,25dvh,155px);
+  width:100%;
+  height:clamp(105px,25dvh,155px);
+  min-height:0;
+  margin:0 0 9px;
+  padding:5px;
+  border:1px solid var(--glass-border);
+  border-radius:12px;
+  background:var(--glass-elevated);
+  overflow:hidden;
+}
+.instrument > .studio-piano-score[hidden] {
+  display:none!important;
+}
+body > .instrument.studio-piano-fullscreen .studio-piano-score > .score {
+  display:block;
+  width:100%;
+  height:100%;
+  min-height:0;
+  margin:0;
+  padding:3px 7px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  overflow:auto;
+  direction:ltr;
+  pointer-events:none;
+  touch-action:pan-x pan-y;
+  overscroll-behavior:contain;
+}
+body > .instrument.studio-piano-fullscreen .studio-piano-score > .score > svg {
+  display:block;
+  max-width:none!important;
+  max-height:none;
+  height:auto;
+}
+body > .instrument.studio-piano-fullscreen .studio-piano-view-controls > .score-record {
+  border-color:color-mix(in srgb,var(--danger) 34%,var(--glass-border));
+  background:color-mix(in srgb,var(--danger) 10%,var(--glass-control));
+  color:var(--danger);
+}
+body > .instrument.studio-piano-fullscreen .studio-piano-view-controls > .score-record svg {
+  fill:currentColor;
+}
+body > .instrument.studio-piano-fullscreen .studio-piano-view-controls > .score-record.recording {
+  border-color:var(--danger);
+  background:color-mix(in srgb,var(--danger) 19%,var(--panel));
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--danger) 13%,transparent);
+}
+body > .instrument.studio-piano-fullscreen .studio-piano-view-controls > .score-record:hover {
+  background:color-mix(in srgb,var(--danger) 16%,var(--panel));
+  color:var(--danger);
+}
+/* The read-only notation strip gets the space previously given to extra-tall
+   keys. The horizontally scrolled piano itself remains the original one. */
+@media screen and (max-width:700px),
+       screen and (pointer:coarse) and (orientation:landscape) and (max-height:520px) {
+  body > .instrument.studio-piano-fullscreen > .studio-piano-score {
+    flex-basis:clamp(96px,27dvh,132px);
+    height:clamp(96px,27dvh,132px);
+  }
+  body > .instrument.studio-piano-fullscreen .board {
+    height:clamp(112px,calc(100dvh - 238px),400px);
+    max-height:none;
+  }
+}
+@media screen and (pointer:coarse) and (orientation:portrait) and (max-width:700px) {
+  body > .instrument.studio-piano-fullscreen > .studio-piano-score {
+    flex-basis:clamp(96px,27vw,132px);
+    height:clamp(96px,27vw,132px);
+  }
+  body > .instrument.studio-piano-fullscreen .board {
+    height:clamp(112px,calc(100vw - 238px),400px);
+    max-height:none;
+  }
+}
