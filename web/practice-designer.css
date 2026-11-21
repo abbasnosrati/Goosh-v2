@@ -927,7 +927,6 @@ dialog.studio-mobile-picker-dialog {
    Original Manual/AI, music, Goal, meter and generator handlers are unchanged. */
 #app[data-page="studio"] .studio-setup-guide,
 #app[data-page="studio"] .studio-setup-icon,
-#app[data-page="studio"] .studio-setup-hero-icon,
 #app[data-page="studio"] .studio-setup-generate-icon {
   display:none;
 }
@@ -966,38 +965,31 @@ dialog.studio-mobile-picker-dialog {
     border-radius:18px 18px 0 0;
     background:var(--glass-surface);
   }
-  #app[data-page="studio"] .studio-compose-heading {
+  #app[data-page="studio"] .studio-setup-header {
     position:absolute;
-    inset-block-start:35px;
-    inset-inline-start:101px;
+    inset-block-start:29px;
+    inset-inline:23px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:20px;
+    min-width:0;
+  }
+  #app[data-page="studio"] .studio-compose-heading {
+    flex:0 0 auto;
     margin:0;
     font-size:clamp(23px,2vw,29px);
     font-weight:800;
     line-height:1.2;
     letter-spacing:-.025em;
+    white-space:nowrap;
   }
-  #app[data-page="studio"] .studio-setup-hero-icon {
-    display:grid;
-    place-items:center;
-    position:absolute;
-    inset-block-start:22px;
-    inset-inline-start:24px;
-    width:60px;
-    height:60px;
-    border:1px solid var(--glass-border);
-    border-radius:15px;
-    background:var(--glass-selected);
-    box-shadow:var(--glass-soft-shadow);
-    color:var(--accent);
-  }
-  #app[data-page="studio"] .studio-setup-hero-icon svg {width:31px;height:31px}
   #app[data-page="studio"] .studio-compose-tabs {
-    position:absolute;
-    inset-block-start:29px;
-    inset-inline-end:23px;
+    position:static;
     display:grid;
     grid-template-columns:repeat(2,minmax(0,1fr));
     width:270px;
+    flex:0 0 270px;
     gap:4px;
     padding:4px;
     border-radius:14px;
