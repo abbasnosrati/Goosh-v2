@@ -324,3 +324,76 @@
     padding-inline: 9px;
   }
 }
+
+
+/* Mobile Studio: one distinct zone for the Manual/AI method, another for
+   Musical System / signatures. Practice Design remains its own section.
+   Existing control DOM, audio, options and Desktop presentation untouched. */
+@media screen and (max-width: 700px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+    margin-block: 0 12px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-tabs {
+    order: 0;
+    width: 100%;
+    min-width: 0;
+    padding: 9px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--soft);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+  /* AI-only goals attach visually to the method selector; the shared
+     musical system stays below it in both Manual and AI modes. */
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-compose-tabs {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: transparent;
+    box-shadow: none;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]) {
+    order: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0 11px 12px;
+    border: 1px solid var(--line);
+    border-top: 0;
+    border-radius: 0 0 14px 14px;
+    background: var(--soft);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-description {
+    margin-top: 4px;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music {
+    order: 2;
+    min-width: 0;
+    margin-top: 12px;
+    padding: 12px 10px 13px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--accent) 4%, var(--panel));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music .studio-music-system {
+    margin-top: 0;
+  }
+  /* Practice Design is already a separate app-level host, not part of
+     the score or generation cards. Make its boundary equally legible. */
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-practice-host > .practice-designer {
+    margin-block: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--accent) 4%, var(--panel));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+}

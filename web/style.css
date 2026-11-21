@@ -1651,3 +1651,57 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     -webkit-tap-highlight-color: transparent;
   }
 }
+
+
+/* Studio editor visual zones: piano and full Score-to-tempo region.
+   The wrapper is layout-neutral on Desktop; the mobile card does NOT
+   nest another phone-edge gutter or change the piano's note widths. */
+#app[data-page="studio"] .studio-score-surface {
+  display: contents;
+}
+@media screen and (max-width: 700px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) > section:has(.instrument) {
+    background: var(--panel);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .instrument {
+    margin-block: 7px 13px;
+    padding: 10px 8px 9px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: var(--soft);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .instrument > .row {
+    margin-bottom: 6px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface {
+    display: block;
+    min-width: 0;
+    margin-block: 14px 4px;
+    padding: 12px 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--accent) 4%, var(--panel));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score-heading {
+    margin: 0 0 11px;
+    padding: 0 2px 9px;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score-actions {
+    min-width: 0;
+    margin-block: 0;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score {
+    min-width: 0;
+    margin-block: 11px 8px;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score-below-actions:not([hidden]) {
+    margin: 0;
+    padding-top: 12px;
+    border-top: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+  }
+}

@@ -1563,12 +1563,15 @@ function studio() {
       render();
     }
   });
-  const scoreHeading = el('div', panel, undefined, 'score-heading');
+  // Presentation wrapper: groups the existing Score, controls, meter and
+  // tempo as one mobile section without altering any musical behavior.
+  const scoreSurface = el('div', panel, undefined, 'studio-score-surface');
+  const scoreHeading = el('div', scoreSurface, undefined, 'score-heading');
   scoreHeading.tabIndex = -1;
   el('h2',scoreHeading,signatureMode
     ? t('Key Signature Editor','تنظیم سرکلید')
     : t('Score','خط حامل'),'score-title');
-  const scoreActions = row(panel);
+  const scoreActions = row(scoreSurface);
   scoreActions.classList.add('score-actions');
   for (const [mode, en, ir] of [
     ['select', 'Select', 'انتخاب'],
@@ -1658,10 +1661,10 @@ function studio() {
   record.className = (rec ? 'recording' : 'primary') + ' score-record';
   record.setAttribute('aria-label', rec ? t('Stop recording', 'توقف ضبط') : t('Start recording', 'شروع ضبط'));
   record.append(scoreTransportIcon(rec ? 'stop' : 'record'));
-  el('div', panel, undefined, 'score');
-  const signatureControls=el('div',panel,undefined,'signature-editor-controls');
+  el('div', scoreSurface, undefined, 'score');
+  const signatureControls=el('div',scoreSurface,undefined,'signature-editor-controls');
   signatureControls.hidden=true;
-  const scoreBelowActions = row(panel);
+  const scoreBelowActions = row(scoreSurface);
   scoreBelowActions.classList.add('score-below-actions');
   scoreBelowActions.hidden=signatureMode;
 
