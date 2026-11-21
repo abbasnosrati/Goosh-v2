@@ -773,6 +773,18 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   margin-block: 8px 12px;
   direction: ltr;
 }
+/* Tempo first (physical left), meter second, on one shared settings row. */
+#app[data-page="studio"] .score-time-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  direction: ltr;
+}
+#app[data-page="studio"] .score-time-controls > .score-meter-control {
+  min-width: 0;
+  margin: 0;
+}
 #app[data-page="studio"] .score-tempo {
   display: inline-flex;
   align-items: center;
@@ -792,7 +804,11 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score-tempo-number {
   width: 64px;
   min-height: 34px;
-  padding: 4px 6px;
+  padding: 4px 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   text-align: center;
   font-variant-numeric: tabular-nums;
   appearance: textfield;
@@ -1525,8 +1541,7 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   min-height: 38px;
   max-width: 225px;
 }
-#app[data-page="studio"] .score-meter-status,
-#app[data-page="studio"] .score-meter-record-hint {
+#app[data-page="studio"] .score-meter-status {
   flex: 1 1 100%;
   margin: 2px 0 0;
   font-size: .83rem;
@@ -1539,7 +1554,6 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 }
 #app[data-page="studio"] .score-meter-control[hidden],
 #app[data-page="studio"] .score-pen-length[hidden],
-#app[data-page="studio"] .score-meter-record-hint[hidden],
 #app[data-page="studio"] .score-meter-status[hidden] {
   display: none !important;
 }
@@ -1703,6 +1717,29 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     max-width: 100%;
     margin: 0;
   }
+  #app[data-page="studio"] .score-time-controls {
+    display: grid;
+    grid-template-columns: minmax(100px, 0.8fr) minmax(0, 1.2fr);
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
+  }
+  #app[data-page="studio"] .score-time-controls > .score-meter-control {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+    min-width: 0;
+    margin: 0;
+  }
+  #app[data-page="studio"] .score-time-controls > .score-meter-control select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex: 0 1 auto;
+  }
   #app[data-page="studio"] .score-meter-control,
   #app[data-page="studio"] .score-pen-length,
   #app[data-page="studio"] .score-measure-count {
@@ -1720,16 +1757,28 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     min-width: 0;
     max-width: none;
   }
-  #app[data-page="studio"] .score-tempo {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
+  #app[data-page="studio"] .score-time-controls > .score-tempo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-content: center;
+    align-items: center;
+    justify-content: stretch;
+    column-gap: 4px;
+    row-gap: 4px;
     width: 100%;
     min-width: 0;
     min-height: 44px;
+    padding: 6px 7px;
   }
-  #app[data-page="studio"] .score-meter-status,
-  #app[data-page="studio"] .score-meter-record-hint {
+  #app[data-page="studio"] .score-time-controls .score-tempo-label {
+    grid-column: 1 / -1;
+  }
+  #app[data-page="studio"] .score-time-controls .score-tempo-number {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 0;
+  }
+  #app[data-page="studio"] .score-meter-status {
     width: 100%;
     line-height: 1.55;
   }
@@ -1744,10 +1793,9 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   #app[data-page="studio"] .score-below-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  #app[data-page="studio"] .score-meter-control,
+  #app[data-page="studio"] .score-time-controls,
   #app[data-page="studio"] .score-pen-length,
-  #app[data-page="studio"] .score-meter-status,
-  #app[data-page="studio"] .score-meter-record-hint {
+  #app[data-page="studio"] .score-meter-status {
     grid-column: 1 / -1;
   }
 }
