@@ -1092,3 +1092,61 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
     display: none;
   }
 }
+
+
+/* Studio transport: dedicated Record affordance in both themes.
+   A neutral glass surface with a red record dot is clearer than the
+   generic blue Primary button. Recording is indicated by a red square
+   and softly tinted surface. Preserve original input/record handlers. */
+#app[data-page="studio"] .score-actions .score-record {
+  border: 1px solid color-mix(in srgb, var(--danger) 26%, var(--glass-border));
+  border-radius: 12px;
+  background: var(--glass-control);
+  color: var(--danger);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--panel) 80%, transparent),
+    0 4px 11px color-mix(in srgb, var(--ink) 9%, transparent);
+  transition: transform 110ms ease, border-color 110ms ease,
+    background 110ms ease, box-shadow 110ms ease;
+}
+#app[data-page="studio"] .score-actions .score-record svg {
+  width: 19px;
+  height: 19px;
+  fill: var(--danger);
+  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--danger) 20%, transparent));
+}
+#app[data-page="studio"] .score-actions .score-record.recording {
+  border-color: color-mix(in srgb, var(--danger) 65%, var(--glass-border));
+  background: linear-gradient(145deg,
+    color-mix(in srgb, var(--danger) 17%, var(--panel)),
+    color-mix(in srgb, var(--danger) 8%, var(--panel)));
+  color: var(--danger);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--panel) 72%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--danger) 10%, transparent),
+    0 4px 13px color-mix(in srgb, var(--danger) 13%, transparent);
+}
+#app[data-page="studio"] .score-actions .score-record.recording svg rect {
+  rx: 3px;
+}
+@media (hover: hover) and (pointer: fine) {
+  #app[data-page="studio"] .score-actions .score-record:hover {
+    border-color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 9%, var(--panel));
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--panel) 80%, transparent),
+      0 5px 16px color-mix(in srgb, var(--danger) 18%, transparent);
+  }
+  #app[data-page="studio"] .score-actions .score-record.recording:hover {
+    background: color-mix(in srgb, var(--danger) 19%, var(--panel));
+  }
+}
+#app[data-page="studio"] .score-actions .score-record:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 6px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  #app[data-page="studio"] .score-actions .score-record {
+    transition: none;
+  }
+}
