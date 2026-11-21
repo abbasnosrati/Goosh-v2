@@ -1031,9 +1031,9 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
 }
 
 
-/* Desktop Etude Setup: one continuous shell instead of two detached
-   nested cards. Preserve both existing surface tints and their content;
-   only the outer frame and hairline borders divide header/settings/guide. */
+/* Desktop Etude Setup: one shared frame, independent raised surfaces.
+   No horizontal line below the Setup title. A shorter vertical rule alone
+   separates Settings and Guide without splitting them into separate cards. */
 @media screen and (min-width: 900px) {
   html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose,
   html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose {
@@ -1048,16 +1048,17 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music,
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide {
     margin-top: 95px;
-    border-top: 1px solid var(--visual-border);
+    border-top: 0;
     border-radius: 0;
-    box-shadow: none;
   }
   html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music,
   html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music {
     border-inline: 0;
     border-bottom: 0;
     background: var(--visual-inner);
-    box-shadow: none;
+    box-shadow:
+      inset 6px 0 15px color-mix(in srgb, var(--accent) 5%, transparent),
+      0 9px 22px color-mix(in srgb, var(--ink) 9%, transparent);
   }
   html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]),
   html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]) {
@@ -1065,20 +1066,36 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
     border-bottom: 0;
     border-radius: 0;
     background: var(--visual-inner);
-    box-shadow: none;
+    box-shadow:
+      inset 6px 0 15px color-mix(in srgb, var(--accent) 5%, transparent),
+      0 9px 22px color-mix(in srgb, var(--ink) 9%, transparent);
   }
   html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose:has(.studio-compose-ai[hidden]) .studio-compose-music,
   html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose:has(.studio-compose-ai[hidden]) .studio-compose-music {
     border-radius: 0;
     border-bottom: 0;
-    box-shadow: none;
+    box-shadow:
+      inset 6px 0 15px color-mix(in srgb, var(--accent) 5%, transparent),
+      0 9px 22px color-mix(in srgb, var(--ink) 9%, transparent);
   }
   html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide,
   html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide {
-    border-inline-start: 1px solid var(--visual-border);
-    border-inline-end: 0;
+    position: relative;
+    border-inline: 0;
     border-bottom: 0;
     background: var(--visual-inner);
-    box-shadow: none;
+    box-shadow:
+      inset -6px 0 15px color-mix(in srgb, var(--accent) 5%, transparent),
+      0 9px 22px color-mix(in srgb, var(--ink) 9%, transparent);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-start: 22px;
+    inset-block-end: 22px;
+    width: 1px;
+    background: var(--visual-border);
+    pointer-events: none;
   }
 }
