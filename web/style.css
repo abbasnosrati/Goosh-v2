@@ -17,7 +17,7 @@
   --glass-selected: linear-gradient(135deg, rgb(222 237 248 / 81%), rgb(222 237 248 / 70%));
   --glass-border: rgb(170 191 205 / 45%);
   --glass-shadow: 0 16px 38px rgb(36 102 153 / 13%), inset 0 1px 0 rgb(255 255 255 / 85%);
-  --glass-soft-shadow: 0 7px 22px rgb(22 101 69 / 10%), inset 0 1px 0 rgb(255 255 255 / 78%);
+  --glass-soft-shadow: 0 7px 22px rgb(36 102 153 / 10%), inset 0 1px 0 rgb(255 255 255 / 78%);
   --glass-blur: blur(20px) saturate(155%);
   --dropdown-control-surface: #E5EEF4;
   --dropdown-menu-surface: #F7FAFC;

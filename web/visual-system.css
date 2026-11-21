@@ -11,8 +11,8 @@
   --visual-panel: linear-gradient(145deg, rgb(255 255 255 / 90%), rgb(229 238 244 / 86%));
   --visual-inner: linear-gradient(145deg, rgb(247 250 252 / 93%), rgb(222 237 248 / 90%));
   --visual-sidebar: linear-gradient(165deg, rgb(247 250 252 / 94%), rgb(222 237 248 / 89%));
-  --visual-shadow: 0 18px 48px rgb(22 101 69 / 14%), 0 4px 14px rgb(22 101 69 / 7%), inset 0 1px 0 rgb(255 255 255 / 90%);
-  --visual-inner-shadow: 0 9px 26px rgb(22 101 69 / 11%), inset 0 1px 0 rgb(255 255 255 / 78%);
+  --visual-shadow: 0 18px 48px rgb(36 102 153 / 14%), 0 4px 14px rgb(36 102 153 / 7%), inset 0 1px 0 rgb(255 255 255 / 90%);
+  --visual-inner-shadow: 0 9px 26px rgb(36 102 153 / 11%), inset 0 1px 0 rgb(255 255 255 / 78%);
   --visual-ambient-strength: .33;
 }
 html.dark {
