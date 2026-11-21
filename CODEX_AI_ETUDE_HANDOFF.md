@@ -3076,3 +3076,16 @@ The user confirmed that the *area-selection icon itself works correctly*. Do not
 **Validation:** Both current JavaScript modules parse. Eight static source checks passed: horizontal timing line, border, ticks and labels are absent; vertical dashed cursor, transparent seek hitbox and time mapping remain; cache keys match. **No live browser, touchscreen or visual device test** was performed. User visual acceptance is pending.
 
 **Scope:** Keep the vertical dashed playhead as the only moving playback affordance. Do not restore timeline/ruler decoration without explicit user instruction.
+
+
+---
+
+## VISUAL REFINEMENT — Select cursor instead of grab hand (2026-11-21)
+
+**User feedback (Persian):** “icon mousce رو حالت select مناسب نیست... وقتی سلکت میشه موس که تغییر میکنه خیلی مناسب این مفهوم نیست”. When using **Select** on the Score, the mouse cursor switched to a grabbing hand, which communicates panning or grabbing rather than choosing a note.
+
+**Implementation, strictly UI cursor only:** In `web/src/score.js` on `feature/practice-sequence-studio` (commit `544744d155742f0a82cc7a5c051a157844cd2708`), replace the previous `grab` cursor on **both Select note and rest hit targets** with the normal mouse arrow (`default`). When an actual note/rest drag exceeds the existing 5px threshold, use the recognizable four-direction move cursor (`move`) during that drag only. On pointer-up/cancel/lost capture, restore the normal arrow. The `Select Area` marquee remains a crosshair; Pen and Eraser retain their custom cursors. Do not change any pointer event, hitbox, note movement, rest movement, selection, drag threshold or audio/notation behavior.
+
+**Cache reload:** Only versioned import cache keys updated to `select-cursor-arrow-1` in `web/src/app.js` and `web/index.html` (commits `f60175da785cda584e3d04d0fc9a4919237afa5a` and `c63dbc8beaf8822943be64e7bb8afb7b0fedfa8d`). No other files/feature behaviors changed.
+
+**Checks actually completed:** Both JS modules parsed; seven source consistency checks verified default select cursor for notes and rests, active-drag move cursor, no old hand cursors, original click/drag handlers, unchanged marquee mode, and matching cache keys. **No physical browser or touch-device visual test** performed. User acceptance pending.
