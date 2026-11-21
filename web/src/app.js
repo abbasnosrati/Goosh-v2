@@ -335,27 +335,30 @@ function snapRecordedOnset(time,quarter,grid) {
   return Math.round(time/grid)*grid;
 }
 
-// Transcribe only the in-progress Metered take, updating the SAME e.notes.
-// Successive attacks determine short-note rhythmic values. A long gap after
-// a short tap leaves a genuine rest; a long key hold may support sustain.
-function reconcileMeteredTake(take) {
-  if(!take.step)return;
+// Metered notation follows quantized key ATTACKS, never physical key holds.
+// Each onset group lasts to the next attack, even across barlines; this
+// deliberately does not infer a rest from an early key release or long gap.
+// Only the final group needs a separate ending: the next beat by default,
+// extended to the stopped beat when recording ends, but not beyond its bar.
+function reconcileMeteredTake(take, stoppedAt = null) {
+  if(!take.step||!take.events.length)return;
   const ordered=[...take.events].sort((a,b)=>a.note.at-b.note.at);
   const quarter=take.quarter,grid=take.step;
-  let current=Infinity,nextOnset=Infinity;
+  const lastAt=ordered[ordered.length-1].note.at;
+  const barEnd=(Math.floor((lastAt+1e-7)/take.barSeconds)+1)*take.barSeconds;
+  const beatEnd=(Math.floor(lastAt/quarter+1e-7)+1)*quarter;
+  const minimumEnd=Math.min(barEnd,beatEnd);
+  const elapsed=stoppedAt===null||take.start===null
+    ? 0:Math.max(0,stoppedAt-take.start);
+  const stoppedBeat=stoppedAt===null
+    ? minimumEnd:Math.ceil((take.base+elapsed)/quarter-1e-7)*quarter;
+  let nextOnset=Math.max(lastAt+grid,
+    Math.min(barEnd,Math.max(minimumEnd,stoppedBeat)));
   for(let i=ordered.length-1;i>=0;i--){
     const entry=ordered[i];
-    if(entry.note.at<current-1e-7){
-      nextOnset=current;
-      current=entry.note.at;
-    }
-    const interval=nextOnset===Infinity?Infinity:nextOnset-current;
-    const longHold=entry.held!==null&&entry.held>=quarter*1.5;
-    let duration=interval<=quarter*1.5+1e-7?interval:quarter;
-    if(longHold&&(!Number.isFinite(interval)||
-       interval>quarter*1.5||entry.held>interval+quarter*.25))
-      duration=Math.max(duration,snapRecordedOnset(entry.held,quarter,grid));
-    entry.note.d=Math.max(grid,Math.round(duration/grid)*grid);
+    if(i<ordered.length-1&&entry.note.at<ordered[i+1].note.at-1e-7)
+      nextOnset=ordered[i+1].note.at;
+    entry.note.d=Math.max(grid,Math.round((nextOnset-entry.note.at)/grid)*grid);
   }
 }
 
@@ -1497,8 +1500,9 @@ function studio() {
   function toggle() {
     stopKeys();
     if (rec) {
+      const stoppedAt=rec.start===null?null:unlock().currentTime;
       stopRecordingMetronome();
-      reconcileMeteredTake(rec);
+      reconcileMeteredTake(rec,stoppedAt);
       const completed=meterInfo(e)?meterTimeline(e):null;
       if(completed&&!completed.issues.length)
         e.measureCount=Math.max(e.measureCount||1,completed.bars.length);
@@ -1514,6 +1518,7 @@ function studio() {
         base: Math.max(0, ...e.notes.map(n => n.at + n.d)),
         step:meter?meter.quarterSeconds/8:0,
         quarter:meter?.quarterSeconds||0,
+        barSeconds:meter?meter.barQuarterBeats*meter.quarterSeconds:0,
         events:[]
       };
       startRecordingMetronome();
@@ -1536,18 +1541,15 @@ function studio() {
     };
     const take = rec;
     e.notes.push(n);
-    const entry={note:n,held:null};
     if(take.step){
-      take.events.push(entry);
+      take.events.push({note:n});
       reconcileMeteredTake(take);
     }
     refreshTake(take);
     return d => {
-      if (rec !== take) return;
-      if(take.step){
-        entry.held=d;
-        reconcileMeteredTake(take);
-      }else n.d=d;
+      if (rec !== take||take.step) return;
+      // Free recording alone preserves the actual physical key-hold duration.
+      n.d=d;
       refreshTake(take);
     }
   });
@@ -1866,8 +1868,8 @@ function studio() {
   meterStatus.setAttribute('role','status');
   meterStatus.hidden=true;
   const recordingHint=el('p',scoreBelowActions,t(
-    'Metered recording follows note attacks and beat timing; longer gaps can become rests. The optional metronome clicks while recording.',
-    'ضبط میزان‌دار بر اساس شروع نت‌ها و ضرب‌هاست؛ مکث طولانی می‌تواند سکوت ایجاد کند. مترونوم اختیاری هنگام ضبط صدا می‌دهد.'
+    'Metered notes extend from one attack to the next; releasing a key does not insert a rest. The optional metronome clicks while recording.',
+    'در ضبط میزان‌دار، کشش هر نت تا شروع نت بعدی ادامه دارد؛ رهاکردن کلاویه سکوت ایجاد نمی‌کند. مترونوم اختیاری است.'
   ),'score-meter-record-hint');
   recordingHint.hidden=!meterInfo(e);
 
