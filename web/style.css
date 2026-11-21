@@ -746,12 +746,12 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   position: relative;
   touch-action: none;
 }
-/* Select Area uses the ordinary arrow, not a crosshair/target sight.
-   Its pointer-drag marquee remains unchanged. */
+/* Select Area uses an arrow plus a small dashed selection box.
+   Reuse the shared Score cursor variable; keep the marquee drag behavior. */
 #app[data-page="studio"] .score[data-tool="range"],
 #app[data-page="studio"] .score[data-tool="range"] svg,
 #app[data-page="studio"] .score[data-tool="range"] svg * {
-  cursor: default !important;
+  cursor: var(--score-tool-cursor, default) !important;
 }
 #app[data-page="studio"] .score .score-range-marquee {
   position: absolute;
