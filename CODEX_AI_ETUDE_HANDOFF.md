@@ -2911,3 +2911,42 @@ These are **extracted-function / data-model runtime tests**, not an interactive 
 4. **Do not edit, refactor, commit, or push any application code merely as a result of this request.** The current version is considered sufficiently good for now by the user. Codex is asked for **analysis and recommendations only**; await explicit approval for any proposed implementation. Do not affect unrelated features, other pages, audio behavior, notation model, visual design, or the existing working behavior without an independently authorized request.
 
 **Documentation-only action:** This entry communicates user feedback and a future review task. It is not a code fix or authorization to modify the recording implementation.
+
+
+---
+
+## IMPLEMENTED — Score range selection for atomic Erase and selected-only Play (2026-11-21)
+
+**User request (Persian paraphrase):** In Etude Studio Score, add one new button directly beside the Eraser. Clicking that tool should let the user drag the mouse across a region to select a group of notes. For now the selection has exactly two actions: delete the selected notes, and when Play is clicked, play **only the selected music**. Maintain **one canonical code path**, not a second editor, player, note model or audio engine.
+
+### Implementation on `feature/practice-sequence-studio`
+
+- **`web/src/app.js`**, commits `9c3b0ec34b78f03cfda198a4f42aa8e2d5ab1086` and `dd8db04f549ef8eaf6fc3301bafb4ee433044359`:
+  - Add a fourth tool **Select area / انتخاب ناحیه** (`scoreTool='range'`) immediately after Eraser, with a dashed-rectangle icon. The existing Select, Pen, Eraser, Wrap, Zoom and transport controls retain their handlers and meanings.
+  - Keep the **existing `sel: Set<number>`** as the sole list of selected canonical note indices; `rangeSelectionActive` is only a lightweight UI origin/intent flag to distinguish an actual marquee from an old single-note click (which traditionally opens Note Settings). The actual content and sound never live in this flag.
+  - `sheet()` passes `selected:sel` and the optional `selectRange` callback into the shared `score()` renderer. Finalizing a marquee replaces the selected indices and repaints the SAME score. Clicking blank score space in marquee mode clears the area selection.
+  - **One erase path:** add `eraseScoreNotes(indices)`. Both the pre-existing single-note Eraser click and a new range delete use this exact function, its existing measured-meter validation, the SAME `e.notes` array, stop existing playback, save and repaint. When a range selection exists, pressing the Eraser button deletes it **as one operation** (without switching to individual erase); Delete/Backspace outside editable fields does the same. Without an area selection, Eraser retains original click-to-delete behavior. Erasing notes leaves their duration as **derived rests** in the same metered timeline; it does not shift unrelated note start times.
+  - **Atomic Undo:** the existing `kind:'erase'` undo entry now supports `items:[{index,note}]` for one or more deletions and restores the original note array positions with one Ctrl+Z. No second undo stack.
+  - **One Play path:** `startScorePlayback()` snapshots `sel` when `rangeSelectionActive && sel.size>0`, filters only the scheduling view, and sets the existing transport `offset` to the earliest selected note onset. The same `scheduleScoreTransport()`, `voice()`, Pause/Resume, sound samples and `paintPlaybackMarker()` are reused. No extra playback engine, silent gaps *between the selected notes* retain their original timing, and the selection starts playing immediately (no preceding unselected silence). Without a marquee selection, Play remains full-score, including when the old Select tool has highlighted a single note for Note Settings.
+  - Preserve Free/Metered recording, other score tools, pitch/Key Signature, music systems and all current playback audio envelope behavior. Starting a new Record clears the temporary range so stale selected indices cannot restrict later Play.
+- **`web/src/score.js`**, commit `a981d37aa0ed1969096d1f6aa2e7f9a86ec16460`: Add an **optional** `selectRange` callback and only when `tool==='range'` attach a pointer-captured box-marquee to the SAME `score()` output host. It intersects **actual on-screen SVG notehead hitboxes** from all visible/wrapped Score rows, sending deduplicated *existing* note indices upstream; tied notehead fragments share the same index. Show a temporary dashed rectangle and preview stroke while dragging. No separate note model, no second notation renderer and no global mouse listener. Pointer cancel restores the old highlight.
+- **`web/style.css`**, commit `e3cf2d7bd4aeb1fdfae661b91d0fb8d78183adc1`: Add a scoped noninteractive glass/accent marquee and crosshair cursor for `data-tool=range`; retain Light/Dark tokens. Change mobile Score editing grid from six to **seven** columns so the additional toolbar button stays alongside existing controls on the second row while transport occupies the first. The tool uses pointer events on mobile too, but actual device touch behavior has **not** been verified.
+- **`web/index.html`**, commit `0e86870b2b52f38e23811555ab127b4a0d03701a`: Bump app module and style cache keys to `score-marquee-select-1`, and `app.js` bumps the shared Score module key.
+
+### Actual validation
+
+- Parse/syntax-check the **actual current** `app.js`, `score.js` and `model.js` with JavaScript Function parsing after stripping only ES module import/export wrappers: **3/3 passed**.
+- Runtime tests with the **actual extracted** `eraseScoreNotes()`, `undoScoreEdit()`, `measuredEditAllowed()` and meter functions using mock state: **6/6 passed**, including single erase+Undo; nonadjacent group deletion as one undo item; exact group Undo; duplicate-index deduplication; no deletion while recording; and derived rest continuity in metered mode.
+- Runtime tests with **the actual extracted** `startScorePlayback()` and mocked audio dependencies: **4/4 passed**, covering consecutive selected notes, nonadjacent selections with time gap, default whole-score Play, and preserving legacy single-click Select behavior.
+- Renderer pointer event tests with the **actual extracted** `score()` function and mock SVG/DOM geometry: **4/4 passed**, covering marquee outline display, selection of original note indices, blank-space selection clear and multiple wrapped staff rows.
+- **No real browser, touch device, Android APK, piano-audio, end-to-end UI or visual screenshot tests were performed**. Do not mark it accepted by user before their own interaction.
+
+### Deliberate scope / known limitations
+
+1. A range selects **noteheads that intersect a dragged rectangular region** (not derived rest glyphs). A note tied over measure boundaries has one canonical index, so marking one displayed tie segment selects and plays/erases **the entire underlying note**, not a cropped fragment of its duration. A user requesting time-span trimming or rest-specific multi-selection needs a separate approved design.
+2. Area selection is replacement-based; no additive Shift-marquee, copy/paste, move, pitch transformations, export selection or other operations were added.
+3. Deleting multiple notes is undoable with **one** Ctrl+Z, but direct Eraser clicked with no selected marquee remains the original single-note tool; the user may also press Delete/Backspace when a marquee is active.
+4. Playback uses the original note pitches, timing, sample scheduling and index-based markers, with a changed **initial offset only**. Testing on hardware remains outstanding.
+5. Avoid implementing additional features without explicit user request. Future reviews should not duplicate shared Score/transport logic.
+
+**Status:** Implemented and code-level checked; awaiting user confirmation on real desktop/mobile behavior.
