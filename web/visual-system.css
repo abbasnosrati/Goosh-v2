@@ -450,6 +450,65 @@ body > footer {
   body.home-screen .g-desktop .g-hero-copy h1 { font-size:clamp(35px,3vw,45px); }
 }
 
+
+/* LIBRARY HEADING ACTIONS — desktop/tablet.
+   The title lives in the design header, the real (functional) buttons live in
+   the app below it. Move their VISUAL position alongside that title without
+   cloning elements or changing the mobile action-reparenting code. */
+@media screen and (min-width: 1100px) {
+  body:has(#app[data-page="studio"] > .shelves),
+  body:has(#app[data-page="practice"] > .shelves) {
+    --library-actions-top: -206px;
+    --library-actions-end: 0px;
+  }
+  body:has(#app[data-page="studio"] > .shelves) #app[data-page="studio"] > .row.controls,
+  body:has(#app[data-page="practice"] > .shelves) #app[data-page="practice"] > .row.controls {
+    position: absolute !important;
+    inset-block-start: var(--library-actions-top) !important;
+    inset-inline-end: var(--library-actions-end) !important;
+    inset-inline-start: auto !important;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    width: max-content;
+    max-width: min(66%, 510px);
+    min-height: 48px;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 10px;
+    z-index: 3;
+  }
+  body:has(#app[data-page="studio"] > .shelves) #app[data-page="studio"] > .row.controls > button,
+  body:has(#app[data-page="practice"] > .shelves) #app[data-page="practice"] > .row.controls > button {
+    flex: none;
+    white-space: nowrap;
+  }
+}
+@media screen and (min-width: 1280px) and (pointer: fine) {
+  body:has(#app[data-page="studio"] > .shelves),
+  body:has(#app[data-page="practice"] > .shelves) {
+    /* The reference shell adds 20px header padding, 15px bottom padding and
+       25px horizontal inset; align to its intro rather than the toolbar. */
+    --library-actions-top: -221px;
+    --library-actions-end: 25px;
+  }
+}
+
+/* MOBILE DOCK PAINT ORDER
+   The fixed nav had z-index:20 but its parent header shared z-index:1 with
+   main. Later card stacking contexts could paint over the entire header.
+   Raise the header stacking context, not the individual card layers. */
+@media screen and (max-width: 700px),
+       screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  body > header {
+    z-index: 30;
+  }
+  body > header > #nav {
+    z-index: 31;
+  }
+}
+
 /* Compact devices keep the original navigation and task-optimized layouts. */
 @media screen and (max-width: 700px) {
   :root { --visual-ambient-strength: .09; }
