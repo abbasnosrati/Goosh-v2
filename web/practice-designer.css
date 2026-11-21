@@ -765,3 +765,73 @@
 @media (prefers-reduced-motion: reduce) {
   dialog.studio-ai-guide-dialog { animation: none; }
 }
+
+/* AI meter mirror — a second mobile view of the existing Score selector. */
+#app[data-page="studio"] .studio-compose-mobile-meter {display:none}
+#app[data-page="studio"] .studio-ai-meter-hint {
+  margin:9px 0 0;
+  font-size:.82rem;
+  line-height:1.5;
+  color:var(--muted);
+}
+#app[data-page="studio"] .studio-ai-meter-hint[hidden] {display:none}
+@media screen and (max-width:700px),
+       screen and (pointer:coarse) and (orientation:landscape) and (max-height:520px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]) .studio-compose-mobile-meter {
+    display:block;
+    order:1;
+    min-width:0;
+    margin:11px 0 0;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-mobile-meter > .practice-field {
+    display:none;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-mobile-meter .studio-ai-meter-title {
+    display:block;
+    margin-bottom:6px;
+    font-size:.82rem;
+    font-weight:600;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-mobile-meter > .studio-mobile-select-trigger {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    width:100%;
+    min-width:0;
+    min-height:48px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:var(--panel);
+    color:var(--ink);
+    font:inherit;
+    text-align:start;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-mobile-meter .studio-mobile-select-value {
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-mobile-meter .studio-mobile-select-trigger.is-placeholder {
+    color:var(--muted);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-mobile-meter .studio-mobile-select-chevron {
+    flex:none;
+    width:8px;
+    height:8px;
+    border-inline-end:1.6px solid currentColor;
+    border-bottom:1.6px solid currentColor;
+    transform:rotate(45deg) translateY(-2px);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-mobile-meter > .studio-mobile-select-trigger:focus-visible {
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-ai-meter-hint {order:2}
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-footnote {order:3}
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-status {order:4}
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-actions {order:5}
+}
