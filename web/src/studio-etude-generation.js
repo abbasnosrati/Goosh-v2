@@ -138,8 +138,8 @@ function showMobileAIGuide(fa){
   heading.id='studio-ai-guide-title';
   dialog.setAttribute('aria-labelledby',heading.id);
   const message=create('p',dialog,t(
-    'In Musical System, set the practice goal and the required etude settings. Then tap Generate Etude to create your music.',
-    'در بخش سیستم موسیقایی، هدف تمرین و تنظیمات لازم اتود را مشخص کنید؛ سپس دکمه «تولید اتود» را بزنید.'
+    'In this section, set the practice goal and the required etude settings. Then tap Generate Etude to create your music.',
+    'در همین بخش، هدف تمرین و تنظیمات لازم اتود را مشخص کنید؛ سپس دکمه «تولید اتود» را بزنید.'
   ),'studio-ai-guide-message');
   message.id='studio-ai-guide-message';
   dialog.setAttribute('aria-describedby',message.id);
@@ -183,7 +183,9 @@ export function mountEtudeComposer(host, {
 
   host.replaceChildren();
   host.className = 'studio-compose';
-  const tabs = create('div', host, null, 'studio-compose-tabs');
+  // Manual/AI and the musical choices share one settings surface.
+  const sharedMusic = create('div', host, null, 'studio-compose-music');
+  const tabs = create('div', sharedMusic, null, 'studio-compose-tabs');
   tabs.setAttribute('role', 'group');
   tabs.setAttribute('aria-label', t('Etude creation method', 'روش ساخت اتود'));
   const manual = create('button', tabs, t('Manual', 'دستی'));
@@ -193,7 +195,6 @@ export function mountEtudeComposer(host, {
 
   // A shared musical foundation: Manual and AI always use the same
   // canonical Etude key signature, piano and score playback frequencies.
-  const sharedMusic = create('div', host, null, 'studio-compose-music');
   const content = create('div', host, null, 'studio-compose-ai');
   const intro = create('p', content, t(
     'Choose a learning goal before generating the notes. One score can then support multiple practices.',
