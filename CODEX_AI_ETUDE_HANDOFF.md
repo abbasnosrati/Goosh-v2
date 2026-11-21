@@ -3143,3 +3143,16 @@ The user confirmed that the *area-selection icon itself works correctly*. Do not
 **Minimal fix, `feature/practice-sequence-studio`:** `web/style.css` commit `e0ced0df0f9951621a03023eca731499a837014b` changes the **scoped `.score[data-tool="range"]` and its SVG descendants** from `cursor:crosshair !important` to `cursor:default !important`. `web/index.html` commit `04b81df1580e34249c4a3755ccd51e9c939d2eca` refreshes only the stylesheet query version to `select-area-standard-arrow-1`. Individual Select note/rest cursors are already `default` on hover and `move` only once an actual drag begins. The area marquee selection gesture, SVG hit testing, preview, canonical selected indices, Eraser, Play, Pen and recording logic are untouched. The independent seek hit region retains its own pointer cursor.
 
 **Verification:** Confirmed exactly one scoped default-arrow rule, no `crosshair` cursor declaration in Select Area, existing marquee logic and seek callback, matching CSS cache key, and balanced braces in CSS. **No live desktop/mobile pointer UI test was performed.** If user still sees a crosshair, verify that the updated stylesheet is actually loaded and the Score's `data-tool` value is `range`; do not try changing note hit handlers again blindly.
+
+
+---
+
+## CURSOR REVISION — Custom arrow with marquee, not plain pointer (2026-11-21)
+
+**User clarification:** After removing the disliked crosshair/gun-sight cursor, Select Area showed the unchanged default mouse cursor, which also fails to communicate the currently active selection tool. The user explicitly wants a **different, appropriate cursor icon**, not an aiming sight and not merely the standard arrow.
+
+**Applied on `feature/practice-sequence-studio`:** `web/src/app.js` commit `53ff8e272af12b8e224bdde6b976e2c271dca7e2` extends the existing `scoreEditingCursor(mode)` factory to include **range**: a 32×32 SVG conventional white/dark-outline mouse pointer beside a small teal dashed-selection rectangle, with the **arrow tip hotspot (2,2)** and **default cursor fallback**, no crosshair. The existing `sheet()` now writes that cursor to the already-existing `--score-tool-cursor` CSS custom property for Select Area as well as Pen/Eraser. `web/style.css` commit `9fe7b90cd611791a065119c86362f0c45409da4c` uses that variable with `!important` across the range Score host and its SVG descendants (replacing the prior forced `cursor:default`). `web/index.html` commit `ed071bf014ec9884d19a3f548ba3373a4ce52bfc` bumps both app and stylesheet cache keys to `select-area-marquee-arrow-1`. Normal Select, Pen and Eraser semantics, selection gesture, notes, audio, or Score are not changed.
+
+**Validation:** Actual `scoreEditingCursor('range')` output was executed and decoded to check SVG arrow plus dashed rectangle, 2,2 hotspot and no crosshair; confirmed shared `scoreEditingCursor()` still yields Pen and Eraser, CSS references active custom property, marquee selection handlers remain, cache keys match, and app JS parses. A 32px icon was also rasterized and inspected; **browser cursor rendering/real pointer interactions have not been independently tested**.
+
+Do not revert it to a crosshair/aiming reticle or an unadorned system pointer without new user instruction.
