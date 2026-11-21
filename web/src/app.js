@@ -20,8 +20,9 @@ import {
   PIANO_TAP_RING_SECONDS
 } from './audio.js?v=score-piano-sample-articulation-1'
 import {
-  score
-} from './score.js?v=score-marquee-select-1'
+  score,
+  paintScorePlayhead
+} from './score.js?v=score-ruler-seek-1'
 import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=mobile-signature-modal-1'
 import {isPersianAccidental, appendPersianAccidental}
@@ -62,6 +63,8 @@ let fa = localStorage.lang !== 'en',
   scoreUndoStack = [],
   practiceToExpand = null,
   penQuarterBeats = 1,
+  freeTimelineOpen = false,
+  scoreSeekPosition = 0,
   metronomeEnabled = false,
   recordingMetronome = null
 const collection = new Map();
@@ -96,6 +99,8 @@ function loadRoute(){
   sel.clear();
   rangeSelectionActive=false;
   scoreTool='select';
+  freeTimelineOpen=false;
+  scoreSeekPosition=0;
   signatureMode=false;
   signaturePitch=0;
   scoreUndoStack.length=0;
@@ -501,6 +506,10 @@ function undoScoreEdit() {
     // A marquee deletion is one undoable edit, including non-adjacent notes.
     for(const {note,index} of [...removed].sort((a,b)=>a.index-b.index))
       e.notes.splice(Math.min(index,e.notes.length),0,note);
+  } else if (action.kind==='free-duration') {
+    if(!e.notes.includes(action.note)) {scoreUndoStack.pop();return false;}
+    stopScorePlayback();
+    action.note.d=action.before;
   } else if (action.kind==='rest-edit') {
     stopScorePlayback();
     for(const {note,at} of action.shifted||[])
@@ -856,6 +865,7 @@ function sheet() {
   score(h, e, {
     zoom,
     wrap,
+    seek:rec?undefined:seekScorePlayback,
     tool: scoreTool,
     fa,
     selected: sel,
@@ -877,7 +887,7 @@ function sheet() {
       }
       if (scoreTool !== 'select') return;
       rangeSelectionActive=false;
-      if (!multi) { sel.clear(); sel.add(i); sheet(); noteSettings(e.notes[i]); return; }
+      if (!multi) { sel.clear(); sel.add(i); sheet(); return; }
       if (sel.has(i)) sel.delete(i);
       else sel.add(i);
       sheet();
@@ -887,7 +897,7 @@ function sheet() {
       // At the notehead's X we deliberately join its onset (a chord).
       // Everywhere else we insert BEFORE the following onset, shifting
       // all following notes/chords by the new quarter-note duration.
-      const duration=60/e.bpm*(meterInfo(e)?penQuarterBeats:1);
+      const duration=60/e.bpm*penQuarterBeats;
       const chord=placement.kind==='chord';
       const at=placement.at;
       if(!Number.isFinite(at)||at<0||at>1e7) return;
@@ -993,38 +1003,11 @@ function sheet() {
       sheet();
     }
   });
-  paintPlaybackMarker(true);
+  if(playback)paintPlaybackMarker(true);
+  else paintScorePlayhead(h,scoreSeekPosition);
+  renderFreeTimeline($('.studio-score-surface > .score-free-timeline'));
   renderSignatureControls();
   renderMobileSignatureDialog();
-}
-
-// Retiming a note must move subsequent note ONSETS, not only its audio release.
-// Preserve existing silence gaps and same-onset chords without quantizing notes.
-function retimeNote(note, newDuration, newRest, restChanged) {
-  const onset = note.at;
-  const previousEnd = e.notes.filter(n => n.at < onset)
-    .reduce((end, n) => Math.max(end, n.at + n.d), 0);
-  const restShift = restChanged ? previousEnd + newRest - onset : 0;
-  const durationShift = newDuration - note.d;
-  const proposed = e.notes.map(n => ({
-    note: n,
-    at: n.at + (n.at >= onset ? restShift : 0) +
-      (n.at > onset ? durationShift : 0)
-  }));
-  // Preserve exact rhythmic positions. Never silently round a duration or
-  // rest to make it appear valid in the selected time signature.
-  if (proposed.some(({at}) => !Number.isFinite(at) || at < 0 || at > 1e7))
-    return false;
-  const candidate=proposed.map(({note:n,at})=>({
-    ...n,at,d:n===note?newDuration:n.d
-  }));
-  if(!measuredEditAllowed(candidate))return false;
-  stopScorePlayback();
-  for (const {note: n, at} of proposed) n.at = at;
-  note.d = newDuration;
-  save();
-  sheet();
-  return true;
 }
 
 // A BPM change is a GLOBAL time-scale edit, including rests and note lengths.
@@ -1047,53 +1030,6 @@ function setEtudeTempo(nextBpm) {
   sheet();
   return true;
 }
-
-function noteSettings(note) {
-  const earlier = e.notes.filter(n => n.at < note.at);
-  const precedingEnd = earlier.reduce((end,n) => Math.max(end,n.at+n.d),0);
-  const rest = Math.max(0,note.at-precedingEnd);
-  const dialog = el('dialog', document.body);
-  const heading = el('h2',dialog,t('Note settings','تنظیمات نت')+' · '+(note.displayPitch || label(note.m)));
-  dialog.setAttribute('aria-label',heading.textContent);
-  const measured=Boolean(meterInfo(e)),quarter=60/e.bpm;
-  const duration = field(dialog,measured
-      ? t('Duration (quarter-note beats)','کشش (برحسب نت سیاه)')
-      : t('Duration (s)','کشش (ثانیه)'),
-    measured?+(note.d/quarter).toFixed(5):+note.d.toFixed(3),
-    ()=>{},null,[measured?.125:.001,100000,'any']);
-  const silence = field(dialog,measured
-      ? t('Rest before note (quarter-note beats)','سکوت پیش از نت (برحسب سیاه)')
-      : t('Rest before note (s)','سکوت پیش از نت (ثانیه)'),
-    measured?+(rest/quarter).toFixed(5):+rest.toFixed(3),
-    ()=>{},null,[0,100000,'any']);
-  const initialRest = silence.value;
-  el('p', dialog, t(
-    'Changing a note’s duration moves later notes, preserving the existing gaps.',
-    'با تغییر کشش این نت، نت‌های بعدی جابه‌جا می‌شوند و فاصله‌های سکوت حفظ می‌شوند.'
-  ), 'note-timing-hint');
-  const actions = row(dialog);
-  btn(actions,t('Save','ذخیره'),()=>{
-    if (!duration.reportValidity() || !silence.reportValidity()) return;
-    const length = Number(duration.value)*(measured?quarter:1);
-    const before = Number(silence.value)*(measured?quarter:1);
-    if (!Number.isFinite(length) || length < .001 || length > 1e5 ||
-        !Number.isFinite(before) || before < 0 || before > 1e5) return;
-    if (!retimeNote(note, length, before, silence.value !== initialRest)) {
-      duration.setCustomValidity(t(
-        'This timing cannot be written exactly in the selected meter.',
-        'این زمان‌بندی در میزان‌نما انتخابی به‌طور دقیق قابل نت‌نویسی نیست.'
-      ));
-      duration.reportValidity();
-      duration.setCustomValidity('');
-      return;
-    }
-    dialog.close();
-  });
-  btn(actions,t('Cancel','انصراف'),()=>dialog.close());
-  dialog.onclose=()=>dialog.remove();
-  dialog.showModal();
-}
-
 
 // One context-sensitive pictogram: a key signature on the notes view,
 // and a plain musical staff when already editing the key signature.
@@ -1206,6 +1142,7 @@ function scoreToolIcon(mode) {
     pen: 'm4 20 5-1 11-11a2.8 2.8 0 0 0-4-4L5 15l-1 5ZM14 6l4 4',
     eraser: 'M4 14 14 4a2.8 2.8 0 0 1 4 0l3 3a2.8 2.8 0 0 1 0 4l-9 9H9l-5-5a2 2 0 0 1 0-1ZM9 9l7 7M12 20h9',
     range: 'M4 8V4h4m8 0h4v4m0 8v4h-4m-8 0H4v-4M10 4h4M20 10v4M14 20h-4M4 14v-4',
+    timeline: 'M3 5v14m0-7h18M7 8h8v8H7zM15 8v8m4-5v5M1 19h22',
     wrap: 'M3 5h18M3 10h18M3 15h11m4-3 3 3-3 3M21 15h-5a5 5 0 0 0-5 5'
   }[mode]);
   svg.append(shape);
@@ -1814,6 +1751,7 @@ function studio() {
   record.setAttribute('aria-label', rec ? t('Stop recording', 'توقف ضبط') : t('Start recording', 'شروع ضبط'));
   record.append(scoreTransportIcon(rec ? 'stop' : 'record'));
   el('div', scoreSurface, undefined, 'score');
+  el('div',scoreSurface,undefined,'score-free-timeline');
   const signatureControls=el('div',scoreSurface,undefined,'signature-editor-controls');
   signatureControls.hidden=true;
   const scoreBelowActions = row(scoreSurface);
@@ -1857,7 +1795,10 @@ function studio() {
       e.measureCount=Math.max(e.measureCount||1,meterTimeline(e).bars.length);
     meterMessage('','');
     save();
-    penValue.hidden=!meterInfo(e);
+    // Free has the same Pen note values and its own resizable note timeline.
+    timelineToggle.hidden=Boolean(meterInfo(e));
+    if(meterInfo(e))freeTimelineOpen=false;
+    timelineToggle.setAttribute('aria-pressed',String(freeTimelineOpen));
     measureField.hidden=!meterInfo(e);
     measureNumber.value=String(e.measureCount||4);
     recordingHint.hidden=!meterInfo(e);
@@ -1898,7 +1839,6 @@ function studio() {
     sheet();
   };
   const penValue=el('label',scoreBelowActions,undefined,'score-pen-length');
-  penValue.hidden=!meterInfo(e);
   el('span',penValue,t('Pen note value','کشش نت با مداد'));
   const penSelect=el('select',penValue);
   const values=[
@@ -1915,6 +1855,17 @@ function studio() {
   if(!values.some(([value])=>value===penQuarterBeats))penQuarterBeats=1;
   penSelect.value=String(penQuarterBeats);
   penSelect.onchange=()=>{penQuarterBeats=Number(penSelect.value)};
+  const timelineToggle=btn(scoreBelowActions,'',()=>{
+    freeTimelineOpen=!freeTimelineOpen;
+    timelineToggle.setAttribute('aria-pressed',String(freeTimelineOpen));
+    timelineToggle.classList.toggle('active',freeTimelineOpen);
+    sheet();
+  },t('Free timeline: resize notes','تایم‌لاین آزاد: تغییر کشش نت‌ها'));
+  timelineToggle.className='score-free-timeline-toggle';
+  timelineToggle.hidden=Boolean(meterInfo(e));
+  timelineToggle.setAttribute('aria-pressed',String(freeTimelineOpen));
+  timelineToggle.append(scoreToolIcon('timeline'));
+  el('span',timelineToggle,t('Timeline','تایم‌لاین'));
   const meterStatus=el('p',scoreBelowActions,undefined,'score-meter-status');
   meterStatus.setAttribute('role','status');
   meterStatus.hidden=true;
