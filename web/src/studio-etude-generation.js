@@ -430,6 +430,10 @@ export function mountEtudeComposer(host, {
     'Choose a meter, or keep it free for a more flexible etude.',
     'میزان‌نما را انتخاب کنید یا برای اتود آزاد، بدون میزان نگه دارید.'
   ));
+  addGuideStep('wand',t('Generate & Practice Design','تولید اتود و طراحی تمرین'),t(
+    'After AI generates or regenerates the etude, its notes appear on the Score below. Use Practice Design to create your exercises.',
+    'پس از تولید یا تولید مجدد اتود با هوش مصنوعی، نت‌های آن روی خط حامل پایین نمایش داده می‌شوند. سپس می‌توانید در بخش طراحی تمرین، تمرین‌های خود را بسازید.'
+  ));
   const guideSignatureTitle=guideSignature.querySelector('strong');
   const guideSignatureDescription=guideSignature.querySelector('p');
 

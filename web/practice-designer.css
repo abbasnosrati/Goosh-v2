@@ -1046,9 +1046,10 @@ dialog.studio-mobile-picker-dialog {
     grid-column:1;
     grid-row:2;
     display:grid;
-    grid-template-columns:auto minmax(0,1fr);
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    column-gap:18px;
     align-content:start;
-    align-items:start;
+    align-items:center;
     min-width:0;
     padding:0 24px 23px;
     border:1px solid var(--glass-border);
@@ -1065,7 +1066,7 @@ dialog.studio-mobile-picker-dialog {
     display:none;
   }
   #app[data-page="studio"] .studio-compose-ai .studio-compose-goal {
-    grid-column:1/-1;
+    grid-column:1;
     order:0;
     position:relative;
     width:100%;
@@ -1097,17 +1098,18 @@ dialog.studio-mobile-picker-dialog {
     background:var(--glass-control);
   }
   #app[data-page="studio"] .studio-compose-ai .studio-compose-mobile-meter {
-    grid-column:1/-1;
-    order:1;
+    grid-column:2;
+    order:0;
     display:block;
     position:relative;
+    min-width:0;
     margin:0;
-    padding:19px 0 21px;
+    padding:20px 0 21px;
     border-bottom:1px solid var(--glass-border);
   }
   #app[data-page="studio"] .studio-compose-ai .studio-compose-mobile-meter .studio-setup-icon {
     position:absolute;
-    inset-block-start:19px;
+    inset-block-start:20px;
     inset-inline-start:0;
   }
   #app[data-page="studio"] .studio-compose-ai .studio-compose-mobile-meter .studio-ai-meter-title {
@@ -1132,6 +1134,8 @@ dialog.studio-mobile-picker-dialog {
   #app[data-page="studio"] .studio-compose-ai .studio-compose-actions {
     grid-column:1;
     order:3;
+    width:100%;
+    min-width:0;
     margin:21px 0 0;
     align-self:center;
   }
@@ -1140,7 +1144,8 @@ dialog.studio-mobile-picker-dialog {
     align-items:center;
     justify-content:center;
     gap:10px;
-    min-width:225px;
+    width:100%;
+    min-width:0;
     min-height:56px;
     padding:12px 20px;
     border-radius:13px;
@@ -1160,6 +1165,7 @@ dialog.studio-mobile-picker-dialog {
   #app[data-page="studio"] .studio-compose-ai .studio-compose-footnote {
     grid-column:2;
     order:4;
+    min-width:0;
     align-self:center;
     margin:21px 0 0;
     padding-inline-start:20px;
@@ -1272,5 +1278,4 @@ dialog.studio-mobile-picker-dialog {
   #app[data-page="studio"] .studio-compose-ai:not([hidden]) {padding-inline:16px}
   #app[data-page="studio"] .studio-setup-guide {padding:22px 18px}
   #app[data-page="studio"] .studio-compose-fields .studio-signature-entry {min-width:160px;font-size:12px}
-  #app[data-page="studio"] .studio-compose-ai .studio-compose-generate {min-width:174px;font-size:14px}
 }
