@@ -60,7 +60,8 @@ function attachMusicBottomSheet(wrapper, select, heading, fa){
     const label=create('h2',header,title());
     label.id='studio-music-picker-'+(++mobileMusicPickerId);
     dialog.setAttribute('aria-labelledby',label.id);
-    const close=create('button',header,fa?'بستن':'Close','studio-mobile-picker-close');
+    const close=create('button',header,'×','studio-mobile-picker-close');
+    close.setAttribute('aria-label',fa?'بستن فهرست انتخاب':'Close choices');
     close.type='button';
     close.onclick=()=>dialog.close();
     const choices=create('div',dialog,null,'studio-mobile-picker-options');
@@ -97,6 +98,43 @@ function attachMusicBottomSheet(wrapper, select, heading, fa){
   };
   sync();
   return {sync};
+}
+
+
+/* Phone-only onboarding moment when AI creation is selected.
+   The whole modal is dismissible (including card and backdrop); it is
+   information-only and never changes the composer or generation state. */
+function showMobileAIGuide(fa){
+  if(!window.matchMedia(
+    '(max-width: 700px), (pointer: coarse) and (orientation: landscape) and (max-height: 520px)'
+  ).matches)return;
+  document.querySelector('dialog.studio-ai-guide-dialog[open]')?.close();
+  const t=(en,ir)=>fa?ir:en;
+  const dialog=create('dialog',document.body,null,'studio-ai-guide-dialog');
+  const header=create('div',dialog,null,'studio-ai-guide-head');
+  const symbol=create('span',header,'✦','studio-ai-guide-symbol');
+  symbol.setAttribute('aria-hidden','true');
+  const close=create('button',header,'×','studio-ai-guide-close');
+  close.type='button';
+  close.setAttribute('aria-label',t('Close guidance','بستن راهنما'));
+  close.onclick=()=>{if(dialog.open)dialog.close()};
+  const eyebrow=create('p',dialog,t('AI COMPOSER','ساخت هوشمند'),'studio-ai-guide-eyebrow');
+  eyebrow.setAttribute('aria-hidden','true');
+  const heading=create('h2',dialog,t('Create with AI','ساخت اتود با هوش مصنوعی'),'studio-ai-guide-title');
+  heading.id='studio-ai-guide-title';
+  dialog.setAttribute('aria-labelledby',heading.id);
+  const message=create('p',dialog,t(
+    'In Musical System, set the practice goal and the required etude settings. Then tap Generate Etude to create your music.',
+    'در بخش سیستم موسیقایی، هدف تمرین و تنظیمات لازم اتود را مشخص کنید؛ سپس دکمه «تولید اتود» را بزنید.'
+  ),'studio-ai-guide-message');
+  message.id='studio-ai-guide-message';
+  dialog.setAttribute('aria-describedby',message.id);
+  const steps=create('div',dialog,null,'studio-ai-guide-steps');
+  create('span',steps,t('01 · Choose settings','۰۱ · تنظیمات و هدف تمرین'));
+  create('span',steps,t('02 · Generate Etude','۰۲ · تولید اتود'));
+  dialog.addEventListener('click',()=>{if(dialog.open)dialog.close()});
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  dialog.showModal();
 }
 
 export function mountEtudeComposer(host, {
@@ -322,7 +360,11 @@ export function mountEtudeComposer(host, {
     onModeChange?.(practiceLocked());
   };
   manual.onclick = () => changeMode('manual');
-  ai.onclick = () => changeMode('ai');
+  ai.onclick = () => {
+    if(busy)return;
+    changeMode('ai');
+    if(state.mode==='ai')showMobileAIGuide(fa);
+  };
   goalInput.onchange = () => {
     state.goal = goalInput.value;
     showStudioMessage(status, '');
