@@ -1108,7 +1108,7 @@ dialog.studio-mobile-picker-dialog {
     inset-block-start:14px;
     inset-inline-start:0;
   }
-  #app[data-page="studio"] .studio-compose-ai .studio-compose-mobile-meter .studio-ai-meter-title {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-mobile-meter .studio-ai-meter-title {
     display:block;
     padding-inline-start:34px;
     margin:0 0 9px;
@@ -1117,7 +1117,7 @@ dialog.studio-mobile-picker-dialog {
     color:var(--ink);
     font-weight:750;
   }
-  #app[data-page="studio"] .studio-compose-ai .studio-compose-mobile-meter > .studio-mobile-select-trigger {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-mobile-meter > .studio-mobile-select-trigger {
     min-height:49px;
     border-radius:11px;
     background:var(--dropdown-control-surface);
