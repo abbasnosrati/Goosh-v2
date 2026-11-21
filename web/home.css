@@ -610,7 +610,7 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
   body.home-screen main {
     width: 100%;
     max-width: 100%;
-    padding: 10px 14px calc(86px + env(safe-area-inset-bottom));
+    padding: 10px 14px calc(104px + env(safe-area-inset-bottom));
   }
   .home-screen .g-desktop {display: block;}
   .home-screen .g-dashboard {display: none;}

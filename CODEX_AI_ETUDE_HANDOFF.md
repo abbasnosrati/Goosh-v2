@@ -2530,3 +2530,16 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 - `web/index.html`: only bump app, Home and Etudes CSS version strings for cache invalidation. No structural HTML changes.
 
 **Validation scope:** JS syntax and selector/media checks; tested ticker with mobile DOM mocks including looping, pause after manual pointer input, RTL, reduced-motion and detach cleanup; checked both libraries still share exactly the same card renderer and mobile CSS. Desktop source CSS unchanged outside existing mobile selectors. No actual browser/device screenshot or APK test was performed. Metered live piano Record -> Score transcription remains **OPEN**, and Codex must seek user's explicit approval before changing that recording path.
+
+
+---
+
+## Mobile Home last Practices card clearance (2026-11-21)
+
+**User-observed issue:** After reducing excess whitespace under Home, the lower edge of the last Practices workspace card sits about 10px underneath the floating four-tab mobile dock. Increase clearance by a small margin only; do not resize cards, redesign the dock, change scroll behavior, or touch Desktop.
+
+**Only CSS change:** In the existing `web/home.css` phone-only `@media screen and (max-width:699px)` Home block, increase `body.home-screen main` bottom padding from `calc(86px + env(safe-area-inset-bottom))` to `calc(104px + env(safe-area-inset-bottom))`, i.e. **+18px**. This reserves a little visible space for the floating dock and its shadow without restoring the excessive old body+main+Hub gaps. Leave the explicit mobile `body.home-screen {padding-bottom:0}` and `.g-hub {margin:0}` unchanged. `web/index.html` bumps only `home.css`'s query string to `mobile-home-dock-clearance-1`.
+
+**Desktop/behavior:** All existing desktop CSS, the four-tab navigation, Home graphics, ticker, Etudes/Practices cards and actions, JS, app music/recording, and unrelated pages are unchanged. Metered live piano transcription remains unresolved and still requires explicit user approval before Codex edits it.
+
+**Validation:** Exact one-line CSS replacement confined to an existing max-699px media block; stylesheet braces balanced and original CSS unchanged otherwise; index change only its Home CSS cache version. No real device/browser visual test performed.
