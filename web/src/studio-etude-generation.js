@@ -32,6 +32,73 @@ export function tonicDisplayName(tonic, fa) {
   }).join(' / ');
 }
 
+
+// Mobile-only presentation adapter: original native select remains authoritative.
+let mobileMusicPickerId=0;
+function attachMusicBottomSheet(wrapper, select, heading, fa){
+  const trigger=create('button',wrapper,null,'studio-mobile-select-trigger');
+  trigger.type='button';
+  trigger.setAttribute('aria-haspopup','dialog');
+  trigger.setAttribute('aria-expanded','false');
+  const valueLabel=create('span',trigger,'','studio-mobile-select-value');
+  create('span',trigger,null,'studio-mobile-select-chevron').setAttribute('aria-hidden','true');
+  const title=()=>heading.textContent.trim()||(fa?'انتخاب':'Choose');
+  function sync(){
+    const display=select.selectedOptions[0]?.textContent?.trim()||(fa?'انتخاب کنید…':'Choose…');
+    valueLabel.textContent=display;
+    trigger.title=display;
+    trigger.setAttribute('aria-label',title()+': '+display);
+    trigger.classList.toggle('is-placeholder',!select.value);
+    trigger.disabled=select.disabled;
+  }
+  trigger.onclick=()=>{
+    if(select.disabled||!select.isConnected||!window.matchMedia(
+      '(max-width: 700px), (pointer: coarse) and (orientation: landscape) and (max-height: 520px)'
+    ).matches)return;
+    const dialog=create('dialog',wrapper,null,'studio-mobile-picker-dialog');
+    const header=create('div',dialog,null,'studio-mobile-picker-header');
+    const label=create('h2',header,title());
+    label.id='studio-music-picker-'+(++mobileMusicPickerId);
+    dialog.setAttribute('aria-labelledby',label.id);
+    const close=create('button',header,fa?'بستن':'Close','studio-mobile-picker-close');
+    close.type='button';
+    close.onclick=()=>dialog.close();
+    const choices=create('div',dialog,null,'studio-mobile-picker-options');
+    let selectedButton=null;
+    for(const option of select.options){
+      const button=create('button',choices,null,'studio-mobile-picker-option');
+      button.type='button';
+      button.disabled=option.disabled;
+      const optionLabel=create('span',button,option.textContent.trim(),'studio-mobile-picker-option-label');
+      optionLabel.dir='auto';
+      create('span',button,'✓','studio-mobile-picker-check').setAttribute('aria-hidden','true');
+      const selected=select.value===option.value;
+      button.setAttribute('aria-pressed',String(selected));
+      if(selected)selectedButton=button;
+      button.onclick=()=>{
+        if(select.value!==option.value){
+          select.value=option.value;
+          select.dispatchEvent(new Event('change',{bubbles:true}));
+        }
+        sync();
+        dialog.close();
+      };
+    }
+    dialog.addEventListener('close',()=>{
+      trigger.setAttribute('aria-expanded','false');
+      dialog.remove();
+      if(trigger.isConnected)trigger.focus({preventScroll:true});
+    },{once:true});
+    dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
+    trigger.setAttribute('aria-expanded','true');
+    dialog.showModal();
+    (selectedButton||choices.querySelector('button:not(:disabled)'))?.focus({preventScroll:true});
+    selectedButton?.scrollIntoView({block:'nearest'});
+  };
+  sync();
+  return {sync};
+}
+
 export function mountEtudeComposer(host, {
   etude, fa, isRecording, isCurrent, onGenerated, onModeChange, onSignatureChange,
   onToggleKeySignature, signatureIcon, returnSignatureIcon, signatureEditing = false
@@ -101,22 +168,31 @@ export function mountEtudeComposer(host, {
     };
   }
   const fields = create('div', sharedMusic, null, 'studio-compose-fields');
-  const styleLabel = create('label', fields, null, 'practice-field');
+  // display:contents on Desktop preserves the original grid and labels.
+  const styleField = create('div', fields, null, 'studio-select-field');
+  const styleLabel = create('label', styleField, null, 'practice-field');
   const styleHeading = create('span', styleLabel);
   const styleInput = create('select', styleLabel);
+  styleInput.classList.add('studio-native-music-select');
   styleInput.onchange = () => {
     state.styles[state.musicSystem] = styleInput.value;
     applySelectedSignature();
     showStudioMessage(status, '');
     sync();
   };
-  const tonicLabel = create('label', fields, null, 'practice-field');
-  create('span', tonicLabel, t('Tonic', 'تونیک'));
+  const stylePicker = attachMusicBottomSheet(styleField, styleInput, styleHeading, fa);
+  const tonicField = create('div', fields, null, 'studio-select-field');
+  const tonicLabel = create('label', tonicField, null, 'practice-field');
+  const tonicHeading = create('span', tonicLabel, t('Tonic', 'تونیک'));
   const tonicInput = create('select', tonicLabel);
+  tonicInput.classList.add('studio-native-music-select');
   tonicInput.onchange = () => {
     state.tonic = tonicInput.value;
     applySelectedSignature();
+    tonicPicker.sync();
   };
+  const tonicPicker = attachMusicBottomSheet(tonicField, tonicInput, tonicHeading, fa);
+  tonicField.hidden = state.musicSystem !== 'western';
   create('p', sharedMusic, t(
     'Selecting a mode sets the score and piano tuning. Use Edit Key Signature to fine-tune it.',
     'با انتخاب دستگاه یا مد، سرکلید و کوک پیانو تنظیم می‌شود. برای تنظیم دقیق‌تر، از ویرایش سرکلید استفاده کنید.'
@@ -183,6 +259,8 @@ export function mountEtudeComposer(host, {
       state.styles[state.musicSystem] = '';
     styleInput.value = state.styles[state.musicSystem];
     tonicLabel.hidden = state.musicSystem !== 'western';
+    tonicField.hidden = tonicLabel.hidden;
+    stylePicker.sync();
   }
 
   const actions = create('div', content, null, 'studio-compose-actions');
@@ -215,6 +293,9 @@ export function mountEtudeComposer(host, {
     styleInput.disabled = busy || !musicCatalog;
     tonicInput.disabled = busy || !musicCatalog;
     tonicLabel.hidden = state.musicSystem !== 'western';
+    tonicField.hidden = tonicLabel.hidden;
+    stylePicker.sync();
+    tonicPicker.sync();
     const unsupported = state.goal === 'chord-recognition';
     generate.textContent = isReplace()
       ? t('Regenerate Etude', 'تولید مجدد اتود')

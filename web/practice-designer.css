@@ -397,3 +397,169 @@
     box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 4%, transparent);
   }
 }
+
+
+/* Side-by-side music selectors; native accessible dialog options on phones. */
+#app[data-page="studio"] .studio-select-field {display:contents}
+#app[data-page="studio"] .studio-select-field[hidden],
+#app[data-page="studio"] .studio-mobile-select-trigger {display:none}
+@media screen and (max-width:700px),
+       screen and (pointer:coarse) and (orientation:landscape) and (max-height:520px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music .studio-compose-fields {
+    display:grid;
+    grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);
+    align-items:start;
+    gap:9px;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-fields > .studio-select-field {
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    gap:6px;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-fields > .studio-select-field[hidden] {display:none}
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-fields:has(> .studio-select-field[hidden]) > .studio-select-field:not([hidden]) {grid-column:1/-1}
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-select-field > .practice-field {
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    margin:0;
+    min-width:0;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-select-field > .practice-field > span {
+    font-size:12px;
+    font-weight:700;
+    line-height:1.5;
+    color:var(--muted);
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-select-field .studio-native-music-select {display:none}
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-select-field > .studio-mobile-select-trigger {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:7px;
+    width:100%;
+    min-width:0;
+    min-height:48px;
+    margin:0;
+    padding:9px 10px;
+    border:1px solid color-mix(in srgb,var(--line) 82%,var(--accent));
+    border-radius:11px;
+    background:var(--panel);
+    color:var(--ink);
+    font-size:13px;
+    font-weight:650;
+    line-height:1.3;
+    text-align:start;
+    box-shadow:0 2px 8px color-mix(in srgb,var(--ink) 4%,transparent);
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-mobile-select-trigger.is-placeholder {color:var(--muted);font-weight:500}
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-mobile-select-value {
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-mobile-select-chevron {
+    flex:none;
+    width:9px;
+    height:9px;
+    margin-inline:3px;
+    border-inline-end:2px solid currentColor;
+    border-bottom:2px solid currentColor;
+    transform:rotate(45deg) translateY(-2px);
+    opacity:.65;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-mobile-select-trigger:focus-visible {
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+  dialog.studio-mobile-picker-dialog {
+    position:fixed;
+    inset:auto 0 0;
+    box-sizing:border-box;
+    width:100%;
+    max-width:none;
+    max-height:min(78dvh,680px);
+    margin:0;
+    padding:0 14px calc(16px + env(safe-area-inset-bottom));
+    border:1px solid var(--line);
+    border-bottom:0;
+    border-radius:22px 22px 0 0;
+    background:var(--panel);
+    color:var(--ink);
+    overflow:hidden;
+    box-shadow:0 -14px 48px rgb(0 0 0 / 22%);
+  }
+  dialog.studio-mobile-picker-dialog::backdrop {background:rgb(4 17 25 / 47%)}
+  .studio-mobile-picker-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:20px 3px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .studio-mobile-picker-header h2 {font-size:17px;font-weight:750;margin:0;min-width:0;line-height:1.4}
+  .studio-mobile-picker-header::before {
+    content:'';
+    position:absolute;
+    top:7px;
+    left:calc(50% - 17px);
+    width:34px;
+    height:4px;
+    border-radius:999px;
+    background:var(--line);
+  }
+  .studio-mobile-picker-close {
+    flex:none;
+    min-height:38px;
+    padding:6px 10px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:transparent;
+    font-size:12px;
+    font-weight:650;
+  }
+  .studio-mobile-picker-options {
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    max-height:min(62dvh,550px);
+    padding-block:10px 4px;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+  }
+  .studio-mobile-picker-option {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    width:100%;
+    min-height:48px;
+    padding:11px 13px;
+    border:1px solid transparent;
+    border-radius:11px;
+    background:transparent;
+    color:var(--ink);
+    font-size:14px;
+    line-height:1.5;
+    text-align:start;
+  }
+  .studio-mobile-picker-option[aria-pressed="true"] {
+    border-color:color-mix(in srgb,var(--accent) 36%,var(--line));
+    background:color-mix(in srgb,var(--accent) 11%,var(--panel));
+    color:var(--accent);
+    font-weight:750;
+  }
+  .studio-mobile-picker-option-label {min-width:0;overflow-wrap:anywhere}
+  .studio-mobile-picker-check {flex:none;opacity:0;font-size:18px;font-weight:750}
+  .studio-mobile-picker-option[aria-pressed="true"] .studio-mobile-picker-check {opacity:1}
+  .studio-mobile-picker-option:focus-visible,
+  .studio-mobile-picker-close:focus-visible {outline:2px solid var(--accent);outline-offset:-2px}
+  .studio-mobile-picker-option:disabled {opacity:.45}
+}

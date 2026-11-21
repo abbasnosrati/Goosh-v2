@@ -2682,3 +2682,18 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 **Scope:** No Javascript or score logic edits, no changes to the desktop, piano, notes/rests, playback, recording, Studio navigation or other pages. `web/index.html` changes only `style.css` cache version to `mobile-score-controls-6-1`.
 
 **Verification:** Source inspection confirmed the original Score creates exactly three select/pen/eraser buttons from a loop, one Wrap button and two Zoom buttons, followed by the transport wrapper, so the grid has exactly six edit actions. Static CSS brace validation, narrow-only media guard, explicit transport/top vs six tools/bottom ordering and HTML-only-cache change passed. Actual mobile device render not tested; user to confirm layout.
+
+
+---
+
+## Mobile Studio Musical System: side-by-side Scale/Mode and Tonic with bottom sheet choices (2026-11-21)
+
+**User request:** In Etude Studio on MOBILE, place Scale/Mode (or Dastgah) and Tonic **next to each other** and replace the unattractive native dropdown appearance with a polished touch-friendly chooser. On Iranian music, Tonic is not shown; the Dastgah selector uses the full row. All Desktop UI and existing music logic unchanged.
+
+**Implementation:** `web/src/studio-etude-generation.js` introduces a small presentation adapter `attachMusicBottomSheet` for only two existing Musical System selects (style and tonic). Wrap each existing label+select in `.studio-select-field`, with `display:contents` on Desktop; add one mobile button per selector. Mobile trigger displays current localized option and opens a native modal HTML `<dialog>` rendered as a bottom sheet with scrollable option rows, selected check, backdrop tap dismissal, keyboard Escape, focus restoration and Close. Options are read from the live native select, so Persian and English labels reflect the catalog. Selection delegates through the original select's `change` event: this preserves all existing state, signature, tuning and piano logic. Trigger disabled/selected state is kept in sync during async catalog loading, mode changes, and AI state changes. Tonic wrapper follows the existing Western-only visibility condition.
+
+**CSS:** `web/practice-designer.css` appends mobile/coarse-landscape styles only for the open Studio editor: two-column `1.3fr/1fr` layout, compact outlined 48px triggers with text ellipsis and chevrons, full-width Iranian field, bottom sheet with theme-token colors, accessible 48px options and clear selected state. Desktop still displays original native selects through layout-neutral wrappers; there are no changes to AI goal picker or other selects.
+
+**Cache:** `web/src/app.js` bumps the composer module import query; `web/index.html` bumps only the relevant stylesheet and app-entry versions. No score, generator, recording, navigation or app business logic changes. Static JS parse and CSS braces verified. Actual phone screenshots/interaction remain for user to confirm.
+
+**Separate bugs:** Metered live recording-to-Score bug remains open and requires explicit approval before code fixes. Persian RTL compact list cards remain user-verified fixed.
