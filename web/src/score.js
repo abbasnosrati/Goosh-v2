@@ -714,24 +714,8 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
         element.setAttribute('class','score-ruler-art')
         return element
       }
-      const bg=drawRuler('rect',{x:startX-6,y:5,width:endX-startX+12,
-        height:27,rx:8,fill:'var(--glass-control)',
-        stroke:'var(--glass-border)','stroke-width':.75,
-        'pointer-events':'none'})
-      drawRuler('line',{x1:startX,y1:22,x2:endX,y2:22,
-        stroke:'currentColor','stroke-opacity':.3,'stroke-width':2,
-        'pointer-events':'none'})
-      for(const item of points){
-        drawRuler('line',{x1:item.x,y1:18,x2:item.x,y2:26,
-          stroke:'currentColor','stroke-opacity':.36,'stroke-width':1,
-          'pointer-events':'none'})
-      }
-      drawRuler('text',{x:startX+3,y:14,'font-size':9,
-        fill:'currentColor','fill-opacity':.8,'pointer-events':'none'},
-        points[0].at.toFixed(1)+'s')
-      drawRuler('text',{x:endX-3,y:14,'font-size':9,
-        fill:'currentColor','fill-opacity':.8,'text-anchor':'end',
-        'pointer-events':'none'},endAt.toFixed(1)+'s')
+      // Keep the time mapping and invisible seek hitbox, but no horizontal
+      // track, border, ticks or time labels: the dashed playhead is sufficient.
       const cursor=drawRuler('line',{x1:startX,y1:10,x2:startX,y2:151,
         stroke:'var(--accent)','stroke-width':1.5,
         'stroke-dasharray':'3 3','stroke-opacity':.75,
