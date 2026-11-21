@@ -3089,3 +3089,14 @@ The user confirmed that the *area-selection icon itself works correctly*. Do not
 **Cache reload:** Only versioned import cache keys updated to `select-cursor-arrow-1` in `web/src/app.js` and `web/index.html` (commits `f60175da785cda584e3d04d0fc9a4919237afa5a` and `c63dbc8beaf8822943be64e7bb8afb7b0fedfa8d`). No other files/feature behaviors changed.
 
 **Checks actually completed:** Both JS modules parsed; seven source consistency checks verified default select cursor for notes and rests, active-drag move cursor, no old hand cursors, original click/drag handlers, unchanged marquee mode, and matching cache keys. **No physical browser or touch-device visual test** performed. User acceptance pending.
+
+
+---
+
+## UI refinement — Remove redundant Score caption beneath piano (2026-11-21)
+
+**Latest user request:** “نوشته ی خط حامل زیر پیانو رو بردار” — Remove the visible **«خط حامل» / “Score”** caption immediately beneath the piano on the Etude Studio editor screen. Keep the actual five-line staff and all musical editing/recording/Play controls.
+
+**Code applied** on `feature/practice-sequence-studio`: `web/src/app.js` commit `c5e21b9e2b9c3be7b739e05e677c46bfe9193ae7` only creates the existing `.score-heading` and `Key Signature Editor / تنظیم سرکلید` heading if `signatureMode` is active; normal Score mode has **no title and no empty title wrapper/gap** below the piano. `web/index.html` commit `bad30af2da750afcb6330b2efafd4842635e2744` only refreshes the entrypoint cache key (`studio-score-title-cleanup-1`). All Score tools, music, selection, seek ruler, layout and keyboard behavior are otherwise unchanged. The preceding Select cursor refinement remains in effect.
+
+**Checks actually performed:** Current app JS syntax parses, normal Score title string is absent, the contextual Key Signature Editor title remains, no wrapper appears in normal mode, and the entrypoint cache key matches. No browser/device visual test performed.
