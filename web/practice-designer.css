@@ -787,7 +787,6 @@ dialog.studio-mobile-picker-dialog {
 @media screen {
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]) .studio-compose-mobile-meter {
     display:block;
-    order:1;
     min-width:0;
     margin:11px 0 0;
   }
@@ -838,6 +837,11 @@ dialog.studio-mobile-picker-dialog {
     outline:2px solid var(--accent);
     outline-offset:2px;
   }
+}
+/* The stacked item order is mobile-only; on desktop it splits the CTA row. */
+@media screen and (max-width:700px),
+       screen and (pointer:coarse) and (orientation:landscape) and (max-height:520px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]) .studio-compose-mobile-meter {order:1}
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-ai-meter-hint {order:2}
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-footnote {order:3}
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-status {order:4}
@@ -1075,7 +1079,6 @@ dialog.studio-mobile-picker-dialog {
     gap:9px;
     margin:0;
     padding:20px 0 21px;
-    border-bottom:1px solid var(--glass-border);
     font-size:15px;
   }
   #app[data-page="studio"] .studio-compose-ai .studio-compose-goal > span:not(.studio-setup-icon) {
@@ -1105,7 +1108,6 @@ dialog.studio-mobile-picker-dialog {
     min-width:0;
     margin:0;
     padding:20px 0 21px;
-    border-bottom:1px solid var(--glass-border);
   }
   #app[data-page="studio"] .studio-compose-ai .studio-compose-mobile-meter .studio-setup-icon {
     position:absolute;
@@ -1168,8 +1170,6 @@ dialog.studio-mobile-picker-dialog {
     min-width:0;
     align-self:center;
     margin:21px 0 0;
-    padding-inline-start:20px;
-    border-inline-start:1px solid var(--glass-border);
     color:var(--muted);
     font-size:13px;
     line-height:1.65;
