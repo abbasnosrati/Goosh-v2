@@ -988,3 +988,27 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
     box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 22%, transparent);
   }
 }
+
+
+/* Manual and AI are now icon-only: retain original segmented control,
+   selected state and hit areas across desktop and mobile. */
+#app[data-page="studio"] .studio-compose-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+#app[data-page="studio"] .studio-compose-mode-icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  pointer-events: none;
+}
+#app[data-page="studio"] .studio-compose-mode-icon svg {
+  display: block;
+  width: 23px;
+  height: 23px;
+}

@@ -14,6 +14,7 @@ const setupIconPaths = Object.freeze({
   dastgah: ['M14 8 20 2', 'm17 2 5 5', 'M14 8c-1.4 2.1-3.8 2.5-5.7 4.4-2.9 2.9-3.4 6.8-1.2 8.1 2.6 1.4 6.4-1.6 7.6-4.2 1.3-2.7.7-5.1-.7-8.3Z', 'M10 16h.01', 'M16 5l3 3'],
   target: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z', 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z', 'M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z'],
   metronome: ['M9 3h6l5 18H4L9 3Z', 'M12 4 16 16', 'M8 18h8', 'M7 21h10'],
+  pen: ['m4 20 4-.8L20 7a2.1 2.1 0 0 0-3-3L5 16l-1 4Z', 'm14 7 3 3'],
   wand: ['m4 20 11-11', 'm12 4 .6-2 .6 2 2 .6-2 .6-.6 2-.6-2-2-.6 2-.6Z', 'm19 12 .6-2 .6 2 2 .6-2 .6-.6 2-.6-2-2-.6 2-.6Z', 'm5 5 .5-1.5L6 5l1.5.5L6 6l-.5 1.5L5 6l-1.5-.5L5 5Z']
 });
 function appendSetupIcon(parent, kind, className='studio-setup-icon') {
@@ -228,10 +229,16 @@ export function mountEtudeComposer(host, {
   const tabs = create('div', sharedMusic, null, 'studio-compose-tabs');
   tabs.setAttribute('role', 'group');
   tabs.setAttribute('aria-label', t('Etude creation method', 'روش ساخت اتود'));
-  const manual = create('button', tabs, t('Manual', 'دستی'));
-  const ai = create('button', tabs, t('AI', 'هوش مصنوعی'));
+  const manual = create('button', tabs);
+  const ai = create('button', tabs);
   manual.type = ai.type = 'button';
   manual.className = ai.className = 'studio-compose-tab';
+  manual.setAttribute('aria-label', t('Manual', 'دستی'));
+  ai.setAttribute('aria-label', t('AI', 'هوش مصنوعی'));
+  manual.title = t('Manual', 'دستی');
+  ai.title = t('AI', 'هوش مصنوعی');
+  appendSetupIcon(manual, 'pen', 'studio-compose-mode-icon');
+  appendSetupIcon(ai, 'wand', 'studio-compose-mode-icon');
 
   // A shared musical foundation: Manual and AI always use the same
   // canonical Etude key signature, piano and score playback frequencies.
