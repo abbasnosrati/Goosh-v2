@@ -3188,3 +3188,16 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 **Verification completed:** Both JS modules parsed successfully. Fourteen static and extracted-function checks passed, including locale-exclusive text for all ten Pen options, exact preserved numerical values, changing the native select still updates `penQuarterBeats`, one invocation of the shared picker per editor, correct mobile/desktop styling and cache keys, and balanced CSS braces. **No actual browser, responsive visual comparison, touch popup, Android APK or audio test performed**, and the user has not yet accepted this particular visual change.
 
 **Do not** change time signatures, the rhythm engine, the selected-note UI, recording or playback as a side effect of this copy/dropdown-only request.
+
+---
+
+## 2026-11-21 — Professional Etude Setup creation-method header (desktop only)
+
+**Request:** Visually refine the cramped, awkward Etude Setup title and icon-only Manual/AI pair. Keep both existing buttons beside the title and retain the established Goosh palette, responsive behavior, and all creation logic.
+
+**Scope and implementation:** `web/visual-system.css` adds a desktop-only (`min-width:900px`) style override scoped to Etude Studio: calmer 44px header alignment, balanced title/selector spacing, one compact 38px-high segmented control, smaller consistent mode icons, visible localized labels taken directly from each existing button's `aria-label` (using CSS `content:attr(aria-label)`), subtle active/hover surfaces with existing theme tokens, and keyboard focus visibility. The same two buttons retain the same handlers, native disabled/selected state, and accessible names. The mobile/tablet icon-only display is unchanged. No new markup, duplicate state, new colors, navigation, music logic, or other pages were changed.
+
+**Cache:** `web/index.html` updates only the `visual-system.css` cache-busting key. The underlying renderer and state files are untouched.
+
+**Validation:** Static selector/scope checks passed; real desktop browser screenshots, visual balance in both themes and RTL/LTR, and interactive device testing remain to be checked.
+
