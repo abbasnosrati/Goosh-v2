@@ -118,7 +118,7 @@ def response_schema(mode, meter="none"):
     }
 
 
-def normalise_etude(data, mode, frequency_for_pitch=get_frequency, meter="none"):
+def normalise_etude(data, mode, frequency_for_pitch=get_frequency, meter="none", measure_count=4):
     if not isinstance(data, dict) or not isinstance(data.get("notes"), list):
         raise ValueError("The model did not return an etude.")
     metered = meter != "none"
@@ -144,7 +144,7 @@ def normalise_etude(data, mode, frequency_for_pitch=get_frequency, meter="none")
     title = title or "اتود " + mode["name"]
     if metered:
         numerator, denominator = (int(v) for v in meter.split("/"))
-        target_beats = 4 * numerator * 4 / denominator
+        target_beats = measure_count * numerator * 4 / denominator
         elapsed_ticks = 0
         notes = []
         for pitch, item in zip(pitches, data["notes"]):
@@ -168,7 +168,7 @@ def normalise_etude(data, mode, frequency_for_pitch=get_frequency, meter="none")
             notes.append({"pitch":pitch,"duration":duration,"restBefore":rest,
                           "frequency":frequency_for_pitch(pitch)})
         if elapsed_ticks != round(target_beats*960):
-            raise ValueError("AI duration and rests do not fill four exact measures.")
+            raise ValueError("AI duration and rests do not fill the selected number of measures.")
         # ABC is not authoritative. For metered music the browser engraves
         # validated e.notes using one canonical meterTimeline; do not fabricate
         # a misleading ABC representation with the wrong bar boundaries.
@@ -228,11 +228,13 @@ def make_western_mode(scale, tonic):
     }
 
 
-def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, tonic="C", tuning_cents=None, meter="none"):
+def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, tonic="C", tuning_cents=None, meter="none", measure_count=4):
     if music_system not in MUSIC_SYSTEMS:
         raise APIError(400, "Unsupported musical system.")
     if meter not in METER_CHOICES:
         raise APIError(400, "Unsupported time signature.")
+    if type(measure_count) is not int or not 1 <= measure_count <= 256:
+        raise APIError(400, "Invalid number of measures.")
     if goals is None: goals = []
     if not isinstance(goals, list) or len(goals) > 10 or any(not isinstance(g, str) or g not in PRACTICE_GOALS for g in goals):
         raise APIError(400, "Invalid practice goals.")
@@ -276,15 +278,15 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
 
     prompt = "\n".join([
         prompt_intro,
-        ("Write exactly four measures of " + meter + ". Compose 1 to 128 notes, "
+        ("Write exactly " + str(measure_count) + " measures of " + meter + ". Compose 1 to 128 notes, "
          "with durations and rests that fill exactly " +
-         str(4*int(meter.split("/")[0])*4/int(meter.split("/")[1])) +
-         " quarter-note beats (across all four measures). "
+         str(measure_count*int(meter.split("/")[0])*4/int(meter.split("/")[1])) +
+         " quarter-note beats (across all selected measures). "
          "Use duration and restBefore in quarter-note beat units; restBefore is "
          "the silence before that note, 0 when there is no rest. "
          "Use quarter, eighth, sixteenth, dotted or tied values expressible by "
          "the notation; avoid irrational subdivisions or tuplets. "
-         "Ensure the final note ends exactly on the fourth barline.")
+         "Ensure the final note ends exactly on the final barline.")
         if meter != "none" else
         "Compose a free-meter etude. For this existing beginner template use "
         "16 notes with 16 quarter-note beats of total duration.",
@@ -346,7 +348,7 @@ def generate_etude(dastgah, goals=None, music_system="iranian", scale=None, toni
         if meter=="none" and music_system == "iranian" and dastgah == "shur":
             return parse_abc_etude(content, frequency_for_pitch)
         parsed = json.loads(content)
-        return normalise_etude(parsed, mode, frequency_for_pitch, meter)
+        return normalise_etude(parsed, mode, frequency_for_pitch, meter, measure_count)
     except (KeyError, IndexError, TypeError, json.JSONDecodeError, ValueError) as error:
         raise APIError(502, "Invalid AI etude response: " + str(error)) from None
 
@@ -516,7 +518,7 @@ class GooshHandler(SimpleHTTPRequestHandler):
             result = (generate_etude(body.get("dastgah"), body.get("practiceGoals"),
                                      body.get("musicSystem", "iranian"),
                                      body.get("scale"), body.get("tonic", "C"), body.get("tuningCents"),
-                                     body.get("meter", "none"))
+                                     body.get("meter", "none"), body.get("measureCount", 4))
                       if endpoint == "/api/generate-etude" else design_practice(body))
         except APIError as error:
             self.send_json(error.status, {"error": str(error)})
