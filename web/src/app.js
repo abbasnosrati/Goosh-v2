@@ -49,7 +49,7 @@ let fa = localStorage.lang !== 'en',
   signaturePreviewTime = -Infinity,
   mobileSignatureDialog = null,
   zoom = 1,
-  wrap = true,
+  wrap = false,
   oct = 4,
   sel = new Set(),
   held = new Map(),
@@ -1464,6 +1464,10 @@ function studio() {
         })
       } catch {
         alert(t('Printing failed', 'چاپ انجام نشد'))
+      } finally {
+        // Printing may temporarily wrap the staff; restore the user's view.
+        wrap = prev;
+        sheet();
       }
       return
     }
