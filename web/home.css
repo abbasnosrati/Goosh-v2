@@ -325,13 +325,12 @@ html.dark .home-screen {--g-shadow:var(--glass-shadow);}
     justify-content: center;
     gap: 7px;
     padding: 6px;
-    border: 1px solid color-mix(in srgb, var(--panel) 65%, var(--line));
+    border: 1px solid var(--glass-border);
     border-radius: 999px;
-    background: var(--glass-surface);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    backdrop-filter: blur(16px) saturate(140%);
-    box-shadow: 0 8px 28px color-mix(in srgb, var(--ink) 7%, transparent),
-                inset 0 1px 0 color-mix(in srgb, var(--panel) 85%, transparent);
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
   }
 
   body > header > nav button {

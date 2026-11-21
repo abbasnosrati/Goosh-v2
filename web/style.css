@@ -19,6 +19,8 @@
   --glass-shadow: 0 16px 38px rgb(36 91 112 / 13%), inset 0 1px 0 rgb(255 255 255 / 85%);
   --glass-soft-shadow: 0 7px 22px rgb(32 87 102 / 10%), inset 0 1px 0 rgb(255 255 255 / 78%);
   --glass-blur: blur(20px) saturate(155%);
+  /* Floating navigation uses the page gradient's own tones, without a blur layer. */
+  --page-dock-surface: linear-gradient(160deg, rgb(241 250 251 / 97%), rgb(223 235 240 / 97%));
   --action-fill: linear-gradient(135deg, #087b87, #11a8ae);
   --action-ink: #f8ffff
 }
@@ -43,6 +45,7 @@ html.dark {
   --glass-shadow: 0 18px 42px rgb(0 5 13 / 38%), inset 0 1px 0 rgb(187 251 255 / 12%);
   --glass-soft-shadow: 0 8px 24px rgb(0 4 10 / 27%), inset 0 1px 0 rgb(185 245 250 / 10%);
   --glass-blur: blur(20px) saturate(145%);
+  --page-dock-surface: linear-gradient(155deg, rgb(12 29 40 / 97%), rgb(7 20 28 / 97%));
   --action-fill: linear-gradient(135deg, #25b8c8, #55e5dd);
   --action-ink: #072b34
 }
@@ -310,7 +313,7 @@ summary {
   right: 6px
 }
 
-.wordmark{display:block;object-fit:contain;width:100px;height:42px}header{background:var(--glass-surface);color:var(--ink);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}header button{color:var(--ink)}
+.wordmark{display:block;object-fit:contain;width:100px;height:42px}header{background:transparent;color:var(--ink);-webkit-backdrop-filter:none;backdrop-filter:none}header button{color:var(--ink)}
 
 .dark-logo, html.dark .light-logo { display: none }
 html.dark .dark-logo { display: block }
@@ -355,7 +358,7 @@ h1{letter-spacing:-.025em}
 .mini-keys i{height:100%;flex:1;background:linear-gradient(#e0eff0,#fff);border-radius:2px 2px 5px 5px;position:relative}
 .mini-keys i:not(:nth-child(7n+3)):not(:nth-child(7n)):not(:last-child)::after{content:'';position:absolute;right:-32%;width:65%;height:63%;background:#123140;z-index:1;border-radius:0 0 3px 3px}
 .wave i{background:#72e6df;border-radius:10px;width:4%}
-footer{display:flex;align-items:center;gap:12px;border-top:1px solid var(--glass-border);padding:18px max(5vw,18px);background:var(--glass-surface);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)}
+footer{display:flex;align-items:center;gap:12px;border-top:1px solid var(--glass-border);padding:18px max(5vw,18px);background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
 footer strong{margin-inline-end:auto;color:var(--muted)}
 .instrument{background:var(--glass-control);padding:12px;border-radius:14px;margin-top:12px;min-width:0}
 .instrument>.row{justify-content:space-between}
@@ -600,7 +603,7 @@ details[open]>summary{margin-bottom:12px}
 .etude-item{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:start;margin-block:4px;padding:14px;background:var(--glass-control);border:0}
 .etude-item strong{overflow-wrap:anywhere}
 .etude-item small{white-space:nowrap}
-footer{background:var(--glass-surface);justify-content:space-between;padding-block:12px}
+footer{background:transparent;justify-content:space-between;padding-block:12px}
 .footer-brand{border-inline-end:1px solid var(--line);padding-inline-end:20px}
 footer .wordmark{width:76px;height:32px}
 footer nav button{font-size:.9rem;color:var(--muted)}
@@ -1572,10 +1575,10 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     margin: 0 auto;
     border: 1px solid color-mix(in srgb, var(--line) 48%, transparent);
     border-radius: 25px;
-    background: var(--glass-surface);
-    box-shadow: var(--glass-shadow);
-    -webkit-backdrop-filter: blur(22px) saturate(145%);
-    backdrop-filter: blur(22px) saturate(145%);
+    background: var(--page-dock-surface);
+    box-shadow: var(--glass-soft-shadow);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   body > header > #nav > button {
     display: flex;
