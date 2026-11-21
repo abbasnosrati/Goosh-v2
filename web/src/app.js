@@ -1710,6 +1710,15 @@ function studio() {
   fullscreenButton.append(fullscreenIcon);
   let fullscreenAnchor=null;
   let wasCollapsedBeforeFullscreen=false;
+  let pianoOrientationLock=null;
+  let ownsBrowserFullscreen=false;
+  const isMobilePianoViewport=()=>window.matchMedia(
+    '(pointer:coarse) and (max-width:700px), (pointer:coarse) and (orientation:landscape) and (max-height:520px)'
+  ).matches;
+  const onPianoBrowserFullscreenChange=()=>{
+    if(ownsBrowserFullscreen && fullscreenAnchor && document.fullscreenElement!==studioPiano)
+      exitPianoFullscreen();
+  };
   const pianoScrollCenter = () =>
     (pianoKeys.scrollLeft + pianoKeys.clientWidth/2)/Math.max(1,pianoKeys.scrollWidth);
   const restorePianoScroll = fraction => requestAnimationFrame(() => {
@@ -1731,6 +1740,17 @@ function studio() {
     if(!fullscreenAnchor)return;
     stopKeys();
     const center=pianoScrollCenter();
+    document.removeEventListener('fullscreenchange',onPianoBrowserFullscreenChange);
+    if(ownsBrowserFullscreen && document.fullscreenElement===studioPiano)
+      document.exitFullscreen?.().catch(()=>{});
+    ownsBrowserFullscreen=false;
+    const previousLock=pianoOrientationLock;
+    pianoOrientationLock=null;
+    if(previousLock==='native')
+      window.Capacitor?.Plugins?.ScreenOrientation?.unlock?.().catch(()=>{});
+    else if(previousLock==='web') {
+      try{screen.orientation.unlock()}catch{}
+    }
     studioPiano.classList.remove('studio-piano-fullscreen');
     if(fullscreenAnchor.isConnected)fullscreenAnchor.replaceWith(studioPiano);
     else studioPiano.remove();
@@ -1740,6 +1760,45 @@ function studio() {
     if(wasCollapsedBeforeFullscreen)setPianoExpanded(false);
     syncFullscreenButton(false);
     restorePianoScroll(center);
+  };
+  const requestPianoLandscape=async (anchor,center)=>{
+    // Mobile apps lock orientation natively if the plugin exists. Browser
+    // implementations often require fullscreen before screen.orientation.lock.
+    // CSS provides an always-available rotated-landscape fallback.
+    const stillOpen=()=>fullscreenAnchor===anchor;
+    const nativeOrientation=window.Capacitor?.Plugins?.ScreenOrientation;
+    if(nativeOrientation?.lock){
+      try{
+        await nativeOrientation.lock({orientation:'landscape'});
+        if(!stillOpen()){await nativeOrientation.unlock?.().catch(()=>{});return;}
+        pianoOrientationLock='native';
+        restorePianoScroll(center);
+        return;
+      }catch{}
+    }
+    if(!stillOpen())return;
+    try {
+      if(document.fullscreenEnabled && studioPiano.requestFullscreen && !document.fullscreenElement){
+        await studioPiano.requestFullscreen({navigationUI:'hide'});
+        if(!stillOpen()){
+          if(document.fullscreenElement===studioPiano)await document.exitFullscreen().catch(()=>{});
+          return;
+        }
+        ownsBrowserFullscreen=document.fullscreenElement===studioPiano;
+      }
+    }catch{}
+    if(!stillOpen())return;
+    try{
+      if(screen.orientation?.lock){
+        await screen.orientation.lock('landscape');
+        if(!stillOpen()){
+          try{screen.orientation.unlock()}catch{}
+          return;
+        }
+        pianoOrientationLock='web';
+      }
+    }catch{}
+    if(stillOpen())restorePianoScroll(center);
   };
   const togglePianoFullscreen = () => {
     if(fullscreenAnchor){exitPianoFullscreen();return;}
@@ -1754,7 +1813,9 @@ function studio() {
     document.body.classList.add('studio-piano-fullscreen-open');
     closeFullscreenPiano=exitPianoFullscreen;
     syncFullscreenButton(true);
+    document.addEventListener('fullscreenchange',onPianoBrowserFullscreenChange);
     restorePianoScroll(center);
+    if(isMobilePianoViewport())void requestPianoLandscape(fullscreenAnchor,center);
   };
   syncFullscreenButton(false);
   const setPianoExpanded = expanded => {

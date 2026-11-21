@@ -3270,3 +3270,13 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 **CSS-only update:** In `web/style.css`, the fullscreen phone/compact-touch-landscape override now keeps `.keys` at its natural height rather than stretching it with `flex:1`; the keyboard is centered vertically inside the fullscreen surface and remains horizontally scrollable. The key board uses a proportional width-based height, `clamp(128px,45vw,210px)`, with a dynamic viewport-height cap for short landscape screens. White-key width uses the existing 38px minimum-per-key strategy, with the octave rail matching the board. Overlay/backdrop, toolbar, maximize/restore button, same piano DOM and audio/recording events are untouched. `web/index.html` updates the CSS cache key only.
 
 **Verification:** Static source checks only; no live mobile/desktop browser or landscape visual QA performed.
+
+---
+
+## 2026-11-21 — Correct mobile fullscreen piano to landscape-only view
+
+**User correction:** Fullscreen Piano on phones must behave like a landscape-only app, rotating the playable surface horizontally to use the **long edge of the physical display**. Merely making a vertical fullscreen panel wider or shortening tall keys is not acceptable. The piano itself stays the same and becomes larger; exiting returns to the existing editor layout.
+
+**Implementation:** `web/src/app.js`: on phone-sized/coarse-pointer landscape view, request actual landscape orientation using an already-registered Capacitor ScreenOrientation native plugin when available, or the browser Screen Orientation API after requesting fullscreen (where supported). Both APIs are optional and failure-safe; no new dependency is introduced. On exit/cancel/route change/browser fullscreen exit, release an acquired orientation lock or owned fullscreen. The existing piano DOM is still portaled/restored as before, never duplicated. `web/style.css`: replace the previous portrait-centered fullscreen override with a landscape-proportioned keyboard and a portrait-device CSS rotation fallback (`rotate(90deg)`, `width:100dvh; height:100vw`) that makes the entire piano, toolbar, keys and interactions horizontal even when device/browser orientation locking is unsupported. When screen orientation actually becomes landscape, the rotated CSS rule stops applying so the keyboard is not double-rotated. The score, sound, tuning, recording and desktop presentation are unchanged. `web/index.html`: bump only CSS/JS cache keys.
+
+**Browser caveat:** Native orientation change depends on platform support and permissions. Web fallback rotates the piano visually but cannot change the physical device's OS orientation. Source-level verification only; no live Android/iOS screenshot or touch test was possible.

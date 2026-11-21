@@ -2753,30 +2753,65 @@ body > .instrument.studio-piano-fullscreen .octave-rail {
 body > .instrument.studio-piano-fullscreen > .piano-scroll-hint {
   flex:none;
 }
-/* On phones the fullscreen surface uses the display WIDTH, not
-   a vertically stretched keyboard. Keep natural piano proportions and
-   center the playable strip within the available viewport height. */
+/* A maximized phone piano is a LANDSCAPE instrument, not a tall
+   portrait panel. This layout applies whether the OS rotated natively or not. */
 @media screen and (max-width:700px),
        screen and (pointer:coarse) and (orientation:landscape) and (max-height:520px) {
   body > .instrument.studio-piano-fullscreen {
-    padding:12px 10px max(14px,env(safe-area-inset-bottom))!important;
+    padding:10px 12px max(10px,env(safe-area-inset-bottom))!important;
+  }
+  body > .instrument.studio-piano-fullscreen > .row {
+    min-height:50px;
+    margin-bottom:8px;
+    padding-bottom:8px;
   }
   body > .instrument.studio-piano-fullscreen > .keys {
-    flex:0 0 auto;
-    height:auto;
-    max-height:calc(100dvh - 135px);
+    display:flex;
+    flex:1 1 auto;
+    flex-direction:column;
+    justify-content:center;
     min-height:0;
-    margin-block:auto;
+    max-height:none;
+    margin:0;
     overflow-x:auto;
     overflow-y:hidden;
   }
   body > .instrument.studio-piano-fullscreen .board {
-    height:clamp(128px,45vw,210px);
-    max-height:calc(100dvh - 165px);
+    flex:0 0 auto;
+    height:min(70dvh,calc(100dvh - 135px));
+    max-height:none;
     min-width:max(100%,calc(var(--whites)*38px));
   }
   body > .instrument.studio-piano-fullscreen .octave-rail {
+    flex:0 0 30px;
     min-width:max(100%,calc(var(--whites)*38px));
+  }
+  body > .instrument.studio-piano-fullscreen > .piano-scroll-hint {
+    display:none;
+  }
+}
+/* When an OS/browser cannot switch orientation, rotate the SAME fullscreen
+   keyboard surface, including toolbar and controls, across the long edge.
+   Phone viewport portrait => visible piano looks/plays landscape. */
+@media screen and (pointer:coarse) and (orientation:portrait) and (max-width:700px) {
+  body > .instrument.studio-piano-fullscreen {
+    inset:auto;
+    top:0;
+    left:100vw;
+    right:auto;
+    bottom:auto;
+    width:100dvh;
+    height:100vw;
+    transform-origin:top left;
+    transform:rotate(90deg);
+    padding:10px 12px!important;
+  }
+  body > .instrument.studio-piano-fullscreen .board {
+    height:min(70vw,calc(100vw - 135px));
+    max-height:none;
+  }
+  body > .instrument.studio-piano-fullscreen > .keys {
+    max-height:none;
   }
 }
 @media (prefers-reduced-motion:reduce) {
