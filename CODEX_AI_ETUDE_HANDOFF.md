@@ -2995,3 +2995,36 @@ These are **extracted-function / data-model runtime tests**, not an interactive 
 - The old Note Settings dialog is intentionally removed, not moved to a second editor. No additional persistent note schema, timeline array, audio player or separate recording path is created. Do not reintroduce the old modal or change existing metered transcription based on this change alone.
 
 **Status:** Implemented in source; logic and mock-UI checks passed; physical UX and audio behavior await the user's verification.
+
+
+---
+
+## IMPLEMENTED — Latest piano-recorded note and clearer Score selection (2026-11-21)
+
+**User feedback / exact scope:** “وقتی داریم با رکورد پیانو میویسم همیشه خرین نتی که نوشته میشه با یه رنگ دیگه باشه که معلو بشه و چشم باشه. icon select رو هم دیدم درست کار میکنه. اما نت هایی که سلکت شدن خیلی واضح نیستن”
+
+The user confirmed that the *area-selection icon itself works correctly*. Do not change the selection algorithm, marquee gesture, erasing or selected-only Play. They want two **visual affordances only**: emphasize the **most recently added piano-recorded note** while Record is armed, and make **all selected Score notes** substantially more recognizable.
+
+### Implementation — existing shared Score renderer only
+
+- **`web/src/app.js`**, commit `3125b6f9e3d9cb08c53ebf7732bc011be4ac2b0c`: The existing piano `onStart` handler sets a transient `take.latestNote=n` reference **immediately after pushing that exact note into the canonical `e.notes`**. `sheet()` passes `recordingIndex: rec?.latestNote ? e.notes.indexOf(rec.latestNote) : -1` into the same `score()` call. This works for **Free and Metered recording** and always follows the latest **attack**, including repeated notes of the same pitch (object identity, not pitch). The indicator appears during recording, changes to the latest note on each attack, and disappears when `rec` becomes null on Stop. No new note list, sound, duration, snap, recording state persisted to disk, audio engine or extra renderer.
+- **`web/src/score.js`**, commit `40a54c49602d614a82149abdaa3485df326f5caa`: Add optional `recordingIndex=-1` parameter; use **one small `emphasizeNote()` visualization helper** for ordinary selected notes, marquee preview, and current latest recording note. Selected noteheads are rendered with the existing theme **`var(--accent)`** (cyan/teal according to Light/Dark), a **visible outer halo ring** with subtle translucent fill, and a thicker stroke. Their stems and flags use the accent too, keeping rhythm readable. Latest recorded note uses distinct **`var(--danger)`** (red/pink according to Light/Dark) halo, head, stem and flags. Hollow white/half notes retain an unfilled musical head (their interior uses `var(--panel)`) so highlighting cannot visually reclassify their notated rhythm.
+- The existing range-selection `show()` / `clear()` use the same `emphasizeNote()` helper instead of merely toggling notehead stroke width, so hover/drag previews show the stronger ring + accent too. No pointer, drag, note hitbox, selection index, rest, score timing, playback or PDF algorithm was changed.
+- **Cache-busting only:** `app.js` now imports `score.js?v=score-note-emphasis-1`; `web/index.html` now loads `app.js?v=score-note-emphasis-1` (commits `1d3d0232b9a467f7c3ed7097dd40c8c0302f8928`, `8c729e6d2745c729f42e5417256ca2fe5c7153e3`).
+
+### Validation actually performed
+
+- JavaScript syntax parse for current `web/src/app.js`, `web/src/score.js` and `web/src/model.js` **3/3 passed** (after stripping only ES import/export wrappers).
+- **9/9 mock-SVG runtime rendering checks passed** using the actual extracted current `score()` code and original `meterTimeline()`:
+  1. Multiple selected heads use theme accent and stronger stroke; others stay normal.
+  2. Selected half-notes remain hollow instead of becoming a quarter-note-looking solid head.
+  3. Selected noteheads have visibly enabled outer halos.
+  4. The last recorded note uses `var(--danger)` rather than the selection accent.
+  5. The latest marker moves from one recorded note index to another.
+  6. No latest marker when recording finishes / no recordingIndex is passed.
+  7. Recording highlight takes priority over selection only if both indices are the same (normally selection is disabled during Record).
+  8. Live box/marquee preview applies the same stronger halo and head style.
+  9. The marquee still emits the original canonical note indices.
+- **No physical browser, touch, Play/audio, device, screenshot, PDF print, or visual cross-theme inspection was performed.** The user has not yet confirmed how these updated colors look on their device. Test at least 4/4 and Free, repeated same-pitch recordings, multiple wrapped staff rows, and Light/Dark.
+
+**Restrictions:** This is a UI-only highlight change to shared notation rendering. Do not introduce blinking animations, modify rhythms or pitch, duplicate selection state, auto-scroll the page, change metronome behavior, or treat the mock tests as completed real-user visual acceptance.
