@@ -936,7 +936,7 @@ dialog.studio-mobile-picker-dialog {
     display:grid;
     grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr);
     grid-template-rows:auto;
-    align-items:start;
+    align-items:stretch;
     gap:0 20px;
     position:relative;
     min-width:0;
@@ -954,7 +954,7 @@ dialog.studio-mobile-picker-dialog {
     flex-direction:column;
     grid-column:1;
     grid-row:1;
-    align-self:start;
+    align-self:stretch;
     min-width:0;
   }
   #app[data-page="studio"] .studio-compose-music {
@@ -1123,6 +1123,7 @@ dialog.studio-mobile-picker-dialog {
     align-content:start;
     align-items:center;
     min-width:0;
+    flex:1;
     padding:0 24px 15px;
     border:1px solid var(--glass-border);
     border-top:0;
@@ -1130,6 +1131,7 @@ dialog.studio-mobile-picker-dialog {
     background:var(--glass-surface);
   }
   #app[data-page="studio"] .studio-compose:has(.studio-compose-ai[hidden]) .studio-compose-music {
+    flex:1;
     padding-bottom:18px;
     border-bottom:1px solid var(--glass-border);
     border-radius:18px;
@@ -1253,7 +1255,7 @@ dialog.studio-mobile-picker-dialog {
     flex-direction:column;
     grid-column:2;
     grid-row:1;
-    align-self:start;
+    align-self:stretch;
     min-width:0;
     margin-top:80px;
     padding:16px 18px;
