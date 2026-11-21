@@ -930,3 +930,16 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
     box-shadow: none;
   }
 }
+
+
+/* Desktop Setup: discard residual squared-off shell while retaining both
+   inner cards, title and tabs. The Piano reference has 19px corners. */
+@media screen and (min-width: 900px) {
+  html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose,
+  html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose {
+    border: 0;
+    border-radius: 19px;
+    background: transparent;
+    box-shadow: none;
+  }
+}
