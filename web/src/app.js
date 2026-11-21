@@ -28,7 +28,7 @@ import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
 import { mountEtudeComposer } from './studio-etude-generation.js?v=western-modes-tonics-language-1'
 import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=music-toggle-reuse-1'
-import { renderHome } from './home.js?v=mobile-home-ticker-1';
+import { renderHome } from './home.js?v=mobile-home-ticker-speed-2';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
 import {installAndroidBackNavigation} from './native-navigation.js';
 import {applyMusicSignature} from './music-signature.js';

@@ -2543,3 +2543,16 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 **Desktop/behavior:** All existing desktop CSS, the four-tab navigation, Home graphics, ticker, Etudes/Practices cards and actions, JS, app music/recording, and unrelated pages are unchanged. Metered live piano transcription remains unresolved and still requires explicit user approval before Codex edits it.
 
 **Validation:** Exact one-line CSS replacement confined to an existing max-699px media block; stylesheet braces balanced and original CSS unchanged otherwise; index change only its Home CSS cache version. No real device/browser visual test performed.
+
+
+---
+
+## Mobile Home feature chip ticker: slight speed increase (2026-11-21)
+
+**Requested change:** Increase the automatic phone Home feature-chip marquee speed only **slightly**, without changing any layout, playback, controls, Desktop behavior or other components.
+
+**Only behavior change:** `web/src/home.js` `startMobileFeatureTicker()` moves from `dt * .027` (27 CSS px/second) to `dt * .032` (32 CSS px/second), a modest **18.5%** increase. The existing seamless loop, mobile-only breakpoint, Arabic/Persian RTL support, manual swipe pause, reduced-motion behavior, requestAnimationFrame scheduling, visibility handling and cleanup are unchanged.
+
+**Cache:** `web/src/app.js` changes only the `home.js` import version to `mobile-home-ticker-speed-2`. `web/index.html` changes only the `app.js` version to `mobile-home-ticker-speed-2`. No styling, Desktop rendering, audio, Score, recording, navigation or musical code edits.
+
+**Validation:** Compared before/after strings, checked exactly one speed expression change, JS parse and all remaining source preserved. No actual browser/APK playback test was performed. Metered recording transcription remains unresolved with a mandatory explicit user approval gate for future Codex modifications.

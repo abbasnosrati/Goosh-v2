@@ -316,7 +316,7 @@ function startMobileFeatureTicker(features) {
     previous=now;
     if(now<pauseUntil)return;
     const direction=getComputedStyle(features).direction==='rtl'?-1:1;
-    let position=features.scrollLeft+direction*(dt*.027);
+    let position=features.scrollLeft+direction*(dt*.032);
     // The second copy is visually identical to the original at this seam.
     if(Math.abs(position)>=distance)position-=direction*distance;
     features.scrollLeft=position;
