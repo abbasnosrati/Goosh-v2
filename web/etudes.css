@@ -334,10 +334,6 @@ html[lang="fa"] #etudes-design-controls .etudes-design-eyebrow { letter-spacing:
   color: var(--accent);
   box-shadow: 0 1px 5px color-mix(in srgb,var(--ink) 8%,transparent);
 }
-#etudes-design-controls .etudes-design-tabs > input:focus-visible + label {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
 body:has(#etudes-mine:checked) #app[data-page="studio"] .shelves section:nth-child(2) > .etude-card,
 body:has(#etudes-mine:checked) #app[data-page="studio"] .shelves section:nth-child(2) > p,
 body:has(#etudes-imported:checked) #app[data-page="studio"] .shelves section:nth-child(1) > .etude-card,
@@ -659,10 +655,6 @@ html[lang="fa"] #practice-design-controls .practice-design-eyebrow { letter-spac
   background: var(--glass-surface);
   color: var(--accent);
   box-shadow: 0 1px 5px color-mix(in srgb,var(--ink) 8%,transparent);
-}
-#practice-design-controls .practice-design-tabs > input:focus-visible + label {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 body:has(#practice-mine:checked) #app[data-page="practice"] .shelves section:nth-child(2) > .etude-card,
 body:has(#practice-mine:checked) #app[data-page="practice"] .shelves section:nth-child(2) > p,
