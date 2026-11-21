@@ -1029,3 +1029,56 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
   padding: 0;
   flex: none;
 }
+
+
+/* Desktop Etude Setup: one continuous shell instead of two detached
+   nested cards. Preserve both existing surface tints and their content;
+   only the outer frame and hairline borders divide header/settings/guide. */
+@media screen and (min-width: 900px) {
+  html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose,
+  html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose {
+    gap: 0;
+    padding: 0;
+    border: 1px solid var(--visual-border);
+    border-radius: 19px;
+    background: var(--visual-shell);
+    box-shadow: var(--visual-shadow);
+    overflow: hidden;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music,
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide {
+    margin-top: 95px;
+    border-top: 1px solid var(--visual-border);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music,
+  html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-music {
+    border-inline: 0;
+    border-bottom: 0;
+    background: var(--visual-inner);
+    box-shadow: none;
+  }
+  html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]),
+  html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]) {
+    border-inline: 0;
+    border-bottom: 0;
+    border-radius: 0;
+    background: var(--visual-inner);
+    box-shadow: none;
+  }
+  html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose:has(.studio-compose-ai[hidden]) .studio-compose-music,
+  html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose:has(.studio-compose-ai[hidden]) .studio-compose-music {
+    border-radius: 0;
+    border-bottom: 0;
+    box-shadow: none;
+  }
+  html:not(.dark) #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide,
+  html.dark #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-guide {
+    border-inline-start: 1px solid var(--visual-border);
+    border-inline-end: 0;
+    border-bottom: 0;
+    background: var(--visual-inner);
+    box-shadow: none;
+  }
+}

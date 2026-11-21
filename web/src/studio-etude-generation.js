@@ -417,7 +417,7 @@ export function mountEtudeComposer(host, {
   const guide=create('aside',host,null,'studio-setup-guide');
   guide.setAttribute('aria-label',t('Etude Setup Guide','راهنمای تنظیمات اتود'));
   const guideHead=create('div',guide,null,'studio-setup-guide-head');
-  create('h3',guideHead,t('Etude Setup Guide','راهنمای تنظیمات اتود'));
+  const guideTitle=create('h3',guideHead,t('Manual Setup Guide','راهنمای حالت دستی'));
   const guideIntroduction=create('p',guideHead,t(
     'Configure the musical context and practice goal to generate a tailored etude.',
     'سیستم موسیقی و هدف تمرین را مشخص کنید تا اتود متناسب با آن ساخته شود.'
@@ -440,6 +440,11 @@ export function mountEtudeComposer(host, {
     if(guideVersion===version)return;
     guideVersion=version;
     const isManual=state.mode==='manual';
+    const heading=isManual
+      ? t('Manual Setup Guide','راهنمای حالت دستی')
+      : t('AI Setup Guide','راهنمای حالت هوش مصنوعی');
+    guideTitle.textContent=heading;
+    guide.setAttribute('aria-label',heading);
     guideIntroduction.textContent=isManual
       ? t('Choose a musical system, write or play your etude, then design exercises.',
           'سیستم موسیقی را انتخاب کنید، اتود را بنویسید یا با پیانو بنوازید و بعد تمرین بسازید.')
