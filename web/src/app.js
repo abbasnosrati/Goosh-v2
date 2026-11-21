@@ -1883,7 +1883,27 @@ function studio() {
   scoreBelowActions.classList.add('score-below-actions');
   scoreBelowActions.hidden=signatureMode;
 
-  const meterWrap=el('label',scoreBelowActions,undefined,'score-meter-control');
+  // Tempo is the leftmost control; the meter picker sits directly beside it.
+  const timeControls=el('div',scoreBelowActions,undefined,'score-time-controls');
+  // Tempo remains a global time-scale edit; only numeric input is shown.
+  const tempoControl = el('div', timeControls, undefined, 'score-tempo');
+  el('span', tempoControl, t('Tempo', 'سرعت'), 'score-tempo-label');
+  const tempoNumber = el('input', tempoControl, undefined, 'score-tempo-number');
+  tempoNumber.type = 'number';
+  tempoNumber.min = '20';
+  tempoNumber.max = '300';
+  tempoNumber.step = '1';
+  tempoNumber.value = String(e.bpm);
+  tempoNumber.disabled=Boolean(rec);
+  tempoNumber.inputMode = 'numeric';
+  tempoNumber.setAttribute('aria-label', t('Tempo in BPM', 'سرعت قطعه برحسب BPM'));
+  el('span', tempoControl, 'BPM', 'score-tempo-unit');
+  tempoNumber.onchange = () => {
+    if (!tempoNumber.reportValidity() || !setEtudeTempo(Number(tempoNumber.value)))
+      tempoNumber.value = String(e.bpm);
+  };
+
+  const meterWrap=el('label',timeControls,undefined,'score-meter-control');
   el('span',meterWrap,t('Time signature','میزان‌نما'));
   meterSelect=el('select',meterWrap);
   meterSelect.setAttribute('aria-label',t('Time signature','میزان‌نما'));
@@ -1927,7 +1947,6 @@ function studio() {
     timelineToggle.classList.toggle('active',freeTimelineOpen);
     measureField.hidden=!meterInfo(e);
     measureNumber.value=String(e.measureCount||4);
-    recordingHint.hidden=!meterInfo(e);
     const metronomeToggle=$('.score-metronome');
     if(metronomeToggle)metronomeToggle.hidden=!meterInfo(e);
     composer.confirmMeterSelection();
@@ -1995,29 +2014,7 @@ function studio() {
   const meterStatus=el('p',scoreBelowActions,undefined,'score-meter-status');
   meterStatus.setAttribute('role','status');
   meterStatus.hidden=true;
-  const recordingHint=el('p',scoreBelowActions,t(
-    'Metered notes extend from one attack to the next; releasing a key does not insert a rest. The optional metronome clicks while recording.',
-    'در ضبط میزان‌دار، کشش هر نت تا شروع نت بعدی ادامه دارد؛ رهاکردن کلاویه سکوت ایجاد نمی‌کند. مترونوم اختیاری است.'
-  ),'score-meter-record-hint');
-  recordingHint.hidden=!meterInfo(e);
 
-  // Tempo remains a global time-scale edit; only numeric input is shown.
-  const tempoControl = el('div', scoreBelowActions, undefined, 'score-tempo');
-  el('span', tempoControl, t('Tempo', 'سرعت'), 'score-tempo-label');
-  const tempoNumber = el('input', tempoControl, undefined, 'score-tempo-number');
-  tempoNumber.type = 'number';
-  tempoNumber.min = '20';
-  tempoNumber.max = '300';
-  tempoNumber.step = '1';
-  tempoNumber.value = String(e.bpm);
-  tempoNumber.disabled=Boolean(rec);
-  tempoNumber.inputMode = 'numeric';
-  tempoNumber.setAttribute('aria-label', t('Tempo in BPM', 'سرعت قطعه برحسب BPM'));
-  el('span', tempoControl, 'BPM', 'score-tempo-unit');
-  tempoNumber.onchange = () => {
-    if (!tempoNumber.reportValidity() || !setEtudeTempo(Number(tempoNumber.value)))
-      tempoNumber.value = String(e.bpm);
-  };
 
   // Practice Sequence is authored here in Studio, not in the learner player.
   // The editor reads/writes the same e.practiceSequence used by AI and export.
