@@ -2950,3 +2950,48 @@ These are **extracted-function / data-model runtime tests**, not an interactive 
 5. Avoid implementing additional features without explicit user request. Future reviews should not duplicate shared Score/transport logic.
 
 **Status:** Implemented and code-level checked; awaiting user confirmation on real desktop/mobile behavior.
+
+
+---
+
+## IMPLEMENTED — Free pen values, Free duration timeline, and per-staff seek/playhead (2026-11-21)
+
+**User's requested UX changes (three scoped features):**
+
+1. `Pen note value` (`کشش نت با مداد`) must stay visible and usable when the meter is **Free**, not only when a time signature is chosen.
+2. Clicking a Score note must **not** open the old numeric Note Settings dialog for duration/rest and Save. In metered notation that workflow is misleading because editing a duration shifts/invalidates following rhythmic placements; remove the modal rather than trying to keep parallel editing rules. In **Free / avaz**, provide an **optional toggleable visual timeline** where note lengths can be freely shortened or stretched with the mouse.
+3. Show a DAW-like **play-position/seek ruler above EACH staff row**. One staff row means one ruler; wrapped score with multiple rows means one ruler per row. Indicate playback position and allow mouse click on that ruler to seek so Play can continue from that musical location. Reuse ONE existing audio transport and note timeline.
+
+### Source changes, implemented on `feature/practice-sequence-studio`
+
+- **`web/src/app.js`:**
+  - The existing `penQuarterBeats` dropdown is **never hidden in Free**, and the existing Pen insertion now uniformly calculates `duration=(60/e.bpm)*penQuarterBeats` in both Free and metered modes. Free uses BPM as its current duration unit scale even without a bar/time signature; the dropdown uses the existing whole/half/quarter/eighth etc. choices and is not a new Pen engine.
+  - The legacy `noteSettings()` modal and `retimeNote()` helper are removed; normal Score Select click only highlights an individual note, retaining existing keyboard selection and Score drag functionality. No hidden numeric note timing editor remains in that click path.
+  - The new **Timeline / تایم‌لاین** button appears near the meter/Pen controls **only in Free**. It toggles a single `.score-free-timeline` panel rendered directly from canonical `e.notes`. Each note is an onset-proportional clip labelled by pitch and length, arranged in visual lanes if notes overlap, with a right-edge resize handle. Pointer drag previews the change; release commits the new duration, with .01-second steps; right/left arrow keys on focused handle adjust by .1 seconds. Editing does **NOT move any other note's onset**: only the note's `d` field changes. Existing recording/audio, Score and Free rest derivation remain driven by the same saved notes. A resize is one atomic Undo action in the existing `scoreUndoStack` (`kind:'free-duration'`). Free clip editing is disabled for metered scores and while recording; switching away from Free hides the panel.
+  - Add a transient `scoreSeekPosition` cursor. The existing shared `startScorePlayback()` now starts at this offset when requested, continuing to respect the existing marquee selection (only selected notes play). Clicking a ruler during playback stops and restarts **the same** existing transport at the chosen time; when idle it repositions the playhead, and Play starts from there. `scheduleScoreTransport()`, piano samples, note transport, and Pause/Resume are reused. Fix existing `playback.started` offset when starting mid-score: `transport.anchor - transport.offset`; otherwise the visual marker could lag behind the audible note after a seek or selected-only playback. The existing Score transport Play button still stops and returns the playhead to time zero.
+  - `sheet()` passes the one `seekScorePlayback()` callback and calls the Score module's `paintScorePlayhead()`; the current `paintPlaybackMarker()` uses the same audio clock to update the ruler playhead on each animation frame, including pause/resume. It also renders (or hides) the Free timeline panel. No duplicate audio scheduler or second notes collection is introduced.
+- **`web/src/score.js`:**
+  - Extend the existing `score()` renderer with an optional `seek` callback. Every generated SVG staff row gets one small labeled seek ruler in the available space above its five staff lines, with clickable hit zone, time anchors derived from its **existing** notes/rests/barline events, live progress and a playhead. The `rulerMap()` interpolation function handles both time-to-x and x-to-time using the same anchors; `paintScorePlayhead(host,time)` updates these SVG markers rather than doing another Score render each frame. This is a visual music-time ruler, **not an audio waveform**.
+  - Ruler clicks stop propagation, including `click`, so tapping the ruler in Pen mode never accidentally inserts a note. Keyboard support on the ruler: left/right by quarter beat and Home/End. In range-selection mode the ruler remains independent of the marquee.
+  - Ruler art receives `.score-ruler-art` so it is excluded from printed Score output; the underlying staff and notation are unchanged.
+- **`web/style.css`:** Add scoped Light/Dark-compatible glass Timeline styling, horizontally scrollable time-proportional clips, resize handle, optional responsive layout and print exclusions for both timeline and ruler art. Existing other pages/notation visuals are untouched.
+- **`web/index.html`:** Only refresh the shared stylesheet and entry module cache keys to `free-timeline-ruler-1`. The app imports `score.js?v=score-ruler-seek-1` to avoid reusing a stale renderer.
+
+### Actual checks performed (no unearned runtime claims)
+
+- Static parsing after stripping import/export wrappers: `web/src/app.js`, `web/src/score.js`, `web/src/model.js` **3/3 passed**.
+- Extracted-function Free duration + Undo tests **6/6 passed**: only one note's `d` changes, other `at` unchanged, one undo restores the duration, metered edit rejected, record-time edit rejected, short Free value valid, negative value rejected.
+- Extracted Score SVG / mock DOM seek ruler tests **6/6 passed**: one ruler for one staff, several rulers for wrapped staves, click maps exactly to musical time, click does not trigger Pen, current-time playhead position updates, keyboard seek dispatches.
+- Existing playback transport with mocked audio dependencies **5/5 passed**: start from clicked time, selected-only Play stays filtered, Pause keeps absolute time, Resume reuses same scheduler and offset, seeking during active playback restarts same scheduler at selected time.
+- Extracted visual Free Timeline and mock pointer tests **4/4 passed**: each canonical note produces a clip, relative onset positions reflect original data, dragging one handle commits only that note's duration, and timeline hides for Metered.
+- These are **source-backed programmatic tests and mocked DOM/audio checks**; they are **NOT real browser/device, real piano/audio, Android/iOS, scroll/resize rendering, visual acceptance or printed PDF tests**. User acceptance has not been recorded. Test actual mobile and desktop Free note editing, wrapped Score seeking, clipboard-free selection/erase, playback seeking and Ctrl+Z in the browser before declaring the UX fully correct.
+
+### Deliberate boundaries / caveats
+
+- In Metered notation, no on-click numeric duration modal and no arbitrary duration resizing; rhythmic placement continues through existing Score Pen/Select/Eraser and the shared measure validator. Free note length editing intentionally does **not** shift other starts; this can create or remove audible overlaps and derived rests, which are allowed in Free.
+- Free note length clips use seconds, with .01-second drag resolution; the predefined Pen note-length menu is relative to BPM. The two views use one `e.notes` model but intentionally have different editing granularity.
+- Seek rulers map actual musical event times onto **engraved spatial note spacing**. This is not a perfectly time-linear axis or waveform representation; intervals inside each pair of Score anchors are interpolated. A full precision DAW waveform, dragging a playhead across rows, or tempo-grid snapping are out of scope unless requested.
+- Clicking a ruler while stopped **positions** the playhead; pressing Play begins there. While already playing it restarts the same transport from the click position. With an active marquee, the current selected-only playback behavior still takes priority.
+- The old Note Settings dialog is intentionally removed, not moved to a second editor. No additional persistent note schema, timeline array, audio player or separate recording path is created. Do not reintroduce the old modal or change existing metered transcription based on this change alone.
+
+**Status:** Implemented in source; logic and mock-UI checks passed; physical UX and audio behavior await the user's verification.
