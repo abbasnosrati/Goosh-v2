@@ -1255,3 +1255,116 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
     font-size:13px;
   }
 }
+
+/* Etude Setup: the same icon-only disclosure affordance as the Piano.
+   Expanded by default; collapsing changes presentation, not form state. */
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-toggle {
+  display:inline-grid;
+  place-items:center;
+  flex:0 0 42px;
+  width:42px;
+  min-width:42px;
+  height:42px;
+  min-height:42px;
+  margin-inline-start:auto;
+  padding:0;
+  border:1px solid var(--glass-border);
+  border-radius:10px;
+  background:var(--glass-control);
+  color:var(--ink);
+  cursor:pointer;
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-toggle svg {
+  display:block;
+  width:21px;
+  height:21px;
+  transition:transform 150ms ease;
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-toggle[aria-expanded="true"] svg {
+  transform:rotate(180deg);
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-toggle:focus-visible {
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+}
+/* Hide the entire settings and guide content, not their underlying controls
+   or values. The heading and disclosure remain visible at all screen sizes. */
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed .studio-compose-music > :not(.studio-setup-header),
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed .studio-compose-ai,
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed .studio-setup-guide,
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed .studio-compose-tabs {
+  display:none!important;
+}
+@media screen and (min-width:900px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed {
+    display:block;
+    padding:0 18px!important;
+    min-height:0;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed .studio-setup-main {
+    display:block;
+    margin:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed .studio-compose-music {
+    display:block;
+    margin:0!important;
+    padding:0!important;
+    min-height:0;
+    background:transparent;
+    box-shadow:none;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed .studio-setup-header {
+    position:relative;
+    inset:auto;
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:16px;
+    min-height:68px;
+    width:100%;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed .studio-compose-heading {
+    margin:0;
+  }
+}
+@media screen and (max-width:899px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-header {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 42px;
+    align-items:center;
+    column-gap:12px;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-header .studio-compose-heading {
+    grid-column:1;
+    grid-row:1;
+    align-self:center;
+    min-width:0;
+    margin:0;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-header .studio-setup-toggle {
+    grid-column:2;
+    grid-row:1;
+    margin-inline-start:0;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-header .studio-compose-tabs {
+    grid-column:1/-1;
+    grid-row:2;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed .studio-setup-header {
+    row-gap:0;
+    min-height:44px;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-collapsed .studio-compose-music {
+    border:1px solid var(--glass-border)!important;
+    border-radius:14px!important;
+    box-shadow:var(--glass-soft-shadow)!important;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-toggle svg {
+    transition:none;
+  }
+}

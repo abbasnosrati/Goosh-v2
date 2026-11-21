@@ -3240,3 +3240,13 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 **Exact change:** In `web/src/app.js` the existing `studio-piano-toggle` button gets a single decorative SVG chevron pointing down when the keyboard is hidden (expand), and up when expanded (collapse), via the existing `aria-expanded` state and a scoped CSS rotation. No extra button, listener or new state is introduced. Keep the localized Show/Hide labels in `aria-label` and hover title for accessibility without displaying visible text on the button. `web/style.css` scopes the 42px square icon button and its SVG rotation to this one control, with reduced-motion support. `web/index.html` updates only the two cache tags.
 
 **Scope:** All existing keyboard visibility handling, octave label, initial Manual/AI visibility, recentering, piano sound, recording and other buttons remain unchanged. No browser/device screenshot verification was performed.
+
+---
+
+## 2026-11-21 — Etude Setup can expand and collapse; initially open
+
+**User request:** Add the same icon-only expand/collapse chevron used for the Studio piano to the Etude Setup section. The section must be expanded by default, and users may close and reopen it without losing settings.
+
+**Changes:** `web/src/studio-etude-generation.js` adds exactly one localized, accessible `studio-setup-toggle` button alongside the existing Etude Setup heading and Manual/AI selector. It uses the same down-chevron SVG path as the Piano, rotated upward while expanded; the button has state-dependent `aria-expanded`, `aria-label`, and title but no visible text. A UI-only `setupExpanded:true` initial flag in the existing per-etude WeakMap state keeps the panel open initially and preserves a user's toggle choice through editor rerenders. Toggling the panel merely adds/removes a CSS class, and marks hidden regions inert for keyboard access; it never resets input values or changes generation, score, piano, or practice logic. The collapsed state retains only its heading and chevron while hiding the Manual/AI segmented selector, musical-system settings, AI fields, and desktop Guide. `web/visual-system.css` scopes the responsive panel layout and styling to Studio, with an intact collapsed header at desktop/tablet/mobile sizes. `web/src/app.js` and `web/index.html` only update cache keys.
+
+**Verification:** Static source checks checked icon direction, click handler, aria state, default expansion, collapsed-only CSS, and unchanged underlying data/state flow. Full browser/device visual QA not performed.

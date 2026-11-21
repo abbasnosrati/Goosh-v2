@@ -198,7 +198,7 @@ export function mountEtudeComposer(host, {
     const previous = etude.musicContext;
     const validPrevious = previous && ['iranian','western'].includes(previous.musicSystem);
     state = {
-      mode:'manual', goal:'',
+      mode:'manual', goal:'', setupExpanded:true,
       musicSystem:validPrevious ? previous.musicSystem : 'iranian',
       styles:validPrevious
         ? {[previous.musicSystem]:previous.musicSystem === 'iranian' ? previous.dastgah : previous.scale}
@@ -217,6 +217,7 @@ export function mountEtudeComposer(host, {
     state.controller = null;
   }
 
+  if(typeof state.setupExpanded!=='boolean')state.setupExpanded=true;
   host.replaceChildren();
   host.className = 'studio-compose';
   // One content column keeps Music and AI settings tightly together regardless
@@ -242,6 +243,21 @@ export function mountEtudeComposer(host, {
   appendSetupIcon(ai, 'wand', 'studio-compose-mode-icon');
   create('span',manual,t('Manual','دستی'),'studio-compose-mode-label');
   create('span',ai,t('AI Assist','هوش مصنوعی'),'studio-compose-mode-label');
+  const setupToggle=create('button',setupHeader,null,'studio-setup-toggle');
+  setupToggle.type='button';
+  const disclosureIcon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  disclosureIcon.setAttribute('viewBox','0 0 24 24');
+  disclosureIcon.setAttribute('fill','none');
+  disclosureIcon.setAttribute('stroke','currentColor');
+  disclosureIcon.setAttribute('stroke-width','2');
+  disclosureIcon.setAttribute('stroke-linecap','round');
+  disclosureIcon.setAttribute('stroke-linejoin','round');
+  disclosureIcon.setAttribute('aria-hidden','true');
+  disclosureIcon.setAttribute('focusable','false');
+  const disclosureChevron=document.createElementNS('http://www.w3.org/2000/svg','path');
+  disclosureChevron.setAttribute('d','m6 9 6 6 6-6');
+  disclosureIcon.append(disclosureChevron);
+  setupToggle.append(disclosureIcon);
 
   // A shared musical foundation: Manual and AI always use the same
   // canonical Etude key signature, piano and score playback frequencies.
@@ -499,6 +515,24 @@ export function mountEtudeComposer(host, {
       ));
     }
   }
+
+  // Folding hides only the composer presentation, never its form state,
+  // music data, or the separate Piano / Score and Practice Design sections.
+  const setSetupExpanded=expanded=>{
+    const open=Boolean(expanded);
+    state.setupExpanded=open;
+    host.classList.toggle('studio-compose-collapsed',!open);
+    setupToggle.setAttribute('aria-expanded',String(open));
+    const label=open
+      ?t('Collapse Etude Setup','جمع‌کردن تنظیمات اتود')
+      :t('Expand Etude Setup','بازکردن تنظیمات اتود');
+    setupToggle.setAttribute('aria-label',label);
+    setupToggle.title=label;
+    for(const region of [tabs,musicSystem,fields,signatureHint,content,guide])
+      region.inert=!open;
+  };
+  setupToggle.onclick=()=>setSetupExpanded(!state.setupExpanded);
+  setSetupExpanded(state.setupExpanded);
 
   let catalog = null;
   let busy = false;
