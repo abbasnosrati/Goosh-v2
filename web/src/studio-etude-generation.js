@@ -434,32 +434,40 @@ export function mountEtudeComposer(host, {
     guideVersion=version;
     const isManual=state.mode==='manual';
     guideIntroduction.textContent=isManual
-      ? t('Choose your musical system, write or play your etude, then create exercises in Practice Design.',
-          'سیستم موسیقی را انتخاب کنید، اتودتان را بنویسید یا با پیانو اجرا کنید و سپس در طراحی تمرین، تمرین بسازید.')
+      ? t('Choose a musical system, write or play your etude, then design exercises.',
+          'سیستم موسیقی را انتخاب کنید، اتود را بنویسید یا با پیانو بنوازید و بعد تمرین بسازید.')
       : t('Configure the musical context and practice goal to generate a tailored etude.',
           'سیستم موسیقی و هدف تمرین را مشخص کنید تا اتود متناسب با آن ساخته شود.');
     guideSteps.replaceChildren();
-    addGuideStep('layers',t('Musical system','سیستم موسیقایی'),t(
-      'Choose the musical tradition for your etude (Iranian or Western).',
-      'موسیقی ایرانی یا غربی را برای اتود انتخاب کنید.'
-    ));
+    addGuideStep('layers',t('Musical system','سیستم موسیقایی'),isManual
+      ? t('Choose Iranian or Western music.',
+          'موسیقی ایرانی یا غربی را انتخاب کنید.')
+      : t('Choose the musical tradition for your etude (Iranian or Western).',
+          'موسیقی ایرانی یا غربی را برای اتود انتخاب کنید.')
+    );
     addGuideStep('dastgah',state.musicSystem==='iranian'
       ? t('Dastgah & Key Signature','دستگاه و سرکلید')
       : t('Scale/Mode & Key Signature','گام یا مد و سرکلید'),
       state.musicSystem==='iranian'
-        ? t("Select a Dastgah, then fine-tune the score's key signature if needed.",
-            'دستگاه را انتخاب کنید و در صورت نیاز سرکلید را دقیق‌تر تنظیم کنید.')
-        : t('Select a scale or mode and a tonic to set the score key signature.',
-            'با انتخاب گام یا مد و نت پایه، سرکلید خط حامل تنظیم می‌شود.')
+        ? (isManual
+          ? t('Choose a Dastgah and adjust its key signature.',
+              'دستگاه و سرکلید آن را تنظیم کنید.')
+          : t("Select a Dastgah, then fine-tune the score's key signature if needed.",
+              'دستگاه را انتخاب کنید و در صورت نیاز سرکلید را دقیق‌تر تنظیم کنید.'))
+        : (isManual
+          ? t('Choose a scale/mode and tonic to set the key signature.',
+              'گام یا مد و نت پایه را برای تعیین سرکلید انتخاب کنید.')
+          : t('Select a scale or mode and a tonic to set the score key signature.',
+              'با انتخاب گام یا مد و نت پایه، سرکلید خط حامل تنظیم می‌شود.'))
     );
     if(isManual){
-      addGuideStep('music',t('Compose & Edit Your Etude','نوشتن و ویرایش اتود'),t(
-        'Write notes directly on the Score or play them on the piano. Edit your etude as needed.',
-        'نت‌های اتود را روی خط حامل بنویسید یا با پیانو بنوازید و در صورت نیاز آن‌ها را ویرایش کنید.'
+      addGuideStep('music',t('Compose & Edit','نوشتن و ویرایش اتود'),t(
+        'Write notes on the Score or play the piano, then edit them.',
+        'روی خط حامل نت بنویسید یا با پیانو بنوازید و سپس ویرایش کنید.'
       ));
       addGuideStep('target',t('Design Your Practice','طراحی تمرین'),t(
-        'Use Practice Design below to create exercises based on your etude.',
-        'در بخش طراحی تمرین در پایین صفحه، تمرین‌های دلخواهتان را بر اساس این اتود بسازید.'
+        'Create exercises for your etude in Practice Design below.',
+        'در بخش طراحی تمرین در پایین صفحه برای اتودتان تمرین بسازید.'
       ));
     }else{
       addGuideStep('target',t('Primary practice goal','هدف اصلی تمرین'),t(
