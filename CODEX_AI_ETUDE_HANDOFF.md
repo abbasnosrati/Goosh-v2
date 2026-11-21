@@ -2893,3 +2893,21 @@ These are **extracted-function / data-model runtime tests**, not an interactive 
 **Out of scope / remaining ambiguity:** Early key-off cannot distinguish a long staccato-notated note from short note plus silence; this version deliberately assumes sustain-in-notation until next attack. True rests between hits must be set deliberately, not inferred. A stop after several beats may lengthen the last note up to (but never beyond) its enclosing barline. The optional metronome's phase is not synchronized to the first attack; it remains an auditory guide. The snap grid can map extremely close attacks to the same notated onset, forming a group. These are currently explicit limits rather than claimed fixes.
 
 **Scope assurance:** This patch was specifically requested after the rule and ambiguity were explained; the unrelated Key Signature dialog documentation above and the older warning do not authorize unrelated code changes.
+
+
+---
+
+## USER FEEDBACK AND CODEX REVIEW REQUEST — Metered piano recording (2026-11-21)
+
+**Latest user feedback (Persian, verbatim):** “خیلی بهتر شد فعلا خوبه .. اما توی کدکس بگو بهتر شده اما خودش وقتی داک رو خوندیه ببرسی کنه وپیشنهاد بهتر شدن روبده”
+
+**Meaning / acceptance status:** The user has now tried the new attack-to-attack Metered piano recording and reports it is **much better and acceptable for now**. This updates the previous “NOT YET USER-VERIFIED” caveat: the user has given *positive practical feedback*, but has **not** claimed that every edge case is fully correct, professionally polished, or regression-free. Do not reopen the previous defect as though the new implementation did nothing, and do not present it as a final perfected transcription algorithm.
+
+**Specific request to Codex — READ, REVIEW, THEN PROPOSE; DO NOT AUTO-IMPLEMENT:**
+
+1. **Read this handoff thoroughly**, especially the older problem report, the approved onset-to-onset design, the latest implementation/test summary, and **this user's updated positive feedback**. Cross-check the **actual current code** in `web/src/app.js` (`snapRecordedOnset`, `reconcileMeteredTake`, `toggle`, piano event timing, optional metronome), `web/src/model.js` (`meterInfo`, `meterTimeline`), and `web/src/score.js` (notation rendering). Where old documentation differs from current code or user feedback, distinguish the historical state from the current one.
+2. Perform an **independent technical and musical review** of how to make Metered piano Record -> Score transcription more accurate, intuitive and robust. In particular assess: attack timestamp vs audio/performance clock consistency; temporal quantization and tolerance at different BPMs; phase alignment with the optional metronome; expressive timing and near-simultaneous notes/chords; short-note versus silence ambiguity; repeated same-pitch taps; notes crossing measures/ties; the **last note and when Record Stop happens**; compound meters (6/8, 6/16), other supported meters, and whether changes could affect existing Score, Free recording, piano sound or mobile touch behavior.
+3. **Present a prioritized, concrete list of proposed improvements to the user in Persian**, each explaining the current observed/verified limitation, the precise musical rule and expected benefit, trade-offs, implementation scope, and a specific playing example that can be used to validate it. Clearly distinguish verified code findings from hypotheses and optional ideas. Prefer minimal safe improvements over an unnecessary rewrite; do not invent requirements or imply that untested changes are already functional.
+4. **Do not edit, refactor, commit, or push any application code merely as a result of this request.** The current version is considered sufficiently good for now by the user. Codex is asked for **analysis and recommendations only**; await explicit approval for any proposed implementation. Do not affect unrelated features, other pages, audio behavior, notation model, visual design, or the existing working behavior without an independently authorized request.
+
+**Documentation-only action:** This entry communicates user feedback and a future review task. It is not a code fix or authorization to modify the recording implementation.
