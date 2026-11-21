@@ -1669,15 +1669,31 @@ function studio() {
     t('Show or hide piano', 'نمایش یا جمع‌کردن پیانو'));
   pianoToggle.type = 'button';
   pianoToggle.className = 'studio-piano-toggle';
+  // Icon-only disclosure: down opens the keyboard, up collapses it.
+  // Keep the same button and callback for piano/recording behavior.
+  const toggleIcon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  toggleIcon.setAttribute('viewBox','0 0 24 24');
+  toggleIcon.setAttribute('fill','none');
+  toggleIcon.setAttribute('stroke','currentColor');
+  toggleIcon.setAttribute('stroke-width','2');
+  toggleIcon.setAttribute('stroke-linecap','round');
+  toggleIcon.setAttribute('stroke-linejoin','round');
+  toggleIcon.setAttribute('aria-hidden','true');
+  toggleIcon.setAttribute('focusable','false');
+  const toggleChevron=document.createElementNS('http://www.w3.org/2000/svg','path');
+  toggleChevron.setAttribute('d','m6 9 6 6 6-6');
+  toggleIcon.append(toggleChevron);
+  pianoToggle.append(toggleIcon);
   const setPianoExpanded = expanded => {
     const open = Boolean(expanded);
     const wasHidden = pianoKeys.hidden;
     pianoKeys.hidden = !open;
     if(pianoOctaveLabel)pianoOctaveLabel.hidden = !open;
     studioPiano.classList.toggle('studio-piano-collapsed', !open);
-    pianoToggle.textContent = open ? t('Hide piano','جمع‌کردن پیانو') : t('Show piano','نمایش پیانو');
+    const toggleLabel=open ? t('Hide piano','جمع‌کردن پیانو') : t('Show piano','نمایش پیانو');
     pianoToggle.setAttribute('aria-expanded',String(open));
-    pianoToggle.setAttribute('aria-label',pianoToggle.textContent);
+    pianoToggle.setAttribute('aria-label',toggleLabel);
+    pianoToggle.title=toggleLabel;
     studioPianoExpanded.set(e,open);
     if(open && wasHidden)
       requestAnimationFrame(() => {if(!pianoKeys.hidden)studioPiano.recenterOctave?.()});

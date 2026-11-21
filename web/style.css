@@ -397,15 +397,33 @@ footer strong{margin-inline-end:auto;color:var(--muted)}
 .instrument{background:var(--glass-control);padding:12px;border-radius:14px;margin-top:12px;min-width:0}
 .instrument>.row{justify-content:space-between}
 #app[data-page="studio"] .instrument .studio-piano-toggle {
+  display:inline-grid;
+  place-items:center;
+  flex:0 0 42px;
+  width:42px;
+  min-width:42px;
+  height:42px;
+  min-height:42px;
   margin-inline-start:auto;
-  min-height:38px;
-  padding:5px 11px;
+  padding:0;
   border:1px solid var(--glass-border);
-  border-radius:9px;
+  border-radius:10px;
   background:var(--glass-control);
   color:var(--ink);
-  font-size:.82rem;
-  font-weight:650;
+}
+#app[data-page="studio"] .instrument .studio-piano-toggle svg {
+  display:block;
+  width:21px;
+  height:21px;
+  transition:transform 150ms ease;
+}
+#app[data-page="studio"] .instrument .studio-piano-toggle[aria-expanded="true"] svg {
+  transform:rotate(180deg);
+}
+@media (prefers-reduced-motion:reduce) {
+  #app[data-page="studio"] .instrument .studio-piano-toggle svg {
+    transition:none;
+  }
 }
 #app[data-page="studio"] .instrument .row > label[hidden],
 #app[data-page="studio"] .instrument .keys[hidden] {display:none!important}

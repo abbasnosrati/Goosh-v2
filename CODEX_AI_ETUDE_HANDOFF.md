@@ -3230,3 +3230,13 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 **Implementation:** `web/src/app.js` keeps the one shared `renderLibraryEtudeCard` renderer and navigational item, but exits before the existing delete-button creation when its destination is `practice`. Only `studio` list cards create the same existing delete action, dialog and handler. No data removal or new behavior is added. `web/etudes.css` removes the unused delete-button padding in Practice cards, including the unused third grid column for Persian mobile layout. `web/index.html` updates only the relevant JS and CSS cache keys. No other page, card action, import/export, or Practice runtime code changes.
 
 **Source review:** Confirmed `etudeList()` calls `renderLibraryEtudeCard(section,id,entry,page)` so the existing page value is the canonical route selector. Static checks ensure the deletion callback remains available in Studio only; no browser/device test was run.
+
+---
+
+## 2026-11-21 — Piano expand / collapse: icon-only button
+
+**User request:** The piano visibility toggle in Etude Studio must not display «جمع‌کردن پیانو» / “Hide piano” (or its Show equivalent) as button text. It should instead display a clear icon indicating the open/close action.
+
+**Exact change:** In `web/src/app.js` the existing `studio-piano-toggle` button gets a single decorative SVG chevron pointing down when the keyboard is hidden (expand), and up when expanded (collapse), via the existing `aria-expanded` state and a scoped CSS rotation. No extra button, listener or new state is introduced. Keep the localized Show/Hide labels in `aria-label` and hover title for accessibility without displaying visible text on the button. `web/style.css` scopes the 42px square icon button and its SVG rotation to this one control, with reduced-motion support. `web/index.html` updates only the two cache tags.
+
+**Scope:** All existing keyboard visibility handling, octave label, initial Manual/AI visibility, recentering, piano sound, recording and other buttons remain unchanged. No browser/device screenshot verification was performed.
