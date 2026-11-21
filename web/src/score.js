@@ -17,7 +17,43 @@ function symbol(beats) {
     Math.abs(Math.log(beats/a.value))?b:a)
   return {...best,exact:Math.abs(beats-best.value)<Math.max(.005,best.value*.012)}
 }
-export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,pick,insert,move,moveRest,eraseRest,tool='select',fa=false}={}) {
+// Both directions use the same row anchors: no second timing or transport.
+// Score is spatially engraved rather than time-proportional; interpolation
+// makes the seek ruler follow the displayed spacing on each staff row.
+function rulerMap(points,value,from,to) {
+  if(!points.length)return 0
+  if(value<=points[0][from])return points[0][to]
+  for(let i=1;i<points.length;i++){
+    const a=points[i-1],b=points[i]
+    if(value>b[from])continue
+    const span=b[from]-a[from]
+    return span>1e-8
+      ?a[to]+Math.max(0,Math.min(1,(value-a[from])/span))*(b[to]-a[to])
+      :b[to]
+  }
+  return points[points.length-1][to]
+}
+
+export function paintScorePlayhead(host,time) {
+  if(!host||!Number.isFinite(time))return
+  for(const svg of host.querySelectorAll('svg[data-score-ruler]')){
+    const ruler=svg.gooshRuler
+    if(!ruler)continue
+    const {points,cursor,thumb,progress,hit}=ruler
+    const from=points[0].at,to=points[points.length-1].at
+    const active=time>=from-1e-7&&time<=to+1e-7
+    cursor.setAttribute('opacity',active?'0.75':'0')
+    thumb.setAttribute('opacity',active?'1':'0')
+    const x=rulerMap(points,Math.max(from,Math.min(to,time)),'at','x')
+    cursor.setAttribute('x1',x);cursor.setAttribute('x2',x)
+    thumb.setAttribute('cx',x)
+    progress.setAttribute('x2',x)
+    progress.setAttribute('opacity',active?'1':'0.2')
+    hit.setAttribute('aria-valuenow',String(Math.max(from,Math.min(to,time)).toFixed(2)))
+  }
+}
+
+export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,seek,pick,insert,move,moveRest,eraseRest,tool='select',fa=false}={}) {
   host.replaceChildren()
   const second=60/(e.bpm||90),width=Math.max(240,host.clientWidth||700)
   const timeline=meterTimeline(e)
@@ -647,6 +683,85 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,pi
       if(y<4||y>161)return
       const placement=planPlacement(rowIndex,x,ev.shiftKey)
       insert?.(pitchFromY(y),placement)
+    }
+
+    if(seek){
+      // Every engraved staff row gets ONE interactive ruler mapped to the
+      // existing note/rest events. The audio schedule remains app.js only.
+      const startX=Math.max(13,Math.min(w-22,row.items[0]?.x??17))
+      const endX=Math.max(startX+9,Math.min(w-10,row.extent-10))
+      const points=[]
+      for(const item of row.items){
+        if(!Number.isFinite(item.at))continue
+        if(points.length&&item.at<=points[points.length-1].at+1e-8)continue
+        points.push({at:item.at,x:Math.max(startX,Math.min(endX,item.x))})
+      }
+      if(!points.length)points.push({at:0,x:startX})
+      const last=row.items[row.items.length-1]
+      const endAt=Math.max(points[points.length-1].at+1e-6,
+        last?last.at+Math.max(last.duration,0):second)
+      points.push({at:endAt,x:endX})
+      svg.setAttribute('data-score-ruler',String(rowIndex))
+      const bg=draw('rect',{x:startX-6,y:5,width:endX-startX+12,
+        height:27,rx:8,fill:'var(--glass-control)',
+        stroke:'var(--glass-border)','stroke-width':.75,
+        'pointer-events':'none'})
+      draw('line',{x1:startX,y1:22,x2:endX,y2:22,
+        stroke:'currentColor','stroke-opacity':.3,'stroke-width':2,
+        'pointer-events':'none'})
+      for(const item of points){
+        draw('line',{x1:item.x,y1:18,x2:item.x,y2:26,
+          stroke:'currentColor','stroke-opacity':.36,'stroke-width':1,
+          'pointer-events':'none'})
+      }
+      draw('text',{x:startX+3,y:14,'font-size':9,
+        fill:'currentColor','fill-opacity':.8,'pointer-events':'none'},
+        points[0].at.toFixed(1)+'s')
+      draw('text',{x:endX-3,y:14,'font-size':9,
+        fill:'currentColor','fill-opacity':.8,'text-anchor':'end',
+        'pointer-events':'none'},endAt.toFixed(1)+'s')
+      const progress=draw('line',{x1:startX,y1:22,x2:startX,y2:22,
+        stroke:'var(--accent)','stroke-width':2.5,
+        'stroke-linecap':'round','pointer-events':'none'})
+      const cursor=draw('line',{x1:startX,y1:10,x2:startX,y2:151,
+        stroke:'var(--accent)','stroke-width':1.5,
+        'stroke-dasharray':'3 3','stroke-opacity':.75,
+        'pointer-events':'none'})
+      const thumb=draw('circle',{cx:startX,cy:22,r:4.1,
+        fill:'var(--accent)',stroke:'var(--panel)','stroke-width':1.1,
+        'pointer-events':'none'})
+      const hit=draw('rect',{x:startX-7,y:3,width:endX-startX+14,
+        height:32,rx:8,fill:'transparent',
+        'data-score-seek':String(rowIndex),
+        role:'slider',tabindex:0,
+        'aria-label':fa?'موقعیت پخش در ردیف '+(rowIndex+1):
+          'Playback position on staff '+(rowIndex+1),
+        'aria-valuemin':String(points[0].at),
+        'aria-valuemax':String(endAt),
+        'aria-valuenow':String(points[0].at)})
+      svg.gooshRuler={points,cursor,thumb,progress,hit,currentTime:points[0].at}
+      hit.style.cursor='pointer'
+      hit.onpointerdown=event=>{
+        if(event.button!==undefined&&event.button!==0)return
+        event.stopPropagation()
+        event.preventDefault()
+        const rect=svg.getBoundingClientRect()
+        const x=(event.clientX-rect.left)*(w/rect.width)
+        const at=rulerMap(points,x,'x','at')
+        seek(at)
+      }
+      hit.onkeydown=event=>{
+        if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return
+        event.preventDefault()
+        event.stopPropagation()
+        const current=Number(hit.getAttribute('aria-valuenow'))||points[0].at
+        const step=second/4
+        const to=event.key==='Home'?points[0].at
+          :event.key==='End'?endAt
+          :Math.max(points[0].at,Math.min(endAt,
+            current+(event.key==='ArrowRight'?step:-step)))
+        seek(to)
+      }
     }
   }
 
