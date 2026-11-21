@@ -2184,10 +2184,6 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 
 
 /* Free-meter note-length timeline and per-row score playhead (Studio only). */
-#app[data-page="studio"] .score-free-timeline-toggle,
-#app[data-page="studio"] .score-free-timeline-toggle[hidden] {
-  /* Existing button typography and theme variables remain canonical. */
-}
 #app[data-page="studio"] .score-free-timeline-toggle {
   display: inline-flex;
   align-items: center;
