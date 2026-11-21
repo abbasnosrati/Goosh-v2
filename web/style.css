@@ -1113,10 +1113,10 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   #app[data-page="studio"] .studio-mobile-signature-card {
     min-width: 0;
     padding: 11px;
-    border: 1px solid var(--glass-border);
+    border: 0;
     border-radius: 16px;
-    background: var(--glass-surface);
-    box-shadow: var(--glass-soft-shadow);
+    background: transparent;
+    box-shadow: none;
   }
   #app[data-page="studio"] .studio-mobile-signature-header {
     display: flex;
@@ -1232,22 +1232,23 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     order: 3;
     grid-column: auto;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "readout adjust" "scale scale" "actions actions";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "adjust" "scale" "actions";
     align-items: center;
     gap: 9px 8px;
     min-width: 0;
     padding-top: 11px;
     border-top: 1px solid var(--glass-border);
   }
-  #app[data-page="studio"] .studio-mobile-signature-editor .signature-tuner-value {
-    font-size: 25px;
+  /* The numeric cents input is the only visible value on phones. */
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-tuner-readout {
+    display: none;
   }
   #app[data-page="studio"] .studio-mobile-signature-editor .signature-tuner-adjust {
-    width: min(100%, 194px);
-    justify-self: end;
-    grid-template-columns: 35px minmax(52px, 1fr) 35px;
-    gap: 4px;
+    width: min(100%, 225px);
+    justify-self: center;
+    grid-template-columns: 38px minmax(64px, 1fr) 38px;
+    gap: 6px;
   }
   #app[data-page="studio"] .studio-mobile-signature-editor .signature-tuner-actions {
     justify-content: center;
