@@ -1218,6 +1218,44 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     font-size: 23px;
     box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
   }
+  /* Unified button centering; symbol-specific optical adjustments compensate
+     for differing font baselines. Applies to the shared modal in both themes. */
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-editor-mark {
+    display:grid;
+    place-items:center;
+    width:100%;
+    padding-inline:2px;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-mark-glyph {
+    display:grid;
+    place-items:center;
+    width:28px;
+    height:30px;
+    margin:auto;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-western-symbol {
+    display:grid;
+    place-items:center;
+    width:24px;
+    height:28px;
+    font-size:25px;
+    line-height:1;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-natural-symbol {
+    transform:translate(1px,-6px);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-flat-symbol {
+    transform:translateY(-3px);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-sharp-symbol {
+    transform:translateY(0);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor svg[data-persian-accidental="کرن"] {
+    transform:translateY(2px);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor svg[data-persian-accidental="سری"] {
+    transform:translateY(1px);
+  }
   #app[data-page="studio"] .studio-mobile-signature-editor .signature-editor-mark.active {
     border-color: var(--accent);
     color: var(--accent);

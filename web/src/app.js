@@ -545,7 +545,7 @@ function renderSignatureControls(box=$('.studio-score-surface > .signature-edito
     'signature-editor-selected')
   const marks=el('div',box,undefined,'signature-editor-marks')
   for(const {mark:option,glyph,en,fa:ir} of SIGNATURE_MARKS){
-    const button=btn(marks,isPersianAccidental(option)?'':glyph,()=>{
+    const button=btn(marks,'',()=>{
       if((e.key[pc]||'')===option&&!e.offset[pc])return
       stopSignaturePreview()
       stopScorePlayback()
@@ -559,17 +559,19 @@ function renderSignatureControls(box=$('.studio-score-surface > .signature-edito
     if(option===mark)button.classList.add('active')
     button.setAttribute('aria-label',t(en,ir))
     button.setAttribute('aria-pressed',String(option===mark))
+    // All five marks share one centered content box. Stored accidentals,
+    // tuning, selection and SVG geometry remain unchanged.
+    const symbol=el('span',button,undefined,'signature-mark-glyph')
     if(option===''){
-      // Keep the natural sign optically centered without affecting any
-      // other symbol or the existing selection/clear-key behavior.
       button.classList.add('signature-natural-mark')
-      button.textContent=''
-      el('span',button,glyph,'signature-natural-symbol')
-    }
-    if(isPersianAccidental(option)){
+      el('span',symbol,glyph,'signature-natural-symbol')
+    }else if(isPersianAccidental(option)){
       button.classList.add('signature-microtonal')
-      // Match the optical height of the unchanged flat/sharp symbols.
-      appendPersianAccidental(button,option,{width:18,height:22})
+      appendPersianAccidental(symbol,option,{width:18,height:22})
+    }else{
+      el('span',symbol,glyph,option==='♭'
+        ? 'signature-western-symbol signature-flat-symbol'
+        : 'signature-western-symbol signature-sharp-symbol')
     }
   }
   // Compact, unboxed tuning controls; selected pitch is already identified
