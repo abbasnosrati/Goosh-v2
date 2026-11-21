@@ -24,7 +24,7 @@ export const signatureGlyph=mark=>SIGNATURE_MARKS.find(item=>item.mark===mark)?.
 
 export function drawKeySignatureEditor(host,e,{selectedPc=0,onSelect,compact=false}={}){
   host.replaceChildren()
-  const w=compact?Math.max(250,Math.round(host.clientWidth||300)):Math.max(650,host.clientWidth||650)
+  const w=compact?Math.max(180,Math.round(host.clientWidth||300)):Math.max(650,host.clientWidth||650)
   const svg=document.createElementNS(ns,'svg')
   svg.setAttribute('width',w)
   svg.setAttribute('height',160)
@@ -39,8 +39,8 @@ export function drawKeySignatureEditor(host,e,{selectedPc=0,onSelect,compact=fal
     svg.append(element)
     return element
   }
-  const pos=index=>compact?65+index*(w-89)/6:96+index*(w-174)/6
-  const targetHalf=compact?Math.max(14,Math.min(22,(w-89)/12)):25
+  const pos=index=>compact?50+index*(w-66)/6:96+index*(w-174)/6
+  const targetHalf=compact?Math.max(10,Math.min(22,(w-66)/12)):25
   const yFor=midi=>104-step(midi)*4.5
   const selectedIndex=SIGNATURE_PITCHES.findIndex(p=>p.pc===selectedPc)
   if(selectedIndex>=0)draw('rect',{
