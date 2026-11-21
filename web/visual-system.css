@@ -219,19 +219,20 @@ body > footer {
   }
 }
 
-/* Exact desktop direction of the reference: brand top, the SAME functional nav
-   shown as a left/right rail (RTL-aware), atmospheric framed workspace right.
-   No duplicate buttons, routes, or settings controls. */
+/* Reference materials and active styles retained; the SAME desktop navigation
+   is horizontal in the original header position. No duplicate controls. */
 @media screen and (min-width: 1280px) and (pointer: fine) {
   body {
-    --visual-rail: 210px;
-    --visual-outer-gutter: clamp(21px, 2.3vw, 46px);
-    --visual-page-width: calc(100% - var(--visual-rail) - 3 * var(--visual-outer-gutter));
-    --visual-page-start: calc(var(--visual-rail) + 2 * var(--visual-outer-gutter));
+    /* Shared centered gutters for header, page shell and footer. */
+    --visual-outer-gutter: max(
+      clamp(20px, 4vw, 64px),
+      calc((100vw - 1460px) / 2)
+    );
+    --visual-page-width: calc(100% - 2 * var(--visual-outer-gutter));
   }
   body > header {
     display: grid;
-    grid-template-columns: minmax(0,1fr) auto;
+    grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
     align-items: center;
     min-height: 78px;
     padding: 10px var(--visual-outer-gutter);
@@ -257,49 +258,49 @@ body > footer {
     box-shadow: var(--visual-inner-shadow);
   }
   body > header > #nav {
-    position: fixed;
-    inset-block-start: 98px;
-    inset-inline-start: var(--visual-outer-gutter);
-    inset-inline-end: auto;
-    z-index: 11;
+    position: static;
+    inset: auto;
+    z-index: auto;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     flex-wrap: nowrap;
-    align-items: stretch;
-    justify-content: flex-start;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
     gap: 7px;
-    width: var(--visual-rail);
-    max-height: calc(100dvh - 118px);
-    overflow-y: auto;
-    padding: 15px 10px;
+    width: max-content;
+    max-width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding: 6px;
     margin: 0;
     border: 1px solid var(--visual-border);
-    border-radius: 22px;
+    border-radius: 999px;
     background: var(--visual-sidebar);
     box-shadow: var(--visual-shadow);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
   body > header > #nav > button {
-    display: flex;
+    display: inline-flex;
     flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
-    gap: 12px;
-    width: 100%;
+    justify-content: center;
+    gap: 9px;
+    width: auto;
     min-width: 0;
-    min-height: 50px;
+    min-height: 44px;
     margin: 0;
-    padding: 10px 13px;
+    padding: 10px 17px;
     border: 1px solid transparent;
-    border-radius: 12px;
+    border-radius: 999px;
     background: transparent;
     color: var(--muted);
     font-size: 13px;
     font-weight: 650;
     line-height: 1.35;
-    white-space: normal;
-    text-align: start;
+    white-space: nowrap;
+    text-align: center;
     box-shadow: none;
   }
   body > header > #nav .mobile-nav-icon {
@@ -331,8 +332,7 @@ body > footer {
   body > #practice-design-controls {
     width: var(--visual-page-width);
     max-width: 1460px;
-    margin-inline-start: var(--visual-page-start);
-    margin-inline-end: var(--visual-outer-gutter);
+    margin-inline: auto;
     box-sizing: border-box;
   }
   /* Override older route-specific centered gutters without altering markup. */
@@ -344,8 +344,8 @@ body > footer {
   body:has(#app[data-page="practice"] > .shelves) > #practice-design-controls {
     width: var(--visual-page-width) !important;
     max-width: 1460px !important;
-    margin-inline-start: var(--visual-page-start) !important;
-    margin-inline-end: var(--visual-outer-gutter) !important;
+    margin-inline-start: auto !important;
+    margin-inline-end: auto !important;
     padding-inline: 25px !important;
   }
   body > main#app {
@@ -432,8 +432,7 @@ body > footer {
     width: var(--visual-page-width);
     max-width: 1460px;
     min-height: 102px;
-    margin-inline-start: var(--visual-page-start);
-    margin-inline-end: var(--visual-outer-gutter);
+    margin-inline: auto;
     padding: 20px 0;
     border-top: 1px solid var(--visual-border);
   }
@@ -445,8 +444,8 @@ body > footer {
   }
 }
 @media screen and (min-width:1280px) and (max-width:1440px) and (pointer:fine) {
-  body { --visual-rail: 184px; --visual-outer-gutter: 22px; }
-  body > header > #nav > button { font-size:12.5px; }
+  body > header > #nav > button { font-size:12.5px; padding-inline:12px; }
+  body > header { gap:14px; }
   body.home-screen .g-desktop .g-hero { grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr); gap:17px; }
   body.home-screen .g-desktop .g-hero-copy h1 { font-size:clamp(35px,3vw,45px); }
 }
