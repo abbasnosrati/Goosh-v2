@@ -389,7 +389,8 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
         return
       }
       let pointer=null,ignoreClick=false
-      hit.style.cursor='grab'
+      // Select uses the conventional arrow; only an actual drag shows Move.
+      hit.style.cursor='default'
       hit.style.touchAction='none'
       hit.onpointerdown=event=>{
         if(event.button!==undefined&&event.button!==0)return
@@ -405,7 +406,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
         if(!pointer.dragged&&Math.hypot(
           event.clientX-pointer.startX,event.clientY-pointer.startY)<5)return
         pointer.dragged=true
-        hit.style.cursor='grabbing'
+        hit.style.cursor='move'
         showDragPreview(dragDestination(event,null,true))
         event.preventDefault?.()
       }
@@ -416,7 +417,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
         ignoreClick=true
         if(hit.hasPointerCapture?.(event.pointerId))
           hit.releasePointerCapture(event.pointerId)
-        hit.style.cursor='grab'
+        hit.style.cursor='default'
         if(dragged){
           const destination=dragDestination(event,null,true)
           showDragPreview(null)
@@ -428,14 +429,14 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
         if(pointer?.id!==event.pointerId)return
         pointer=null
         ignoreClick=true
-        hit.style.cursor='grab'
+        hit.style.cursor='default'
         showDragPreview(null)
         event.stopPropagation()
       }
       hit.onlostpointercapture=()=>{
         if(!pointer)return
         pointer=null
-        hit.style.cursor='grab'
+        hit.style.cursor='default'
         showDragPreview(null)
       }
       hit.onclick=event=>{
@@ -496,7 +497,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
       let pointer=null,ignoreClick=false
       if(tool==='select'&&move){
         hit.style.touchAction='none'
-        hit.style.cursor='grab'
+        hit.style.cursor='default'
         hit.onpointerdown=ev=>{
           if(ev.button!==undefined&&ev.button!==0)return
           if(ev.isPrimary===false)return
@@ -511,7 +512,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
           if(!pointer.dragged &&
              Math.hypot(ev.clientX-pointer.startX,ev.clientY-pointer.startY)<5)return
           pointer.dragged=true
-          hit.style.cursor='grabbing'
+          hit.style.cursor='move'
           showDragPreview(dragDestination(ev,e.notes[index]))
           ev.preventDefault?.()
         }
@@ -522,7 +523,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
           ignoreClick=true
           if(hit.hasPointerCapture?.(ev.pointerId))
             hit.releasePointerCapture(ev.pointerId)
-          hit.style.cursor='grab'
+          hit.style.cursor='default'
           if(dragged){
             const target=dragDestination(ev,e.notes[index])
             showDragPreview(null)
@@ -534,14 +535,14 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
           if(pointer?.id!==ev.pointerId)return
           pointer=null
           ignoreClick=true
-          hit.style.cursor='grab'
+          hit.style.cursor='default'
           showDragPreview(null)
           ev.stopPropagation()
         }
         hit.onlostpointercapture=()=>{
           if(!pointer)return
           pointer=null
-          hit.style.cursor='grab'
+          hit.style.cursor='default'
           showDragPreview(null)
         }
       }
