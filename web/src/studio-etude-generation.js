@@ -224,9 +224,10 @@ export function mountEtudeComposer(host, {
   const mainColumn=create('div',host,null,'studio-setup-main');
   // Manual/AI and the musical choices share one settings surface.
   const sharedMusic = create('div', mainColumn, null, 'studio-compose-music');
-  appendSetupIcon(sharedMusic,'music','studio-setup-hero-icon');
-  create('h2', sharedMusic, t('Etude Setup', 'تنظیمات اتود'), 'studio-compose-heading');
-  const tabs = create('div', sharedMusic, null, 'studio-compose-tabs');
+  // One shared header keeps Manual / AI immediately beside the title.
+  const setupHeader = create('div', sharedMusic, null, 'studio-setup-header');
+  create('h2', setupHeader, t('Etude Setup', 'تنظیمات اتود'), 'studio-compose-heading');
+  const tabs = create('div', setupHeader, null, 'studio-compose-tabs');
   tabs.setAttribute('role', 'group');
   tabs.setAttribute('aria-label', t('Etude creation method', 'روش ساخت اتود'));
   const manual = create('button', tabs);
