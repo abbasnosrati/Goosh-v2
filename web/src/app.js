@@ -59,7 +59,9 @@ let fa = localStorage.lang !== 'en',
   scorePlaybackRequestId = 0,
   scoreUndoStack = [],
   practiceToExpand = null,
-  penQuarterBeats = 1
+  penQuarterBeats = 1,
+  metronomeEnabled = false,
+  recordingMetronome = null
 const collection = new Map();
 const prefix = 'goosh.etude.';
 for(let i=0;i<localStorage.length;i++){
@@ -93,6 +95,7 @@ function loadRoute(){
   signaturePitch=0;
   scoreUndoStack.length=0;
   practiceToExpand=null;
+  metronomeEnabled=false;
 }
 loadRoute();
 const t = (en, ir) => fa ? ir : en,
@@ -302,6 +305,88 @@ function piano(parent, onStart) {
   box.onlostpointercapture = box.onpointerup = box.onpointercancel = ev => {
     if (fingers.delete(ev.pointerId)) held.get(ev.pointerId)?.();
   };
+}
+
+
+// Notated beat duration differs from the pianist's physical key hold.
+// Prefer nearby natural beat subdivisions while retaining the original
+// 1/32-quarter grid as a fallback.
+function snapRecordedOnset(time,quarter,grid) {
+  const beat=time/quarter;
+  for(const [division,tolerance] of [[1,.1],[2,.075],[4,.04]]){
+    const target=Math.round(beat*division)/division;
+    if(Math.abs(beat-target)<=tolerance)return target*quarter;
+  }
+  return Math.round(time/grid)*grid;
+}
+
+// Transcribe only the in-progress Metered take, updating the SAME e.notes.
+// Successive attacks determine short-note rhythmic values. A long gap after
+// a short tap leaves a genuine rest; a long key hold may support sustain.
+function reconcileMeteredTake(take) {
+  if(!take.step)return;
+  const ordered=[...take.events].sort((a,b)=>a.note.at-b.note.at);
+  const quarter=take.quarter,grid=take.step;
+  let current=Infinity,nextOnset=Infinity;
+  for(let i=ordered.length-1;i>=0;i--){
+    const entry=ordered[i];
+    if(entry.note.at<current-1e-7){
+      nextOnset=current;
+      current=entry.note.at;
+    }
+    const interval=nextOnset===Infinity?Infinity:nextOnset-current;
+    const longHold=entry.held!==null&&entry.held>=quarter*1.5;
+    let duration=interval<=quarter*1.5+1e-7?interval:quarter;
+    if(longHold&&(!Number.isFinite(interval)||
+       interval>quarter*1.5||entry.held>interval+quarter*.25))
+      duration=Math.max(duration,snapRecordedOnset(entry.held,quarter,grid));
+    entry.note.d=Math.max(grid,Math.round(duration/grid)*grid);
+  }
+}
+
+function stopRecordingMetronome() {
+  const state=recordingMetronome;
+  if(!state)return;
+  recordingMetronome=null;
+  clearInterval(state.timer);
+  const now=state.clock.currentTime;
+  state.output.gain.cancelScheduledValues(now);
+  state.output.gain.setValueAtTime(0,now);
+  setTimeout(()=>state.output.disconnect(),150);
+}
+
+// The audio clock schedules each short click precisely. The JS interval
+// only fills the lookahead window; no tick is saved in the musical score.
+function startRecordingMetronome() {
+  const meter=meterInfo(e);
+  if(!rec||!metronomeEnabled||!meter||recordingMetronome)return;
+  const clock=unlock(),output=createScoreOutput();
+  output.gain.value=.6;
+  // 6/8 and 6/16 use compound (dotted) beat pulses.
+  const unitsPerPulse=meter.numerator===6?3:1;
+  const interval=meter.quarterSeconds*4/meter.denominator*unitsPerPulse;
+  const pulsesPerBar=meter.numerator/unitsPerPulse;
+  const state={clock,output,timer:null,nextAt:clock.currentTime+.05,pulse:0};
+  recordingMetronome=state;
+  const fillQueue=()=>{
+    while(recordingMetronome===state&&state.nextAt<clock.currentTime+.15){
+      const at=state.nextAt,accent=state.pulse%pulsesPerBar===0;
+      const oscillator=clock.createOscillator(),gain=clock.createGain();
+      oscillator.type='sine';
+      oscillator.frequency.setValueAtTime(accent?1200:850,at);
+      gain.gain.setValueAtTime(.0001,at);
+      gain.gain.linearRampToValueAtTime(accent?.18:.11,at+.004);
+      gain.gain.exponentialRampToValueAtTime(.0001,at+.07);
+      oscillator.connect(gain).connect(output);
+      oscillator.start(at);
+      oscillator.stop(at+.075);
+      oscillator.onended=()=>{oscillator.disconnect();gain.disconnect()};
+      state.pulse++;
+      state.nextAt+=interval;
+    }
+  };
+  fillQueue();
+  state.timer=setInterval(fillQueue,25);
 }
 
 function refreshTake(take) {
@@ -1084,6 +1169,15 @@ function scoreTransportIcon(type) {
   } else if (type === 'pause') {
     rect(5,5,5,14);
     rect(14,5,5,14);
+  } else if (type === 'metronome') {
+    const path = document.createElementNS(ns,'path');
+    path.setAttribute('d','M12 3 19 20H5L12 3Zm0 4v9m-3-4 6-3');
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','currentColor');
+    path.setAttribute('stroke-width','1.9');
+    path.setAttribute('stroke-linejoin','round');
+    path.setAttribute('stroke-linecap','round');
+    svg.append(path);
   } else if (type === 'record') {
     const circle = document.createElementNS(ns,'circle');
     circle.setAttribute('cx','12');
@@ -1361,6 +1455,8 @@ function studio() {
   function toggle() {
     stopKeys();
     if (rec) {
+      stopRecordingMetronome();
+      reconcileMeteredTake(rec);
       const completed=meterInfo(e)?meterTimeline(e):null;
       if(completed&&!completed.issues.length)
         e.measureCount=Math.max(e.measureCount||1,completed.bars.length);
@@ -1374,8 +1470,11 @@ function studio() {
       rec = {
         start: null, // Anchor the take to the first played key, not Record.
         base: Math.max(0, ...e.notes.map(n => n.at + n.d)),
-        step:meter?meter.quarterSeconds/8:0
-      }
+        step:meter?meter.quarterSeconds/8:0,
+        quarter:meter?.quarterSeconds||0,
+        events:[]
+      };
+      startRecordingMetronome();
     }
     render()
   }
@@ -1387,7 +1486,7 @@ function studio() {
     // Metered piano recording uses an explicit rhythmic 1/32-note grid;
     // free mode retains every original, unquantized performance timestamp.
     const snap=value=>rec.step
-      ?Math.round(value/rec.step)*rec.step:value;
+      ?snapRecordedOnset(value,rec.quarter,rec.step):value;
     const n = {
       m,
       at: snap(rawAt),
@@ -1395,11 +1494,19 @@ function studio() {
     };
     const take = rec;
     e.notes.push(n);
+    const entry={note:n,held:null};
+    if(take.step){
+      take.events.push(entry);
+      reconcileMeteredTake(take);
+    }
     refreshTake(take);
     return d => {
       if (rec !== take) return;
-      n.d = take.step?Math.max(take.step,snap(d)):d;
-      refreshTake(take)
+      if(take.step){
+        entry.held=d;
+        reconcileMeteredTake(take);
+      }else n.d=d;
+      refreshTake(take);
     }
   });
   // The Manual/AI choice lives beside the existing score. The notes stay
@@ -1520,6 +1627,26 @@ function studio() {
   pauseButton.dataset.scorePause = '';
   pauseButton.classList.add('score-transport-button');
   updateScoreTransportButtons();
+  const metronomeButton=btn(transportActions,'',()=>{
+    metronomeEnabled=!metronomeEnabled;
+    if(metronomeEnabled)startRecordingMetronome();
+    else stopRecordingMetronome();
+    metronomeButton.classList.toggle('active',metronomeEnabled);
+    metronomeButton.setAttribute('aria-pressed',String(metronomeEnabled));
+    metronomeButton.title=t(
+      metronomeEnabled?'Metronome on (clicks while recording)':'Metronome off',
+      metronomeEnabled?'مترونوم روشن (هنگام ضبط)':'مترونوم خاموش');
+    metronomeButton.setAttribute('aria-label',metronomeButton.title);
+  });
+  metronomeButton.className='score-metronome';
+  metronomeButton.hidden=!meterInfo(e);
+  metronomeButton.classList.toggle('active',metronomeEnabled);
+  metronomeButton.setAttribute('aria-pressed',String(metronomeEnabled));
+  metronomeButton.title=t(
+    metronomeEnabled?'Metronome on (clicks while recording)':'Metronome off',
+    metronomeEnabled?'مترونوم روشن (هنگام ضبط)':'مترونوم خاموش');
+  metronomeButton.setAttribute('aria-label',metronomeButton.title);
+  metronomeButton.append(scoreTransportIcon('metronome'));
   const record = btn(transportActions, '', toggle,
     (rec ? t('Stop recording', 'توقف ضبط') : t('Start recording', 'شروع ضبط')) + ' (R)');
   record.dataset.record = '';
@@ -1543,6 +1670,7 @@ function studio() {
     option.value=meter;
   }
   meterSelect.value=e.meter||'none';
+  meterSelect.disabled=Boolean(rec);
   meterSelect.onchange=()=>{
     const selected=meterSelect.value;
     const proposed={...e,meter:selected};
@@ -1555,7 +1683,10 @@ function studio() {
       return;
     }
     stopScorePlayback();
+    stopRecordingMetronome();
     e.meter=selected;
+    if(!meterInfo(e))metronomeEnabled=false;
+    else startRecordingMetronome();
     if(meterInfo(e))
       e.measureCount=Math.max(e.measureCount||1,meterTimeline(e).bars.length);
     meterMessage('','');
@@ -1564,6 +1695,8 @@ function studio() {
     measureField.hidden=!meterInfo(e);
     measureNumber.value=String(e.measureCount||4);
     recordingHint.hidden=!meterInfo(e);
+    const metronomeToggle=$('.score-metronome');
+    if(metronomeToggle)metronomeToggle.hidden=!meterInfo(e);
     sheet();
   };
   const measureField=el('label',scoreBelowActions,undefined,'score-measure-count');
@@ -1619,8 +1752,8 @@ function studio() {
   meterStatus.setAttribute('role','status');
   meterStatus.hidden=true;
   const recordingHint=el('p',scoreBelowActions,t(
-    'Metered recording snaps to a 1/32-note grid and adds measures when needed. Free preserves natural timing.',
-    'ضبط میزان‌دار روی شبکهٔ سه‌لاچنگ منطبق می‌شود و در صورت نیاز میزان اضافه می‌کند؛ حالت آزاد زمان‌بندی طبیعی را حفظ می‌کند.'
+    'Metered recording follows note attacks and beat timing; longer gaps can become rests. The optional metronome clicks while recording.',
+    'ضبط میزان‌دار بر اساس شروع نت‌ها و ضرب‌هاست؛ مکث طولانی می‌تواند سکوت ایجاد کند. مترونوم اختیاری هنگام ضبط صدا می‌دهد.'
   ),'score-meter-record-hint');
   recordingHint.hidden=!meterInfo(e);
 
@@ -1633,6 +1766,7 @@ function studio() {
   tempoNumber.max = '300';
   tempoNumber.step = '1';
   tempoNumber.value = String(e.bpm);
+  tempoNumber.disabled=Boolean(rec);
   tempoNumber.inputMode = 'numeric';
   tempoNumber.setAttribute('aria-label', t('Tempo in BPM', 'سرعت قطعه برحسب BPM'));
   el('span', tempoControl, 'BPM', 'score-tempo-unit');
@@ -1652,6 +1786,7 @@ function studio() {
 }
 
 function cancel() {
+  stopRecordingMetronome();
   stopSignaturePreview();
   stopScorePlayback();
   clearPlaybackMarker();
@@ -2021,7 +2156,13 @@ $('#file').onchange = async ev => {
     ev.target.value = ''
   }
 }
-window.addEventListener('blur', stopKeys);
+window.addEventListener('blur', () => {
+  stopKeys();
+  stopRecordingMetronome();
+});
+window.addEventListener('focus', () => {
+  if(rec&&metronomeEnabled)startRecordingMetronome();
+});
 window.addEventListener('resize', () => {
   if (page === 'studio') sheet()
 });

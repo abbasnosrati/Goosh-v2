@@ -1095,3 +1095,24 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score-audio-status[hidden] {
   display: none !important;
 }
+
+
+/* Metered live piano recording: opt-in click, same Studio theme tokens. */
+#app[data-page="studio"] .score-actions .score-metronome {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 9px;
+}
+#app[data-page="studio"] .score-actions .score-metronome svg {
+  fill: none;
+}
+#app[data-page="studio"] .score-actions .score-metronome.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+#app[data-page="studio"] .score-actions .score-metronome[hidden] {
+  display: none !important;
+}
