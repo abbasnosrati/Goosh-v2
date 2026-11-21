@@ -2669,3 +2669,16 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 - `web/index.html`: bump only local cache version strings for `style.css`, `practice-designer.css` and `app.js` to `mobile-studio-zones-1` so the UI updates without stale assets.
 
 **Guardrails and checks:** No Desktop CSS rework, no routing, practice/AI generation, piano playback, key signature, Score manipulation, timing, recording, print/share, import/export logic updates. Original CSS files preserved byte-for-byte before appended mobile blocks; CSS braces balanced; new grouping contains all Score elements and maintains order. Rendering screenshots on an actual device are **not yet verified**; user should review the visual hierarchy, in both light/dark and Persian/English. Metered piano recording bug is unrelated and STILL requires explicit user approval before any separate fix. The Persian compact library RTL cards remain user-verified FIXED.
+
+
+---
+
+## Mobile Studio Score: Play/Pause/Record above six tools in one row (2026-11-21)
+
+**User wants mobile Etude Studio UI only:** Put all six Score editing actions—Mouse/Select, Pencil, Eraser, Wrap/multiline, Zoom minus and Zoom plus—on **a single horizontal row BELOW Play / Pause / Record**. Metronome, when offered in metered mode, remains in the playback row. Preserve existing handlers, tool selection, visibility, notes and layout elsewhere.
+
+**Change:** Append a phone-only and coarse-touch landscape media block to `web/style.css` with selectors scoped to `#app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score-actions`. Grid uses `repeat(6,minmax(0,1fr))`, 4px horizontal gap. Existing direct child tool buttons occupy `grid-row:2`; existing transport wrapper spans six columns on `grid-row:1`, before the tools. Override inherited 44px **minimum WIDTH** for these six tools to zero (keeping at least 44px HEIGHT and 18px icons), so narrow phone widths fit without overflow. Transport uses four columns when metronome is present; three when hidden in Free meter. Existing keyboard and score layout not changed.
+
+**Scope:** No Javascript or score logic edits, no changes to the desktop, piano, notes/rests, playback, recording, Studio navigation or other pages. `web/index.html` changes only `style.css` cache version to `mobile-score-controls-6-1`.
+
+**Verification:** Source inspection confirmed the original Score creates exactly three select/pen/eraser buttons from a loop, one Wrap button and two Zoom buttons, followed by the transport wrapper, so the grid has exactly six edit actions. Static CSS brace validation, narrow-only media guard, explicit transport/top vs six tools/bottom ordering and HTML-only-cache change passed. Actual mobile device render not tested; user to confirm layout.

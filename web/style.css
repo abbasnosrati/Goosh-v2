@@ -1705,3 +1705,47 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     border-top: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
   }
 }
+
+
+/* Mobile Studio Score: one transport row above six editing controls. */
+@media screen and (max-width: 700px),
+       screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score-actions {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: auto auto;
+    align-items: stretch;
+    gap: 6px 4px;
+    min-width: 0;
+    width: 100%;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score-actions > button {
+    grid-row: 2;
+    min-width: 0;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 7px 2px;
+    font-size: 16px;
+    line-height: 1;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score-actions > button svg {
+    width: 18px;
+    height: 18px;
+    max-width: 100%;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score-actions > .score-transport-actions {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    min-width: 0;
+    width: 100%;
+    gap: 6px;
+    margin: 0;
+  }
+  /* When there is no time signature, metronome is hidden. */
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score-actions > .score-transport-actions:has(.score-metronome[hidden]) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
