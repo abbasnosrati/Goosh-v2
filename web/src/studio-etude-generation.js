@@ -257,7 +257,11 @@ export function mountEtudeComposer(host, {
   const signatureHint = create('p', sharedMusic, null, 'studio-compose-music-hint');
   // One persistent-position toggle beside the Iranian/Western radios:
   // it opens the existing editor and becomes Back to Score in-place.
-  const signatureActions = create('div', musicOptions, null, 'studio-signature-actions');
+  const mobileSignaturePlacement = window.matchMedia(
+    '(max-width: 700px), (pointer: coarse) and (orientation: landscape) and (max-height: 520px)'
+  ).matches;
+  const signatureActions = create('div',
+    mobileSignaturePlacement ? fields : musicOptions, null, 'studio-signature-actions');
   const editSignature = create('button', signatureActions, null, 'signature-toggle studio-signature-entry');
   editSignature.type = 'button';
   const signatureLabel = signatureEditing

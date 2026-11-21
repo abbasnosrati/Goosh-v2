@@ -22,9 +22,9 @@ export const SIGNATURE_MARKS=[
 ]
 export const signatureGlyph=mark=>SIGNATURE_MARKS.find(item=>item.mark===mark)?.glyph||mark
 
-export function drawKeySignatureEditor(host,e,{selectedPc=0,onSelect}={}){
+export function drawKeySignatureEditor(host,e,{selectedPc=0,onSelect,compact=false}={}){
   host.replaceChildren()
-  const w=Math.max(650,host.clientWidth||650)
+  const w=compact?Math.max(250,Math.round(host.clientWidth||300)):Math.max(650,host.clientWidth||650)
   const svg=document.createElementNS(ns,'svg')
   svg.setAttribute('width',w)
   svg.setAttribute('height',160)
@@ -39,11 +39,12 @@ export function drawKeySignatureEditor(host,e,{selectedPc=0,onSelect}={}){
     svg.append(element)
     return element
   }
-  const pos=index=>96+index*(w-174)/6
+  const pos=index=>compact?65+index*(w-89)/6:96+index*(w-174)/6
+  const targetHalf=compact?Math.max(14,Math.min(22,(w-89)/12)):25
   const yFor=midi=>104-step(midi)*4.5
   const selectedIndex=SIGNATURE_PITCHES.findIndex(p=>p.pc===selectedPc)
   if(selectedIndex>=0)draw('rect',{
-    x:pos(selectedIndex)-25,y:41,width:50,height:104,rx:8,
+    x:pos(selectedIndex)-targetHalf,y:41,width:targetHalf*2,height:104,rx:8,
     fill:'var(--accent)',opacity:.09,'pointer-events':'none'
   })
   for(let i=0;i<5;i++){
@@ -83,7 +84,7 @@ export function drawKeySignatureEditor(host,e,{selectedPc=0,onSelect}={}){
       'text-anchor':'middle','pointer-events':'none'
     },pitch.name)
     const target=draw('rect',{
-      x:x-25,y:42,width:50,height:106,
+      x:x-targetHalf,y:42,width:targetHalf*2,height:106,
       fill:'transparent',cursor:'pointer',role:'button',tabindex:0,
       'aria-label':pitch.name+' key signature',
       'aria-pressed':String(pitch.pc===selectedPc),

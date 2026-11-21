@@ -278,6 +278,15 @@
     min-width: 0;
     min-inline-size: 0;
   }
+  #app[data-page="studio"] .studio-compose-fields > .studio-signature-actions {
+    width: fit-content;
+    justify-self: start;
+    margin-top: -2px;
+  }
+  #app[data-page="studio"] .studio-compose-fields > .studio-signature-actions .studio-signature-entry {
+    width: auto;
+    min-height: 42px;
+  }
   #app[data-page="studio"] .studio-compose-fields,
   #app[data-page="studio"] .practice-fields {
     grid-template-columns: minmax(0, 1fr);

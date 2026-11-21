@@ -1082,6 +1082,182 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 }
 
 
+/* Mobile Key Signature: a floating view of the existing desktop editor.
+   Natural, flat, sharp, Koron and Sori use their canonical score controls. */
+@media screen and (max-width: 700px),
+       screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  #app[data-page="studio"] dialog.studio-mobile-signature-dialog {
+    box-sizing: border-box;
+    position: fixed;
+    inset: 0;
+    width: min(380px, calc(100vw - 28px));
+    max-width: 380px;
+    max-height: calc(100dvh - 36px);
+    margin: auto;
+    padding: 13px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--glass-border);
+    border-radius: 23px;
+    background: var(--glass-elevated);
+    color: var(--ink);
+    box-shadow: var(--glass-shadow), 0 24px 80px rgb(0 0 0 / 32%);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+  #app[data-page="studio"] dialog.studio-mobile-signature-dialog::backdrop {
+    background: rgb(3 16 23 / 65%);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-card {
+    min-width: 0;
+    padding: 11px;
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    background: var(--glass-surface);
+    box-shadow: var(--glass-soft-shadow);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-clef {
+    color: var(--accent);
+    font: 28px/1 Georgia,serif;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 34px;
+    min-height: 34px;
+    padding: 6px;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    background: var(--glass-control);
+    color: var(--ink);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-close svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 7px;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor > .signature-editor-controls:not([hidden]) {
+    display: contents;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-editor-selected {
+    order: 0;
+    grid-column: auto;
+    min-width: 0;
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 650;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-editor-marks {
+    order: 1;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 5px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-editor-mark {
+    min-width: 0;
+    min-height: 43px;
+    padding: 6px 2px;
+    border: 1px solid var(--glass-border);
+    border-radius: 9px;
+    background: var(--glass-control);
+    color: var(--ink);
+    font-size: 23px;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-editor-mark.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--glass-selected);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent),
+      0 0 16px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-editor-mark.signature-microtonal svg {
+    max-width: 100%;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-staff.score {
+    order: 2;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--ink);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-staff.score svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    touch-action: manipulation;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-tuner-inline {
+    order: 3;
+    grid-column: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "readout adjust" "scale scale" "actions actions";
+    align-items: center;
+    gap: 9px 8px;
+    min-width: 0;
+    padding-top: 11px;
+    border-top: 1px solid var(--glass-border);
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-tuner-value {
+    font-size: 25px;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-tuner-adjust {
+    width: min(100%, 194px);
+    justify-self: end;
+    grid-template-columns: 35px minmax(52px, 1fr) 35px;
+    gap: 4px;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-tuner-actions {
+    justify-content: center;
+    gap: 6px;
+  }
+  #app[data-page="studio"] .studio-mobile-signature-editor .signature-tuner-actions > button {
+    min-height: 40px;
+  }
+}
+
 /* One metering control for the existing Score in Manual and AI. */
 #app[data-page="studio"] .score-meter-control,
 #app[data-page="studio"] .score-measure-count,

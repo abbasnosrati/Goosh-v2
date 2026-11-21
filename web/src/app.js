@@ -23,10 +23,10 @@ import {
   score
 } from './score.js?v=free-piano-overlap-drag-2'
 import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
-  from './key-signature.js?v=koron-align-a4-1'
+  from './key-signature.js?v=mobile-signature-modal-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { mountEtudeComposer } from './studio-etude-generation.js?v=iranian-signature-only-1'
+import { mountEtudeComposer } from './studio-etude-generation.js?v=mobile-signature-modal-1'
 import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=music-toggle-reuse-1'
 import { renderHome } from './home.js?v=mobile-home-ticker-speed-2';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
@@ -47,6 +47,7 @@ let fa = localStorage.lang !== 'en',
   signaturePitch = 0,
   signaturePreviewRelease = null,
   signaturePreviewTime = -Infinity,
+  mobileSignatureDialog = null,
   zoom = 1,
   wrap = true,
   oct = 4,
@@ -526,12 +527,11 @@ function auditionSignature(hz,force=false){
   signaturePreviewRelease(.55)
 }
 
-function renderSignatureControls(){
-  const box=$('.signature-editor-controls')
+function renderSignatureControls(box=$('.signature-editor-controls'), inMobileDialog=false){
   if(!box)return
-  box.hidden=!signatureMode
+  box.hidden=!(signatureMode||inMobileDialog)
   box.replaceChildren()
-  if(!signatureMode)return
+  if(!signatureMode&&!inMobileDialog)return
   const selected=SIGNATURE_PITCHES.find(p=>p.pc===signaturePitch)
   if(!selected)return
   const pc=selected.pc,mark=e.key[pc]||''
@@ -768,6 +768,22 @@ function editScoreRest(source, destination=null) {
   save();
   sheet();
 }
+// The phone modal reuses the desktop's drawing, mark buttons, cent controls
+// and underlying e.key/e.offset. It never replaces the learner's Score.
+function renderMobileSignatureDialog(){
+  const dialog=mobileSignatureDialog;
+  if(!dialog?.isConnected||!dialog.open)return;
+  const staff=dialog.querySelector('.studio-mobile-signature-staff');
+  const controls=dialog.querySelector('.signature-editor-controls');
+  if(!staff||!controls)return;
+  staff.dataset.view='signature';
+  drawKeySignatureEditor(staff,e,{
+    selectedPc:signaturePitch,compact:true,
+    onSelect:pc=>{stopSignaturePreview();signaturePitch=pc;sheet()}
+  });
+  renderSignatureControls(controls,true);
+}
+
 function sheet() {
   const h = $('.score');
   if (!h) return;
@@ -931,6 +947,7 @@ function sheet() {
   });
   paintPlaybackMarker(true);
   renderSignatureControls();
+  renderMobileSignatureDialog();
 }
 
 // Retiming a note must move subsequent note ONSETS, not only its audio release.
@@ -1518,6 +1535,51 @@ function studio() {
   // canonical on this etude; generated exercises only store practice steps.
   const showSignatureEditor = editing => {
     stopSignaturePreview();
+    const mobile=window.matchMedia(
+      '(max-width: 700px), (pointer: coarse) and (orientation: landscape) and (max-height: 520px)'
+    ).matches;
+    if(mobile){
+      if(!editing){mobileSignatureDialog?.close();return}
+      if(mobileSignatureDialog?.open)return;
+      stopScorePlayback();
+      signaturePitch = SIGNATURE_PITCHES.find(p=>e.key[p.pc])?.pc ?? 0;
+      const dialog=el('dialog',panel,undefined,'studio-mobile-signature-dialog');
+      const card=el('div',dialog,undefined,'studio-mobile-signature-card');
+      const header=el('div',card,undefined,'studio-mobile-signature-header');
+      const title=el('div',header,undefined,'studio-mobile-signature-title');
+      el('span',title,'𝄞','studio-mobile-signature-clef').setAttribute('aria-hidden','true');
+      const heading=el('strong',title,t('Key Signature','سرکلید'));
+      heading.id='studio-mobile-signature-title';
+      dialog.setAttribute('aria-labelledby',heading.id);
+      const close=btn(header,'',()=>dialog.close(),t('Close key signature','بستن سرکلید'));
+      close.className='studio-mobile-signature-close';
+      close.setAttribute('aria-label',t('Close key signature','بستن سرکلید'));
+      const cross=document.createElementNS('http://www.w3.org/2000/svg','svg');
+      cross.setAttribute('viewBox','0 0 24 24');
+      cross.setAttribute('aria-hidden','true');
+      const crossPath=document.createElementNS('http://www.w3.org/2000/svg','path');
+      crossPath.setAttribute('d','M18 6 6 18 M6 6l12 12');
+      cross.append(crossPath);
+      close.append(cross);
+      const editor=el('div',card,undefined,'studio-mobile-signature-editor');
+      el('div',editor,undefined,'signature-editor-controls');
+      el('div',editor,undefined,'score studio-mobile-signature-staff');
+      dialog.addEventListener('click',event=>{
+        if(event.target!==dialog)return;
+        const bounds=dialog.getBoundingClientRect();
+        if(event.clientX<bounds.left||event.clientX>bounds.right||
+           event.clientY<bounds.top||event.clientY>bounds.bottom)dialog.close();
+      });
+      dialog.addEventListener('close',()=>{
+        stopSignaturePreview();
+        if(mobileSignatureDialog===dialog)mobileSignatureDialog=null;
+        dialog.remove();
+      },{once:true});
+      mobileSignatureDialog=dialog;
+      dialog.showModal();
+      renderMobileSignatureDialog();
+      return;
+    }
     if (editing) {
       stopScorePlayback();
       signaturePitch = SIGNATURE_PITCHES.find(p => e.key[p.pc])?.pc ?? 0;
@@ -2261,6 +2323,11 @@ function syncMobileLibraryActions(){
 mobileLibraryLayout.addEventListener('change',syncMobileLibraryActions);
 
 function render() {
+  if(mobileSignatureDialog){
+    if(mobileSignatureDialog.open)mobileSignatureDialog.close();
+    mobileSignatureDialog.remove();
+    mobileSignatureDialog=null;
+  }
   document.documentElement.lang = fa ? 'fa' : 'en';
   document.documentElement.dir = fa ? 'rtl' : 'ltr';
   document.documentElement.classList.toggle('dark', dark);
