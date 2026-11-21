@@ -851,7 +851,7 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
 }
 @media (hover:hover) {
   .etude-delete:hover {
-    color: #b53340;
+    color: #B53249;
     border-color: currentColor;
   }
 }
@@ -871,7 +871,7 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
   text-align: start;
 }
 .etude-delete-dialog::backdrop {
-  background: rgb(4 17 27 / 65%);
+  background: rgb(4 15 25 / 65%);
   backdrop-filter: blur(5px);
 }
 .etude-delete-dialog h2 {
@@ -914,12 +914,12 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
   color: var(--ink);
 }
 .etude-delete-confirm {
-  background: #ae3442;
-  border: 1px solid #ae3442;
+  background: #B53249;
+  border: 1px solid #B53249;
   color: white;
 }
 @media (hover:hover) {
-  .etude-delete-confirm:hover { background: #922634; border-color: #922634; }
+  .etude-delete-confirm:hover { background: #B53249; border-color: #B53249; }
   .etude-delete-cancel:hover { background: var(--soft); }
 }
 @media (max-width: 420px) {

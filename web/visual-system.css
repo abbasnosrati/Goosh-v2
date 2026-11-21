@@ -5,38 +5,38 @@
    CSS loaded last to keep the new visual layer independently reversible. */
 
 :root {
-  --visual-border: rgb(91 150 163 / 35%);
-  --visual-edge: rgb(74 190 202 / 34%);
-  --visual-shell: linear-gradient(145deg, rgb(251 255 255 / 95%), rgb(229 244 248 / 93%) 58%, rgb(219 237 241 / 95%));
-  --visual-panel: linear-gradient(145deg, rgb(250 254 255 / 90%), rgb(226 243 246 / 86%));
-  --visual-inner: linear-gradient(145deg, rgb(244 253 254 / 93%), rgb(220 236 241 / 90%));
-  --visual-sidebar: linear-gradient(165deg, rgb(240 251 253 / 94%), rgb(221 239 244 / 89%));
-  --visual-shadow: 0 18px 48px rgb(32 81 102 / 14%), 0 4px 14px rgb(16 71 97 / 7%), inset 0 1px 0 rgb(255 255 255 / 90%);
-  --visual-inner-shadow: 0 9px 26px rgb(24 78 101 / 11%), inset 0 1px 0 rgb(255 255 255 / 78%);
+  --visual-border: rgb(78 104 122 / 35%);
+  --visual-edge: rgb(170 191 205 / 34%);
+  --visual-shell: linear-gradient(145deg, rgb(255 255 255 / 95%), rgb(234 241 245 / 93%) 58%, rgb(222 237 248 / 95%));
+  --visual-panel: linear-gradient(145deg, rgb(255 255 255 / 90%), rgb(229 238 244 / 86%));
+  --visual-inner: linear-gradient(145deg, rgb(247 250 252 / 93%), rgb(222 237 248 / 90%));
+  --visual-sidebar: linear-gradient(165deg, rgb(247 250 252 / 94%), rgb(222 237 248 / 89%));
+  --visual-shadow: 0 18px 48px rgb(22 101 69 / 14%), 0 4px 14px rgb(22 101 69 / 7%), inset 0 1px 0 rgb(255 255 255 / 90%);
+  --visual-inner-shadow: 0 9px 26px rgb(22 101 69 / 11%), inset 0 1px 0 rgb(255 255 255 / 78%);
   --visual-ambient-strength: .33;
 }
 html.dark {
-  --visual-border: rgb(104 190 206 / 30%);
-  --visual-edge: rgb(77 220 226 / 49%);
-  --visual-shell: linear-gradient(143deg, rgb(30 61 76 / 94%) 0%, rgb(17 39 52 / 96%) 56%, rgb(10 30 42 / 96%) 100%);
-  --visual-panel: linear-gradient(148deg, rgb(37 69 82 / 91%), rgb(16 39 53 / 93%));
-  --visual-inner: linear-gradient(145deg, rgb(33 60 74 / 92%), rgb(16 35 48 / 96%));
-  --visual-sidebar: linear-gradient(160deg, rgb(21 50 64 / 92%), rgb(10 32 46 / 94%));
-  --visual-shadow: 0 22px 55px rgb(0 7 14 / 44%), 0 5px 18px rgb(0 10 18 / 28%), inset 0 1px 0 rgb(157 241 249 / 13%);
-  --visual-inner-shadow: 0 10px 27px rgb(0 8 18 / 29%), inset 0 1px 0 rgb(134 230 239 / 10%);
+  --visual-border: rgb(132 199 248 / 30%);
+  --visual-edge: rgb(69 240 242 / 49%);
+  --visual-shell: linear-gradient(143deg, rgb(20 47 68 / 94%) 0%, rgb(23 44 59 / 96%) 56%, rgb(11 27 40 / 96%) 100%);
+  --visual-panel: linear-gradient(148deg, rgb(48 76 96 / 91%), rgb(23 44 59 / 93%));
+  --visual-inner: linear-gradient(145deg, rgb(20 47 68 / 92%), rgb(11 27 40 / 96%));
+  --visual-sidebar: linear-gradient(160deg, rgb(20 47 68 / 92%), rgb(11 27 40 / 94%));
+  --visual-shadow: 0 22px 55px rgb(4 15 25 / 44%), 0 5px 18px rgb(4 15 25 / 28%), inset 0 1px 0 rgb(132 199 248 / 13%);
+  --visual-inner-shadow: 0 10px 27px rgb(4 15 25 / 29%), inset 0 1px 0 rgb(132 199 248 / 10%);
   --visual-ambient-strength: .78;
 }
 html.dark body {
   background:
-    radial-gradient(ellipse 66% 55% at 96% 13%, rgb(14 120 145 / 11%), transparent 68%),
-    radial-gradient(ellipse 62% 62% at 2% 84%, rgb(18 135 156 / 13%), transparent 65%),
-    linear-gradient(135deg, #0d202c, #071720 66%, #081b26);
+    radial-gradient(ellipse 66% 55% at 96% 13%, rgb(6 132 157 / 11%), transparent 68%),
+    radial-gradient(ellipse 62% 62% at 2% 84%, rgb(6 132 157 / 13%), transparent 65%),
+    linear-gradient(135deg, #172C3B, #071722 66%, #040F19);
 }
 html:not(.dark) body {
   background:
-    radial-gradient(ellipse 55% 43% at 97% 7%, rgb(72 195 206 / 15%), transparent 73%),
-    radial-gradient(ellipse 65% 50% at 0 87%, rgb(75 168 197 / 11%), transparent 70%),
-    linear-gradient(155deg, #f1fafb, #e4f0f4 55%, #ecf5f7);
+    radial-gradient(ellipse 55% 43% at 97% 7%, rgb(69 240 242 / 15%), transparent 73%),
+    radial-gradient(ellipse 65% 50% at 0 87%, rgb(132 199 248 / 11%), transparent 70%),
+    linear-gradient(155deg, #EAF1F5, #E8EFF3 55%, #EAF1F5);
 }
 /* Background artwork never overlays a control or blocks pointer events. */
 body::before {
@@ -136,7 +136,7 @@ body > footer {
 .home-screen .g-sheet-mock {
   background: var(--visual-inner);
   border-color: var(--visual-edge);
-  box-shadow: 0 23px 48px rgb(0 10 22 / 25%), inset 0 1px 0 rgb(145 238 247 / 12%);
+  box-shadow: 0 23px 48px rgb(4 15 25 / 25%), inset 0 1px 0 rgb(132 199 248 / 12%);
 }
 .home-screen .g-hub-card {
   border-radius: 20px;
@@ -597,45 +597,45 @@ body > footer {
    musical SVGs, three-dimensional glass, crisp borders and stronger accents.
    No motion, no large backdrop filters, and no additional page controls. */
 html:not(.dark) {
-  --visual-border: rgb(49 124 147 / 39%);
-  --visual-edge: rgb(14 141 161 / 47%);
+  --visual-border: rgb(36 102 153 / 39%);
+  --visual-edge: rgb(5 116 137 / 47%);
   --visual-shell:
-    radial-gradient(ellipse 90% 75% at 100% 0%, rgb(117 224 228 / 28%), transparent 64%),
-    linear-gradient(142deg, rgb(255 255 255 / 98%) 0%, rgb(234 248 250 / 96%) 46%, rgb(217 239 245 / 96%) 100%);
+    radial-gradient(ellipse 90% 75% at 100% 0%, rgb(170 191 205 / 28%), transparent 64%),
+    linear-gradient(142deg, rgb(255 255 255 / 98%) 0%, rgb(234 241 245 / 96%) 46%, rgb(222 237 248 / 96%) 100%);
   --visual-panel:
-    radial-gradient(ellipse 90% 80% at 100% 0%, rgb(141 225 229 / 20%), transparent 72%),
-    linear-gradient(150deg, rgb(255 255 255 / 96%) 0%, rgb(226 244 248 / 95%) 100%);
+    radial-gradient(ellipse 90% 80% at 100% 0%, rgb(170 191 205 / 20%), transparent 72%),
+    linear-gradient(150deg, rgb(255 255 255 / 96%) 0%, rgb(229 238 244 / 95%) 100%);
   --visual-inner:
-    linear-gradient(145deg, rgb(247 254 255 / 97%), rgb(215 237 242 / 97%));
+    linear-gradient(145deg, rgb(247 250 252 / 97%), rgb(222 237 248 / 97%));
   --visual-sidebar:
-    radial-gradient(ellipse at 0% 0%, rgb(104 218 227 / 24%), transparent 67%),
-    linear-gradient(162deg, #f5fdff 0%, #dceff4 100%);
+    radial-gradient(ellipse at 0% 0%, rgb(170 191 205 / 24%), transparent 67%),
+    linear-gradient(162deg, #F7FAFC 0%, #DEEDF8 100%);
   --visual-shadow:
-    0 24px 58px rgb(35 102 125 / 21%),
-    0 5px 16px rgb(45 104 124 / 10%),
+    0 24px 58px rgb(36 102 153 / 21%),
+    0 5px 16px rgb(36 102 153 / 10%),
     inset 0 1px 0 #fff,
-    inset 0 -1px 0 rgb(40 143 158 / 11%);
+    inset 0 -1px 0 rgb(36 102 153 / 11%);
   --visual-inner-shadow:
-    0 12px 29px rgb(33 109 134 / 15%),
-    0 3px 9px rgb(25 109 128 / 7%),
+    0 12px 29px rgb(36 102 153 / 15%),
+    0 3px 9px rgb(5 116 137 / 7%),
     inset 0 1px 0 rgb(255 255 255 / 96%);
   --visual-ambient-strength: .82;
-  --glass-border: rgb(85 156 177 / 48%);
-  --glass-surface: linear-gradient(145deg, rgb(255 255 255 / 95%), rgb(223 242 247 / 87%));
-  --glass-elevated: linear-gradient(150deg, #fff, #ecf9fc);
-  --glass-control: linear-gradient(145deg, #fff, #e4f4f8);
-  --glass-selected: linear-gradient(140deg, #bdeff1, #dff9fa);
+  --glass-border: rgb(78 104 122 / 48%);
+  --glass-surface: linear-gradient(145deg, rgb(255 255 255 / 95%), rgb(222 237 248 / 87%));
+  --glass-elevated: linear-gradient(150deg, #fff, #EAF1F5);
+  --glass-control: linear-gradient(145deg, #fff, #E5EEF4);
+  --glass-selected: linear-gradient(140deg, #DEEDF8, #DEEDF8);
   --glass-shadow: var(--visual-shadow);
   --glass-soft-shadow: var(--visual-inner-shadow);
-  --dropdown-control-surface: #eff9fc;
-  --dropdown-menu-surface: #f8fdff;
+  --dropdown-control-surface: #EAF1F5;
+  --dropdown-menu-surface: #F7FAFC;
 }
 html:not(.dark) body {
   background:
-    radial-gradient(ellipse 70% 45% at 100% 0%, rgb(90 194 212 / 34%), transparent 72%),
-    radial-gradient(ellipse 65% 65% at 0% 88%, rgb(105 192 212 / 27%), transparent 76%),
-    radial-gradient(ellipse 45% 60% at 58% 50%, rgb(190 232 240 / 29%), transparent 79%),
-    linear-gradient(155deg, #f6fefe 0%, #d8ecf2 58%, #eaf7f9 100%);
+    radial-gradient(ellipse 70% 45% at 100% 0%, rgb(170 191 205 / 34%), transparent 72%),
+    radial-gradient(ellipse 65% 65% at 0% 88%, rgb(170 191 205 / 27%), transparent 76%),
+    radial-gradient(ellipse 45% 60% at 58% 50%, rgb(222 237 248 / 29%), transparent 79%),
+    linear-gradient(155deg, #FFFFFF 0%, #E8EFF3 58%, #EAF1F5 100%);
 }
 html:not(.dark) body::before {
   background-image: url("brand/ambient-studio-light.svg");
@@ -653,36 +653,36 @@ html:not(.dark) body:has(#app[data-page="practice"] > .shelves)::before {
 /* A static, illuminated backdrop for Home's existing editorial hero. */
 html:not(.dark) .home-screen .g-hero {
   background:
-    radial-gradient(ellipse 66% 90% at 92% 15%, rgb(83 206 219 / 31%), transparent 73%),
-    radial-gradient(ellipse 60% 75% at 0% 100%, rgb(155 220 233 / 25%), transparent 80%),
+    radial-gradient(ellipse 66% 90% at 92% 15%, rgb(170 191 205 / 31%), transparent 73%),
+    radial-gradient(ellipse 60% 75% at 0% 100%, rgb(170 191 205 / 25%), transparent 80%),
     var(--visual-shell);
   border: 1px solid var(--visual-edge);
   box-shadow:
-    0 29px 64px rgb(34 114 138 / 22%),
+    0 29px 64px rgb(36 102 153 / 22%),
     inset 0 1px 0 #fff,
-    inset 0 -2px 0 rgb(55 162 177 / 14%);
+    inset 0 -2px 0 rgb(36 102 153 / 14%);
 }
 html:not(.dark) .home-screen .g-hero-composition {
   background:
-    radial-gradient(ellipse 65% 60% at 50% 45%, rgb(77 185 204 / 21%), transparent 78%);
+    radial-gradient(ellipse 65% 60% at 50% 45%, rgb(170 191 205 / 21%), transparent 78%);
 }
 html:not(.dark) .home-screen .g-sheet-mock {
   border-color: var(--visual-edge);
-  background: linear-gradient(154deg, #ffffff 0%, #e0f5f9 100%);
+  background: linear-gradient(154deg, #FFFFFF 0%, #DEEDF8 100%);
   box-shadow:
-    0 24px 49px rgb(34 93 115 / 23%),
+    0 24px 49px rgb(36 102 153 / 23%),
     inset 0 1px 0 #fff;
 }
 html:not(.dark) .home-screen .g-orbit {
-  border-color: rgb(20 142 167 / 23%);
-  background: radial-gradient(circle, transparent 44%, rgb(56 180 195 / 13%) 49%, transparent 73%);
+  border-color: rgb(5 116 137 / 23%);
+  background: radial-gradient(circle, transparent 44%, rgb(36 102 153 / 13%) 49%, transparent 73%);
 }
 html:not(.dark) .home-screen .g-note,
 html:not(.dark) .home-screen .g-waveform i {
-  background: #1694a4;
+  background: #057489;
 }
 html:not(.dark) .home-screen .g-note:after {
-  background: #1694a4;
+  background: #057489;
 }
 html:not(.dark) .home-screen .g-hub-card,
 html:not(.dark) .home-screen .g-dashboard-panel,
@@ -694,18 +694,18 @@ html:not(.dark) .home-screen .g-community-teaser {
 html:not(.dark) .home-screen .g-hub-card .g-hub-visual,
 html:not(.dark) .home-screen .g-community-poster {
   background:
-    radial-gradient(ellipse 90% 85% at 0% 15%, rgb(99 212 222 / 36%), transparent 78%),
-    linear-gradient(120deg, #ecfafc, #ceeef4);
+    radial-gradient(ellipse 90% 85% at 0% 15%, rgb(170 191 205 / 36%), transparent 78%),
+    linear-gradient(120deg, #EAF1F5, #DEEDF8);
 }
 html:not(.dark) .home-screen .g-hub-top > .g-icon,
 html:not(.dark) .home-screen .g-panel-heading .g-icon,
 html:not(.dark) #app[data-page="studio"] .studio-setup-hero-icon,
 html:not(.dark) #app[data-page="studio"] .studio-setup-guide-step-icon {
-  color: #087b8d;
-  background: linear-gradient(148deg, #ddfbfd 0%, #bde7ed 100%);
-  border-color: rgb(30 151 166 / 41%);
+  color: #057489;
+  background: linear-gradient(148deg, #DEEDF8 0%, #DEEDF8 100%);
+  border-color: rgb(36 102 153 / 41%);
   box-shadow:
-    0 7px 15px rgb(38 128 146 / 17%),
+    0 7px 15px rgb(36 102 153 / 17%),
     inset 0 1px 0 #fff;
 }
 /* Deeper, legible Light controls without altering input behavior. */
@@ -722,7 +722,7 @@ html:not(.dark) #app[data-page="studio"] .studio-setup-guide {
   background: var(--visual-inner);
   border-color: var(--visual-border);
   box-shadow:
-    0 7px 22px rgb(39 105 127 / 10%),
+    0 7px 22px rgb(36 102 153 / 10%),
     inset 0 1px 0 #fff;
 }
 html:not(.dark) #app[data-page="studio"] .studio-compose .studio-mobile-select-trigger,
@@ -730,37 +730,37 @@ html:not(.dark) #app[data-page="studio"] .studio-compose .studio-signature-entry
 html:not(.dark) #app[data-page="studio"] .studio-piano-toggle,
 html:not(.dark) #app[data-page="studio"] .studio-compose .studio-music-choice {
   background: var(--glass-control);
-  border-color: rgb(72 144 166 / 42%);
+  border-color: rgb(36 102 153 / 42%);
   color: var(--ink);
-  box-shadow: 0 4px 11px rgb(42 111 136 / 8%), inset 0 1px 0 #fff;
+  box-shadow: 0 4px 11px rgb(36 102 153 / 8%), inset 0 1px 0 #fff;
 }
 html:not(.dark) #app[data-page="studio"] .studio-compose .studio-compose-tab.active,
 html:not(.dark) #app[data-page="studio"] .studio-compose .studio-music-choice:has(input:checked) {
-  border-color: #218e9e;
-  background: linear-gradient(135deg, #a8e9ed, #d3f8f9);
-  color: #076c7a;
-  box-shadow: 0 5px 15px rgb(29 131 150 / 14%), inset 0 1px 0 #fff;
+  border-color: #246699;
+  background: linear-gradient(135deg, #DEEDF8, #DEEDF8);
+  color: #057489;
+  box-shadow: 0 5px 15px rgb(36 102 153 / 14%), inset 0 1px 0 #fff;
 }
 html:not(.dark) #app[data-page="studio"] .studio-compose .studio-compose-generate,
 html:not(.dark) .home-screen .g-action-primary {
-  background: linear-gradient(135deg, #087b8a, #18b5be);
+  background: linear-gradient(135deg, #057489, #246699);
   color: #fff;
-  border-color: rgb(6 114 127 / 37%);
-  box-shadow: 0 9px 19px rgb(8 122 138 / 22%), inset 0 1px 0 rgb(255 255 255 / 30%);
+  border-color: rgb(5 116 137 / 37%);
+  box-shadow: 0 9px 19px rgb(5 116 137 / 22%), inset 0 1px 0 rgb(255 255 255 / 30%);
 }
 /* Etudes and Practice lists: distinguish the shell from the card surfaces. */
 html:not(.dark) #etudes-design-controls .etudes-design-toolbar,
 html:not(.dark) #practice-design-controls .practice-design-toolbar {
-  background: linear-gradient(140deg, #f9feff, #d9f1f5);
+  background: linear-gradient(140deg, #F7FAFC, #DEEDF8);
   border-color: var(--visual-border);
   box-shadow: var(--visual-inner-shadow);
 }
 html:not(.dark) #app:has(> .shelves) .etude-item {
   border-color: var(--visual-border);
-  box-shadow: 0 12px 29px rgb(39 104 124 / 16%), inset 0 1px 0 #fff;
+  box-shadow: 0 12px 29px rgb(36 102 153 / 16%), inset 0 1px 0 #fff;
 }
 html:not(.dark) #app:has(> .shelves) .etude-card {
-  box-shadow: 0 6px 15px rgb(36 102 129 / 6%);
+  box-shadow: 0 6px 15px rgb(36 102 153 / 6%);
 }
 /* Desktop navigation: a distinctly shaped panel like the Dark reference. */
 @media screen and (min-width: 1280px) and (pointer: fine) {
@@ -770,10 +770,10 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
     box-shadow: var(--visual-shadow);
   }
   html:not(.dark) body > header > #nav > button.active {
-    background: linear-gradient(110deg, #c2f4f5, #dffbfd);
-    color: #076b80;
-    border-color: rgb(9 143 158 / 55%);
-    box-shadow: 0 6px 16px rgb(24 146 159 / 18%), inset 0 1px 0 #fff;
+    background: linear-gradient(110deg, #DEEDF8, #DEEDF8);
+    color: #057489;
+    border-color: rgb(5 116 137 / 55%);
+    box-shadow: 0 6px 16px rgb(5 116 137 / 18%), inset 0 1px 0 #fff;
   }
   html:not(.dark) body > main#app,
   html:not(.dark) body > #etudes-design-controls,
