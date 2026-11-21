@@ -2715,3 +2715,16 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 - `web/src/app.js`: composer-module import version only. `web/index.html`: stylesheet and app-entry cache query updates only. No changes to Desktop, data, audio, recording, export, mobile navigation or unrelated screen UI.
 
 **Validation:** JS module syntax, CSS brace matching, exact diff scope for cache/version and app logic, modal dismiss paths, presence of X-only visible text, original generation callbacks, button order and mobile-only CSS media conditions checked. No actual phone screenshot or touch simulation performed; user should confirm interaction on their device. Separate metered live Piano Record→Score bug remains OPEN and requires explicit permission before any fix. User-verified RTL library cards remain CLOSED.
+
+
+---
+
+## Mobile AI guide popup: replace oversized × with precise SVG close icon (2026-11-21)
+
+**User feedback:** The new AI guide popup itself looks good, but its **X close button is visually poor**. Change only this popup's close control, preserve the attractive popup and everything else. Never put visible Close/بستن text on a dismiss button when an X exists.
+
+**Exact fix:** In `web/src/studio-etude-generation.js`, replace the popup's oversized font-rendered `×` character with a crisp, fixed 18×18 inline SVG with two 1.85px round-capped crossing strokes. Keep the button's semantic `<button>`, accessible bilingual aria-label, click handler and the other popup-dismiss paths (tap popup itself, tap backdrop, Escape) unchanged. In `web/practice-designer.css`, restyle **only** `.studio-ai-guide-close`: maintain its 40×40 touch target, replace the chunky circular border and huge 28px text glyph with a restrained 12px-radius rounded-square, very light theme-token border/background, subtle muted icon and a desktop-hover highlight. Keep keyboard focus outline. No change to the modal's background, decoration, layout, fonts or contents, the previous Musical System bottom sheet X, music generation or another route. All behavior and desktop appearance outside this mobile popup remain intact.
+
+**Cache:** Bump only the composer module version in `web/src/app.js`, and the `practice-designer.css` and app-entry query strings in `web/index.html`. No other files changed.
+
+**Validation:** AST-style JS parse, targeted exact source substitutions, all unchanged CSS retained, CSS brace balance and cache-only diffs checked. No actual phone visual QA was performed; await user confirmation.
