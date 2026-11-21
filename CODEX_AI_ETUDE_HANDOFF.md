@@ -2584,19 +2584,27 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 
 ---
 
-## STILL OPEN user report: Persian mobile Etudes/Practices card regression; grid repair attempt (2026-11-21)
+## RESOLVED: Persian mobile Etudes/Practices card regression — user-verified (2026-11-21)
 
-**USER-CONFIRMED UNRESOLVED BUG:** The user reports that **previous mobile Persian/RTL Etudes and Practices list fixes did NOT work**, including `69210a3b5fb82afa52965f1667343f8c9eb73652`. **English mobile cards are okay. Do not call the Persian bug resolved until verified by the user on device.** The current request is both to document the unresolved issue for Codex AND to implement a more structural correction. Scope is strictly the shared list cards on **mobile Persian**; Desktop and English must not regress.
+**CURRENT STATUS — RESOLVED, USER VERIFIED:** On 2026-11-21, after the fix at `2aa8bd0bd82b64e5c5c8bc262a1be3ea96dbe91d`, the user explicitly confirmed the Persian/RTL Etudes and Practices mobile cards are now correct ("آها درست شد"). The earlier attempts, including `69210a3b5fb82afa52965f1667343f8c9eb73652`, had failed; that is historical context only. **Codex must no longer treat this Persian mobile card issue as open or attempt further fixes without a new user report.** English mobile and Desktop were preserved.
 
 **Confirmed CSS root cause:** In `web/etudes.css`, a fake localized date is injected as `html[lang="fa"] #app:has(> .shelves) .etude-item strong::after { content: ' · ۲۹ آبان ۱۴۰۵' }`. Its selector has specificity **(1,3,3)**, exceeding the preceding phone `#app:has(> .shelves) .etude-item > strong::after { content:none }` at **(1,2,2)**. Therefore the Persian-specific date was **still rendered inside the new ~100px compact cards**, while English suppressed its date, creating a real language-dependent overflow. This is not an actual user date and must not appear in compact mobile card titles. The previous patch focused on left/right offsets but did not address this.
 
-**Repair attempt now committed:**
+**Fix implemented and confirmed by the user:**
 - Replace the last **Persian-only @media(max-width:719px)** block in `web/etudes.css` (instead of appending another conflicting position override). Selectors require **both** `html[lang="fa"][dir="rtl"]` and list context; English and Desktop CSS are unchanged.
 - Use a stable three-column **grid inside the existing `.etude-item` button**: 48px notation tile on the RTL start/right, flexible title and note-count column in the center, and 44px reserved on RTL end/left for the *existing sibling* Delete button. Use two rows for title + count; standard 100px minimum height and the existing theme-aware background remain.
 - The music `::before` visual is now a **static grid item**, not absolute, eliminating mixed physical and logical insets. Explicitly reset old inset/transform values. The original Delete button remains a separate absolutely positioned sibling, centered vertically at physical **left:12px** after clearing inherited offsets; its callback and modal are unchanged.
 - Add a **higher-specificity** Persian mobile `strong::after {content:none; display:none}` to eliminate the fake hard-coded date that previously survived.
 - `web/index.html` only bumps the Etudes stylesheet cache key from `mobile-rtl-list-1` to `mobile-rtl-grid-2`. **No changes** to `web/src/app.js`, data, Score, audio, piano recording, routing or any other feature.
 
-**Verification and limitation:** Static CSS comparison confirmed all earlier style outside this single mobile RTL block is byte-identical. CSS parser specificity comparison confirms why the former date override won and why the new rule should override it. Checked Grid positions and both common Studio/Practice selectors, CSS braces and HTML cache-only change. An isolated Chromium render was **attempted but timed out in the execution environment**, so **visual results were NOT verified in a browser or APK**. The user must inspect the Persian mobile lists; if incorrect, collect a screenshot and real computed styles before further iterations. Do not reapply guessed left/right patches.
+**Verification:** Static CSS comparison checked all style outside the dedicated mobile RTL block remained unchanged; selector specificity, grid positions, both Studio/Practice selectors, CSS braces and cache-only HTML change were checked. Chromium rendering was not available in the execution environment, **but the user subsequently checked the result on their own mobile device and explicitly confirmed it works**. **This issue is closed.** Do not reapply guessed left/right patches or reopen without a new report.
 
 **Separate open bug:** Live metered Piano Record → rhythmic Score transcription remains UNRESOLVED and requires explicit user approval before Codex changes that code.
+
+
+---
+
+### Current bug status for Codex (latest user confirmation, 2026-11-21)
+
+- **CLOSED / FIXED:** Persian/RTL compact Etudes and Practices cards on mobile. User confirmed success after commit `2aa8bd0bd82b64e5c5c8bc262a1be3ea96dbe91d`. Previous "STILL OPEN" statements about this exact issue describe historical failed attempts and are superseded by this update. **Do not work on this issue unless the user reports a new regression.**
+- **SEPARATE ISSUE, STILL OPEN:** Metered piano live Record → Score transcription. Unchanged; explicit user approval before any Codex fix remains required.
