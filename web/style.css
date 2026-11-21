@@ -68,6 +68,24 @@ body {
   font: 16px/1.6 system-ui, sans-serif
 }
 
+/* All Goosh screens: prevent accidental page-text highlighting while
+   keeping editable controls usable for typing, selection and copy/paste. */
+body,
+body * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body input,
+body textarea,
+body [contenteditable="true"],
+body [contenteditable="true"] *,
+body [contenteditable="plaintext-only"],
+body [contenteditable="plaintext-only"] * {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 header,
 nav,
 aside,
