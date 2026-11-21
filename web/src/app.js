@@ -2399,8 +2399,9 @@ function render() {
   // Explicit editor-only marker for phone navigation (not the Etudes list).
   document.body.classList.toggle('studio-editor-screen',page==='studio' && Boolean(activeId));
   const name=routes.find(([key])=>key===page)[1];
-  document.title=name+' · Goosh';
-  if(page!=='home')el('h1',app,name);
+  const pageTitle=page==='studio' && activeId?t('Etude Studio','استودیوی اتود'):name;
+  document.title=pageTitle+' · Goosh';
+  if(page!=='home')el('h1',app,pageTitle);
   if(page==='home'){
     renderHome({
       el,app,t,collection,navigate,
