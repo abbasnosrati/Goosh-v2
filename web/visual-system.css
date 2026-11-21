@@ -451,33 +451,57 @@ body > footer {
 }
 
 
-/* LIBRARY HEADING ACTIONS — desktop/tablet.
-   The title lives in the design header, the real (functional) buttons live in
-   the app below it. Move their VISUAL position alongside that title without
-   cloning elements or changing the mobile action-reparenting code. */
-@media screen and (min-width: 1100px) {
-  body:has(#app[data-page="studio"] > .shelves),
-  body:has(#app[data-page="practice"] > .shelves) {
-    --library-actions-top: -206px;
-    --library-actions-end: 0px;
+/* LIBRARY HEADING ACTIONS.
+   On wide/non-mobile screens anchor the REAL functional buttons to the
+   visible library heading row, not a negative pixel offset from #app.
+   CSS anchor positioning is used only where supported; non-supporting
+   browsers keep the ordinary in-flow action row. */
+@media screen and (min-width: 720px) {
+  body:has(#app[data-page="studio"] > .shelves) #etudes-design-controls .etudes-design-intro {
+    anchor-name: --goosh-etudes-title-row;
   }
+  body:has(#app[data-page="practice"] > .shelves) #practice-design-controls .practice-design-intro {
+    anchor-name: --goosh-practice-title-row;
+  }
+  /* Fallback: make sure earlier library absolute positioning is disabled. */
   body:has(#app[data-page="studio"] > .shelves) #app[data-page="studio"] > .row.controls,
   body:has(#app[data-page="practice"] > .shelves) #app[data-page="practice"] > .row.controls {
-    position: absolute !important;
-    inset-block-start: var(--library-actions-top) !important;
-    inset-inline-end: var(--library-actions-end) !important;
-    inset-inline-start: auto !important;
+    position: static !important;
+    inset: auto !important;
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-end;
     width: max-content;
-    max-width: min(66%, 510px);
-    min-height: 48px;
-    margin: 0 !important;
+    max-width: 100%;
+    margin: 0 0 16px auto !important;
     padding: 0 !important;
     gap: 10px;
     z-index: 3;
+  }
+  @supports (position-anchor: --goosh-etudes-title-row) and (top: anchor(center)) {
+    body:has(#app[data-page="studio"] > .shelves) #app[data-page="studio"] > .row.controls {
+      position: fixed !important;
+      position-anchor: --goosh-etudes-title-row;
+      inset-block-start: anchor(--goosh-etudes-title-row center) !important;
+      inset-inline-end: anchor(--goosh-etudes-title-row end) !important;
+      inset-inline-start: auto !important;
+      transform: translateY(-50%);
+      width: max-content;
+      max-width: 55vw;
+      margin: 0 !important;
+    }
+    body:has(#app[data-page="practice"] > .shelves) #app[data-page="practice"] > .row.controls {
+      position: fixed !important;
+      position-anchor: --goosh-practice-title-row;
+      inset-block-start: anchor(--goosh-practice-title-row center) !important;
+      inset-inline-end: anchor(--goosh-practice-title-row end) !important;
+      inset-inline-start: auto !important;
+      transform: translateY(-50%);
+      width: max-content;
+      max-width: 55vw;
+      margin: 0 !important;
+    }
   }
   body:has(#app[data-page="studio"] > .shelves) #app[data-page="studio"] > .row.controls > button,
   body:has(#app[data-page="practice"] > .shelves) #app[data-page="practice"] > .row.controls > button {
@@ -485,13 +509,59 @@ body > footer {
     white-space: nowrap;
   }
 }
-@media screen and (min-width: 1280px) and (pointer: fine) {
-  body:has(#app[data-page="studio"] > .shelves),
-  body:has(#app[data-page="practice"] > .shelves) {
-    /* The reference shell adds 20px header padding, 15px bottom padding and
-       25px horizontal inset; align to its intro rather than the toolbar. */
-    --library-actions-top: -221px;
-    --library-actions-end: 25px;
+@media screen and (min-width: 720px) and (max-width: 1099px) {
+  body:has(#app[data-page="studio"] > .shelves) #app[data-page="studio"] > .row.controls > button,
+  body:has(#app[data-page="practice"] > .shelves) #app[data-page="practice"] > .row.controls > button {
+    min-height: 42px;
+    padding-inline: 13px;
+  }
+}
+
+/* AI Guide has enough vertical space for a more readable instruction list.
+   Manual's compact 2x2 layout and all mobile styles stay as they were. */
+@media screen and (min-width: 900px) {
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-compose-music-hint {
+    border-bottom: 0;
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-setup-guide {
+    padding: 22px 23px;
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-setup-guide-head {
+    padding-bottom: 15px;
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-setup-guide-head h3 {
+    font-size: clamp(19px, 1.6vw, 23px);
+    line-height: 1.32;
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-setup-guide-head p {
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-setup-guide-steps {
+    gap: clamp(12px, 1.3vw, 18px);
+    padding-top: 18px;
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-setup-guide-step {
+    gap: 12px;
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-setup-guide-step-icon {
+    flex: 0 0 clamp(40px, 3vw, 48px);
+    width: clamp(40px, 3vw, 48px);
+    height: clamp(40px, 3vw, 48px);
+    border-radius: 13px;
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-setup-guide-step-icon svg {
+    width: 25px;
+    height: 25px;
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-setup-guide-step-copy strong {
+    font-size: 15px;
+    line-height: 1.44;
+    margin-bottom: 4px;
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai:not([hidden])) .studio-setup-guide-step-copy p {
+    font-size: 13.5px;
+    line-height: 1.57;
   }
 }
 
