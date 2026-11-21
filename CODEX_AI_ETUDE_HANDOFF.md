@@ -3191,13 +3191,12 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 
 ---
 
-## 2026-11-21 — Professional Etude Setup creation-method header (desktop only)
+## 2026-11-21 — Score settings bar visual redesign (desktop only)
 
-**Request:** Visually refine the cramped, awkward Etude Setup title and icon-only Manual/AI pair. Keep both existing buttons beside the title and retain the established Goosh palette, responsive behavior, and all creation logic.
+**User screenshot:** The circled row directly beneath the Score staff (Tempo, Time signature, Pen note value, Free Timeline) was visually inconsistent: mixed inline and boxed labels, uneven heights, and unrelated spacing.
 
-**Scope and implementation:** `web/visual-system.css` adds a desktop-only (`min-width:900px`) style override scoped to Etude Studio: calmer 44px header alignment, balanced title/selector spacing, one compact 38px-high segmented control, smaller consistent mode icons, visible localized labels taken directly from each existing button's `aria-label` (using CSS `content:attr(aria-label)`), subtle active/hover surfaces with existing theme tokens, and keyboard focus visibility. The same two buttons retain the same handlers, native disabled/selected state, and accessible names. The mobile/tablet icon-only display is unchanged. No new markup, duplicate state, new colors, navigation, music logic, or other pages were changed.
+**Implemented on `feature/practice-sequence-studio`:** A desktop/fine-pointer scoped CSS redesign in `web/style.css` makes this single row a subdued glass-like settings strip using the existing Goosh palette. Each control receives a consistently aligned label above a uniform 42px field; the BPM value and suffix share one visual field. Meter, Pen length, optional measure count and Timeline receive matching borders, radii and spacing. The physical left-to-right order keeps Tempo first as previously requested. The two existing theme modes use the same semantic CSS tokens. Small touch/mobile layouts are unchanged. `web/index.html` only refreshes the `style.css` cache key.
 
-**Cache:** `web/index.html` updates only the `visual-system.css` cache-busting key. The underlying renderer and state files are untouched.
+**Scope safeguard:** No DOM changes, control duplication, state edits, time signature/tempo/note duration behavior, audio, score renderer, Practice player or other page changes. This commit also restores the unrelated previous Etude Setup header modifications because they were outside the circled request.
 
-**Validation:** Static selector/scope checks passed; real desktop browser screenshots, visual balance in both themes and RTL/LTR, and interactive device testing remain to be checked.
-
+**Verification:** Source-level CSS scope and cache paths reviewed; no browser screenshot or device interaction test performed.

@@ -2466,3 +2466,147 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     flex-basis: 100%;
   }
 }
+
+/* Score settings below the staff: a consistent desktop control bar.
+   Presentation only; keep the canonical tempo, meter, note value and
+   timeline inputs and every existing event handler unchanged. */
+@media screen and (min-width:701px) and (pointer:fine) {
+  #app[data-page="studio"] .studio-score-surface > .score-below-actions:not([hidden]) {
+    display:flex;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    column-gap:18px;
+    row-gap:12px;
+    margin:15px 0 3px;
+    padding:14px 16px;
+    border:1px solid var(--glass-border);
+    border-radius:14px;
+    background:color-mix(in srgb,var(--panel) 68%,var(--glass-surface));
+    box-shadow:inset 0 1px 0 color-mix(in srgb,var(--panel) 80%,transparent);
+    direction:ltr;
+  }
+  #app[data-page="studio"] .score-below-actions > .score-time-controls {
+    display:inline-flex;
+    align-items:flex-end;
+    gap:16px;
+    min-width:0;
+  }
+  #app[data-page="studio"] .score-time-controls > .score-tempo,
+  #app[data-page="studio"] .score-time-controls > .score-meter-control,
+  #app[data-page="studio"] .score-below-actions > .score-pen-length,
+  #app[data-page="studio"] .score-below-actions > .score-measure-count {
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    justify-content:flex-end;
+    gap:7px;
+    min-width:0;
+    min-height:0;
+    margin:0;
+    padding:0;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+  }
+  #app[data-page="studio"] .score-tempo-label,
+  #app[data-page="studio"] .score-meter-control > span,
+  #app[data-page="studio"] .score-pen-length > span,
+  #app[data-page="studio"] .score-measure-count > span {
+    display:block;
+    margin:0;
+    padding:0;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:650;
+    line-height:1.3;
+    text-align:start;
+    direction:rtl;
+    white-space:nowrap;
+  }
+  #app[data-page="studio"] .score-time-controls > .score-tempo {
+    position:relative;
+    display:grid;
+    grid-template-columns:minmax(35px,1fr) auto;
+    grid-template-rows:auto 42px;
+    column-gap:4px;
+    width:118px;
+  }
+  #app[data-page="studio"] .score-tempo-label {
+    grid-column:1/-1;
+  }
+  #app[data-page="studio"] .score-tempo-number {
+    grid-column:1;
+    grid-row:2;
+    width:100%;
+    min-width:0;
+    min-height:42px;
+    padding:0 4px 0 10px;
+    border:1px solid var(--glass-border);
+    border-inline-end:0;
+    border-radius:10px 0 0 10px;
+    background:var(--dropdown-control-surface);
+    color:var(--ink);
+    font-size:15px;
+    font-weight:700;
+    text-align:center;
+  }
+  #app[data-page="studio"] .score-tempo-unit {
+    display:grid;
+    grid-column:2;
+    grid-row:2;
+    align-items:center;
+    min-height:42px;
+    padding-inline:6px 9px;
+    border:1px solid var(--glass-border);
+    border-inline-start:0;
+    border-radius:0 10px 10px 0;
+    background:var(--dropdown-control-surface);
+    color:var(--muted);
+    font-size:10.5px;
+    font-weight:650;
+  }
+  #app[data-page="studio"] .score-meter-control > select,
+  #app[data-page="studio"] .score-pen-length > select,
+  #app[data-page="studio"] .score-measure-count > input {
+    width:auto;
+    max-width:none;
+    height:42px;
+    min-height:42px;
+    margin:0;
+    padding:0 12px;
+    border:1px solid var(--glass-border);
+    border-radius:10px;
+    background:var(--dropdown-control-surface);
+    color:var(--ink);
+    box-shadow:none;
+    font:inherit;
+    font-size:13px;
+    font-weight:600;
+  }
+  #app[data-page="studio"] .score-meter-control > select {min-width:172px;max-width:218px}
+  #app[data-page="studio"] .score-pen-length > select {min-width:126px;max-width:190px}
+  #app[data-page="studio"] .score-measure-count > input {width:90px;text-align:center}
+  #app[data-page="studio"] .score-below-actions > .score-free-timeline-toggle:not([hidden]) {
+    align-self:flex-end;
+    min-height:42px;
+    margin:0;
+    padding:0 15px;
+    border:1px solid var(--glass-border);
+    border-radius:10px;
+    background:var(--glass-control);
+    box-shadow:none;
+    color:var(--ink);
+    font-size:13px;
+    font-weight:600;
+  }
+  #app[data-page="studio"] .score-below-actions > .score-free-timeline-toggle.active {
+    border-color:color-mix(in srgb,var(--accent) 38%,var(--glass-border));
+    background:color-mix(in srgb,var(--accent) 11%,var(--panel));
+    color:var(--ink);
+  }
+  #app[data-page="studio"] .score-below-actions > .score-meter-status:not([hidden]) {
+    margin:0;
+    flex-basis:100%;
+  }
+}
