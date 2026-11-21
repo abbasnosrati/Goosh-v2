@@ -431,6 +431,7 @@ function refreshTake(take) {
 function paintPlaybackMarker(force = false) {
   if (!playback) return;
   const elapsed = playback.clock.currentTime - playback.started;
+  paintScorePlayhead($('.studio-score-surface > .score'),elapsed);
   // Follow the latest note attack, not the releases of older notes that
   // can still overlap it (especially after a live piano recording).
   // Notes with the same onset are a chord and may share the indicator.
@@ -461,6 +462,7 @@ function clearPlaybackMarker() {
   $('.score')?.querySelectorAll('[data-playback-note]').forEach(marker => {
     marker.setAttribute('opacity', '0');
   });
+  paintScorePlayhead($('.studio-score-surface > .score'),scoreSeekPosition);
 }
 
 function advancePlaybackMarker() {
@@ -875,6 +877,7 @@ function sheet() {
       for(const index of indices)
         if(Number.isInteger(index)&&index>=0&&index<e.notes.length)sel.add(index);
       rangeSelectionActive=sel.size>0;
+      scoreSeekPosition=sel.size?Math.min(...[...sel].map(i=>e.notes[i].at)):0;
       sheet();
     },
     moveRest: rec ? undefined : (source,slot) => editScoreRest(source,slot),
@@ -1029,6 +1032,125 @@ function setEtudeTempo(nextBpm) {
   save();
   sheet();
   return true;
+}
+
+// Free meter alone permits arbitrary durations without moving later onsets.
+// The same e.notes, score renderer, audio transport and Undo stack are reused.
+function setFreeNoteDuration(note,seconds) {
+  if(page!=='studio'||!activeId||rec||signatureMode||meterInfo(e)||
+     !e.notes.includes(note)||!Number.isFinite(seconds)||
+     seconds<.001||seconds>1e5||note.at+seconds>1e7)return false;
+  if(Math.abs(note.d-seconds)<.0005)return true;
+  stopScorePlayback();
+  rememberScoreEdit({kind:'free-duration',note,before:note.d});
+  note.d=seconds;
+  scoreSeekPosition=0;
+  sel.clear();
+  rangeSelectionActive=false;
+  save();
+  sheet();
+  return true;
+}
+
+function renderFreeTimeline(host) {
+  if(!host)return;
+  const visible=freeTimelineOpen&&!meterInfo(e)&&!signatureMode;
+  host.hidden=!visible;
+  if(!visible){host.replaceChildren();return;}
+  const priorScroll=host.querySelector('.free-timeline-scroll')?.scrollLeft||0;
+  host.replaceChildren();
+  const header=el('div',host,undefined,'free-timeline-heading');
+  el('strong',header,t('Free timing editor','ویرایش کشش آزاد'));
+  el('small',header,t(
+    'Drag a note’s right edge to resize it. Other note onsets stay fixed.',
+    'لبهٔ راست هر نت را بکشید تا کشش آن تغییر کند؛ شروع بقیهٔ نت‌ها ثابت می‌ماند.'
+  ));
+  if(!e.notes.length){
+    el('p',host,t('Add or record a note to edit its timing.',
+      'برای ویرایش کشش، ابتدا نتی بنویسید یا ضبط کنید.'),'free-timeline-empty');
+    return;
+  }
+  const sorted=e.notes.map((note,index)=>({note,index})).sort((a,b)=>
+    a.note.at-b.note.at||a.index-b.index);
+  const end=Math.max(1,...sorted.map(({note})=>note.at+note.d));
+  const scale=Math.min(112,Math.max(.05,120000/Math.max(1,end)));
+  const width=Math.max(750,Math.ceil(end*scale+64));
+  const startX=22;
+  const occupied=[];
+  const positioned=sorted.map(entry=>{
+    const visualEnd=entry.note.at+Math.max(entry.note.d,18/scale)+.04;
+    let lane=occupied.findIndex(value=>value<=entry.note.at);
+    if(lane<0){lane=occupied.length;occupied.push(0);}
+    occupied[lane]=visualEnd;
+    return {...entry,lane};
+  });
+  const height=38+occupied.length*42+12;
+  const viewport=el('div',host,undefined,'free-timeline-scroll');
+  viewport.tabIndex=0;
+  viewport.setAttribute('aria-label',t('Free note timeline','تایم‌لاین نت‌های آزاد'));
+  const track=el('div',viewport,undefined,'free-timeline-track');
+  track.style.width=width+'px';
+  track.style.height=height+'px';
+  const ticks=Math.min(300,Math.ceil(end));
+  const every=Math.max(1,Math.ceil(end/80));
+  for(let sec=0;sec<=ticks;sec+=every){
+    const tick=el('div',track,undefined,'free-timeline-tick');
+    tick.style.left=(startX+sec*scale)+'px';
+    el('span',tick,sec+'s');
+  }
+  const durationLabel=seconds=>seconds.toFixed(2).replace(/\\.?0+$/,'')+'s';
+  for(const {note,index,lane} of positioned){
+    const clip=el('div',track,undefined,'free-timeline-note');
+    const left=startX+note.at*scale;
+    clip.style.left=left+'px';
+    clip.style.top=(35+lane*42)+'px';
+    clip.style.width=Math.max(18,note.d*scale)+'px';
+    clip.title=(note.displayPitch||label(note.m))+' · '+durationLabel(note.d);
+    const name=el('span',clip,note.displayPitch||label(note.m),'free-timeline-note-name');
+    const length=el('span',clip,durationLabel(note.d),'free-timeline-note-duration');
+    clip.setAttribute('aria-label',clip.title);
+    clip.onclick=()=>{
+      if(rec)return;
+      sel.clear();sel.add(index);rangeSelectionActive=false;sheet();
+    };
+    const handle=el('button',clip,'','free-timeline-resize');
+    handle.type='button';
+    handle.setAttribute('aria-label',t('Resize note','تغییر کشش نت')+' '+(note.displayPitch||label(note.m)));
+    handle.title=t('Drag to resize','برای تغییر کشش بکشید');
+    let drag=null;
+    handle.onpointerdown=ev=>{
+      if(ev.button!==undefined&&ev.button!==0||rec)return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      drag={id:ev.pointerId,x:ev.clientX,d:note.d};
+      handle.setPointerCapture?.(ev.pointerId);
+    };
+    const resized=ev=>Math.max(.01,Math.min(1e5,
+      Math.round((drag.d+(ev.clientX-drag.x)/scale)*100)/100));
+    handle.onpointermove=ev=>{
+      if(!drag||drag.id!==ev.pointerId)return;
+      const duration=resized(ev);
+      clip.style.width=Math.max(18,duration*scale)+'px';
+      length.textContent=durationLabel(duration);
+      ev.preventDefault();
+    };
+    handle.onpointerup=ev=>{
+      if(!drag||drag.id!==ev.pointerId)return;
+      const duration=resized(ev);
+      drag=null;
+      if(handle.hasPointerCapture?.(ev.pointerId))handle.releasePointerCapture(ev.pointerId);
+      ev.stopPropagation();
+      setFreeNoteDuration(note,duration);
+    };
+    handle.onpointercancel=()=>{drag=null;clip.style.width=Math.max(18,note.d*scale)+'px';length.textContent=durationLabel(note.d)};
+    handle.onkeydown=ev=>{
+      if(!['ArrowLeft','ArrowRight'].includes(ev.key)||rec)return;
+      ev.preventDefault();
+      setFreeNoteDuration(note,Math.max(.01,
+        Math.round((note.d+(ev.key==='ArrowRight'?.1:-.1))*100)/100));
+    };
+  }
+  viewport.scrollLeft=priorScroll;
 }
 
 // One context-sensitive pictogram: a key signature on the notes view,
@@ -1333,7 +1455,12 @@ async function startScorePlayback() {
   const end = Math.max(0, ...notes.map(n => n.at + n.d));
   // Start at the first selected onset; preserve absolute score timestamps
   // so the existing pause/resume scheduler and note markers stay aligned.
-  const start=selectedIndices?Math.min(...notes.map(n=>n.at)):0;
+  const selectionStart=selectedIndices?Math.min(...notes.map(n=>n.at)):0;
+  const requested=Number.isFinite(scoreSeekPosition)?scoreSeekPosition:0;
+  const start=selectedIndices
+    ?(requested>=selectionStart && requested<end?requested:selectionStart)
+    :Math.max(0,Math.min(requested,Math.max(0,end-.001)));
+  scoreSeekPosition=start;
   const transport = {
     clock, notes, end, offset:start, anchor:0, paused:false,
     output:null, releases:[], timer:null
@@ -1343,13 +1470,25 @@ async function startScorePlayback() {
   // Keep the existing score note-marker system without changing its functions.
   clearPlaybackMarker();
   playback = {
-    clock, started:transport.anchor,
+    clock, started:transport.anchor - transport.offset,
     notes:notes.map(n => ({index:n.index, at:n.at, d:n.d})),
     end, frame:null
   };
   paintPlaybackMarker(true);
   playback.frame = requestAnimationFrame(advancePlaybackMarker);
   updateScoreTransportButtons();
+}
+
+// Seek changes only the starting offset of the existing Score transport.
+// During active playback it restarts the same sampler/scheduler at that point.
+function seekScorePlayback(seconds) {
+  if(page!=='studio'||!activeId||signatureMode||rec||!Number.isFinite(seconds))return;
+  const end=Math.max(0,...e.notes.map(n=>n.at+n.d));
+  scoreSeekPosition=Math.max(0,Math.min(end,seconds));
+  const wasPlaying=scorePlaybackPending||Boolean(scoreTransport&&!scoreTransport.paused);
+  stopScorePlayback();
+  paintScorePlayhead($('.studio-score-surface > .score'),scoreSeekPosition);
+  if(wasPlaying)startScorePlayback();
 }
 
 function pauseScorePlayback() {
@@ -1711,8 +1850,11 @@ function studio() {
   audioStatus.setAttribute('role', 'status');
   audioStatus.hidden = true;
   const playButton = btn(transportActions, '', () => {
-    if (scoreTransport || scorePlaybackPending) stopScorePlayback();
-    else startScorePlayback();
+    if (scoreTransport || scorePlaybackPending) {
+      stopScorePlayback();
+      scoreSeekPosition=0;
+      paintScorePlayhead($('.studio-score-surface > .score'),0);
+    } else startScorePlayback();
   });
   playButton.dataset.scoreTransport = '';
   playButton.classList.add('score-transport-button');
