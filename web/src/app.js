@@ -70,6 +70,9 @@ let fa = localStorage.lang !== 'en',
 const collection = new Map();
 // Per-Etude UI preference; no note/audio model changes.
 const studioPianoExpanded = new WeakMap();
+// The fullscreen piano moves the same keyboard DOM temporarily to the body.
+// Always restore it before an editor rerender or route change.
+let closeFullscreenPiano = null;
 const prefix = 'goosh.etude.';
 for(let i=0;i<localStorage.length;i++){
   const key=localStorage.key(i);
@@ -1665,8 +1668,12 @@ function studio() {
   const pianoTools = studioPiano.querySelector(':scope > .row');
   const pianoKeys = studioPiano.querySelector(':scope > .keys');
   const pianoOctaveLabel = pianoTools.querySelector('label');
-  const pianoToggle = btn(pianoTools, '', () => setPianoExpanded(pianoKeys.hidden),
-    t('Show or hide piano', 'نمایش یا جمع‌کردن پیانو'));
+  const pianoViewControls = el('div',pianoTools,undefined,'studio-piano-view-controls');
+  const pianoToggle = btn(pianoViewControls, '', () => {
+    const wasOpen = !pianoKeys.hidden;
+    if (studioPiano.classList.contains('studio-piano-fullscreen')) exitPianoFullscreen();
+    setPianoExpanded(!wasOpen);
+  }, t('Show or hide piano', 'نمایش یا جمع‌کردن پیانو'));
   pianoToggle.type = 'button';
   pianoToggle.className = 'studio-piano-toggle';
   // Icon-only disclosure: down opens the keyboard, up collapses it.
@@ -1684,6 +1691,72 @@ function studio() {
   toggleChevron.setAttribute('d','m6 9 6 6 6-6');
   toggleIcon.append(toggleChevron);
   pianoToggle.append(toggleIcon);
+
+  const fullscreenButton = btn(pianoViewControls, '', () => togglePianoFullscreen(),
+    t('Fullscreen piano','نمای تمام‌صفحه پیانو'));
+  fullscreenButton.type='button';
+  fullscreenButton.className='studio-piano-fullscreen-toggle';
+  const fullscreenIcon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  fullscreenIcon.setAttribute('viewBox','0 0 24 24');
+  fullscreenIcon.setAttribute('fill','none');
+  fullscreenIcon.setAttribute('stroke','currentColor');
+  fullscreenIcon.setAttribute('stroke-width','1.9');
+  fullscreenIcon.setAttribute('stroke-linecap','round');
+  fullscreenIcon.setAttribute('stroke-linejoin','round');
+  fullscreenIcon.setAttribute('aria-hidden','true');
+  fullscreenIcon.setAttribute('focusable','false');
+  const fullscreenShape=document.createElementNS('http://www.w3.org/2000/svg','path');
+  fullscreenIcon.append(fullscreenShape);
+  fullscreenButton.append(fullscreenIcon);
+  let fullscreenAnchor=null;
+  let wasCollapsedBeforeFullscreen=false;
+  const pianoScrollCenter = () =>
+    (pianoKeys.scrollLeft + pianoKeys.clientWidth/2)/Math.max(1,pianoKeys.scrollWidth);
+  const restorePianoScroll = fraction => requestAnimationFrame(() => {
+    if(!pianoKeys.isConnected || pianoKeys.hidden)return;
+    pianoKeys.scrollLeft=Math.max(0,fraction*pianoKeys.scrollWidth-pianoKeys.clientWidth/2);
+  });
+  const syncFullscreenButton = open => {
+    fullscreenButton.setAttribute('aria-pressed',String(open));
+    const label=open
+      ?t('Exit fullscreen piano','بازگشت پیانو به حالت عادی')
+      :t('Fullscreen piano','نمای تمام‌صفحه پیانو');
+    fullscreenButton.setAttribute('aria-label',label);
+    fullscreenButton.title=label;
+    fullscreenShape.setAttribute('d',open
+      ?'M9 3v6H3M15 21v-6h6'
+      :'M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5');
+  };
+  const exitPianoFullscreen = () => {
+    if(!fullscreenAnchor)return;
+    stopKeys();
+    const center=pianoScrollCenter();
+    studioPiano.classList.remove('studio-piano-fullscreen');
+    if(fullscreenAnchor.isConnected)fullscreenAnchor.replaceWith(studioPiano);
+    else studioPiano.remove();
+    fullscreenAnchor=null;
+    document.body.classList.remove('studio-piano-fullscreen-open');
+    if(closeFullscreenPiano===exitPianoFullscreen)closeFullscreenPiano=null;
+    if(wasCollapsedBeforeFullscreen)setPianoExpanded(false);
+    syncFullscreenButton(false);
+    restorePianoScroll(center);
+  };
+  const togglePianoFullscreen = () => {
+    if(fullscreenAnchor){exitPianoFullscreen();return;}
+    stopKeys();
+    const center=pianoScrollCenter();
+    wasCollapsedBeforeFullscreen=pianoKeys.hidden;
+    if(wasCollapsedBeforeFullscreen)setPianoExpanded(true);
+    fullscreenAnchor=document.createComment('studio piano return point');
+    studioPiano.before(fullscreenAnchor);
+    document.body.append(studioPiano);
+    studioPiano.classList.add('studio-piano-fullscreen');
+    document.body.classList.add('studio-piano-fullscreen-open');
+    closeFullscreenPiano=exitPianoFullscreen;
+    syncFullscreenButton(true);
+    restorePianoScroll(center);
+  };
+  syncFullscreenButton(false);
   const setPianoExpanded = expanded => {
     const open = Boolean(expanded);
     const wasHidden = pianoKeys.hidden;
@@ -2054,6 +2127,7 @@ function studio() {
 }
 
 function cancel() {
+  closeFullscreenPiano?.();
   stopRecordingMetronome();
   stopSignaturePreview();
   stopScorePlayback();
@@ -2507,6 +2581,7 @@ function syncMobileLibraryActions(){
 mobileLibraryLayout.addEventListener('change',syncMobileLibraryActions);
 
 function render() {
+  closeFullscreenPiano?.();
   if(mobileSignatureDialog){
     if(mobileSignatureDialog.open)mobileSignatureDialog.close();
     mobileSignatureDialog.remove();
@@ -2624,6 +2699,11 @@ document.addEventListener('pointerdown', ev => {
   sheet();
 });
 document.onkeydown = ev => {
+  if(ev.key==='Escape' && closeFullscreenPiano && !document.querySelector('dialog[open]')){
+    ev.preventDefault();
+    closeFullscreenPiano();
+    return;
+  }
   if(document.querySelector('dialog[open]'))return;
   const typing = /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName) || ev.target.isContentEditable;
   if (page==='studio' && activeId && !rec && !typing && !ev.repeat &&

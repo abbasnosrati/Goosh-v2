@@ -1368,3 +1368,22 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
     transition:none;
   }
 }
+
+/* The Etude Setup disclosure shares the piano's refined glass-button finish. */
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-toggle {
+  border-color:color-mix(in srgb,var(--accent) 25%,var(--glass-border));
+  border-radius:12px;
+  background:var(--glass-control);
+  box-shadow:var(--glass-soft-shadow);
+  transition:background-color 140ms ease,color 140ms ease,border-color 140ms ease;
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-toggle:hover {
+  border-color:color-mix(in srgb,var(--accent) 48%,var(--glass-border));
+  background:var(--glass-selected);
+  color:var(--accent);
+}
+@media (prefers-reduced-motion:reduce) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-setup-toggle {
+    transition:none;
+  }
+}
