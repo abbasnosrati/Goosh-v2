@@ -849,3 +849,420 @@ dialog.studio-mobile-picker-dialog {
     border-radius:18px;
   }
 }
+
+
+/* Approved Etude Setup reference: Desktop presentation only.
+   Original Manual/AI, music, Goal, meter and generator handlers are unchanged. */
+#app[data-page="studio"] .studio-setup-guide,
+#app[data-page="studio"] .studio-setup-icon,
+#app[data-page="studio"] .studio-setup-hero-icon,
+#app[data-page="studio"] .studio-setup-generate-icon {
+  display:none;
+}
+@media screen and (min-width: 900px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose {
+    display:grid;
+    grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr);
+    grid-template-rows:auto auto;
+    gap:0 20px;
+    position:relative;
+    min-width:0;
+    margin-block:16px 18px;
+    padding:23px 21px 22px;
+    border:1px solid var(--glass-border);
+    border-radius:22px;
+    background:var(--glass-surface);
+    box-shadow:var(--glass-shadow);
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+  }
+  #app[data-page="studio"] .studio-compose-music {
+    grid-column:1;
+    grid-row:1;
+    min-width:0;
+    margin-top:80px;
+    padding:22px 24px 0;
+    border:1px solid var(--glass-border);
+    border-bottom:0;
+    border-radius:18px 18px 0 0;
+    background:var(--glass-surface);
+  }
+  #app[data-page="studio"] .studio-compose-heading {
+    position:absolute;
+    inset-block-start:35px;
+    inset-inline-start:101px;
+    margin:0;
+    font-size:clamp(23px,2vw,29px);
+    font-weight:800;
+    line-height:1.2;
+    letter-spacing:-.025em;
+  }
+  #app[data-page="studio"] .studio-setup-hero-icon {
+    display:grid;
+    place-items:center;
+    position:absolute;
+    inset-block-start:22px;
+    inset-inline-start:24px;
+    width:60px;
+    height:60px;
+    border:1px solid var(--glass-border);
+    border-radius:15px;
+    background:var(--glass-selected);
+    box-shadow:var(--glass-soft-shadow);
+    color:var(--accent);
+  }
+  #app[data-page="studio"] .studio-setup-hero-icon svg {width:31px;height:31px}
+  #app[data-page="studio"] .studio-compose-tabs {
+    position:absolute;
+    inset-block-start:29px;
+    inset-inline-end:23px;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:270px;
+    gap:4px;
+    padding:4px;
+    border-radius:14px;
+    border:1px solid var(--glass-border);
+    background:var(--glass-control);
+    box-shadow:var(--glass-soft-shadow);
+  }
+  #app[data-page="studio"] .studio-compose-tab {
+    width:100%;
+    min-width:0;
+    min-height:48px;
+    padding:9px 14px;
+    font-size:15px;
+    font-weight:700;
+  }
+  #app[data-page="studio"] .studio-compose-music .studio-music-system {
+    margin:0;
+    padding:0 0 22px;
+    border-bottom:1px solid var(--glass-border);
+  }
+  #app[data-page="studio"] .studio-compose-music .studio-music-system legend {
+    display:flex;
+    align-items:center;
+    gap:13px;
+    width:auto;
+    margin:0 0 12px;
+    padding:0;
+    font-size:17px;
+    line-height:1.5;
+    font-weight:750;
+  }
+  #app[data-page="studio"] .studio-setup-icon {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    width:23px;
+    height:23px;
+    color:var(--accent);
+  }
+  #app[data-page="studio"] .studio-setup-icon svg {
+    width:22px;
+    height:22px;
+    display:block;
+  }
+  #app[data-page="studio"] .studio-music-choices {
+    gap:12px;
+    padding-inline-start:35px;
+  }
+  #app[data-page="studio"] .studio-music-choice {
+    min-height:49px;
+    padding:11px 17px;
+    border-radius:12px;
+    font-weight:650;
+  }
+  #app[data-page="studio"] .studio-compose-fields {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:end;
+    gap:14px;
+    padding-top:19px;
+  }
+  #app[data-page="studio"] .studio-compose-fields:has(> .studio-signature-actions[hidden]) {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  #app[data-page="studio"] .studio-compose-fields .studio-select-field {
+    display:contents;
+  }
+  #app[data-page="studio"] .studio-compose-fields > .studio-select-field > .practice-field {
+    position:relative;
+    min-width:0;
+    gap:8px;
+    font-size:14px;
+  }
+  #app[data-page="studio"] .studio-compose-fields .practice-field > span:not(.studio-setup-icon) {
+    display:block;
+    padding-inline-start:34px;
+    font-weight:750;
+    color:var(--ink);
+    font-size:15px;
+    line-height:1.5;
+  }
+  #app[data-page="studio"] .studio-compose-fields .studio-setup-icon {
+    position:absolute;
+    inset-block-start:0;
+    inset-inline-start:0;
+  }
+  #app[data-page="studio"] .studio-compose-fields .practice-field select {
+    height:49px;
+    padding-inline:15px;
+    border:1px solid var(--glass-border);
+    border-radius:11px;
+    background:var(--glass-control);
+  }
+  #app[data-page="studio"] .studio-compose-fields > .studio-signature-actions {
+    justify-self:end;
+    align-self:end;
+    margin:0;
+    padding:0;
+  }
+  #app[data-page="studio"] .studio-compose-fields > .studio-signature-actions .studio-signature-entry {
+    min-width:175px;
+    min-height:49px;
+    border-radius:11px;
+    border-color:var(--glass-border);
+    background:var(--glass-control);
+    box-shadow:var(--glass-soft-shadow);
+  }
+  #app[data-page="studio"] .studio-compose-music-hint {
+    margin:0;
+    padding:12px 0 20px;
+    border-bottom:1px solid var(--glass-border);
+    font-size:13px;
+    line-height:1.65;
+  }
+  #app[data-page="studio"] .studio-compose-ai:not([hidden]) {
+    grid-column:1;
+    grid-row:2;
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    align-content:start;
+    align-items:start;
+    min-width:0;
+    padding:0 24px 23px;
+    border:1px solid var(--glass-border);
+    border-top:0;
+    border-radius:0 0 18px 18px;
+    background:var(--glass-surface);
+  }
+  #app[data-page="studio"] .studio-compose:has(.studio-compose-ai[hidden]) .studio-compose-music {
+    padding-bottom:18px;
+    border-bottom:1px solid var(--glass-border);
+    border-radius:18px;
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-description {
+    display:none;
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-goal {
+    grid-column:1/-1;
+    order:0;
+    position:relative;
+    width:100%;
+    max-width:none;
+    min-width:0;
+    gap:9px;
+    margin:0;
+    padding:20px 0 21px;
+    border-bottom:1px solid var(--glass-border);
+    font-size:15px;
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-goal > span:not(.studio-setup-icon) {
+    display:block;
+    padding-inline-start:34px;
+    color:var(--ink);
+    font-weight:750;
+    line-height:1.5;
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-goal > .studio-setup-icon {
+    position:absolute;
+    inset-block-start:20px;
+    inset-inline-start:0;
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-goal select {
+    min-height:49px;
+    border:1px solid var(--glass-border);
+    border-radius:11px;
+    padding-inline:16px;
+    background:var(--glass-control);
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-mobile-meter {
+    grid-column:1/-1;
+    order:1;
+    display:block;
+    position:relative;
+    margin:0;
+    padding:19px 0 21px;
+    border-bottom:1px solid var(--glass-border);
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-mobile-meter .studio-setup-icon {
+    position:absolute;
+    inset-block-start:19px;
+    inset-inline-start:0;
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-mobile-meter .studio-ai-meter-title {
+    display:block;
+    padding-inline-start:34px;
+    margin:0 0 9px;
+    font-size:15px;
+    color:var(--ink);
+    font-weight:750;
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-mobile-meter > .studio-mobile-select-trigger {
+    min-height:49px;
+    border-radius:11px;
+    background:var(--glass-control);
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-ai-meter-hint {
+    grid-column:1/-1;
+    order:2;
+    margin:7px 0 0;
+    font-size:12px;
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-actions {
+    grid-column:1;
+    order:3;
+    margin:21px 0 0;
+    align-self:center;
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-generate {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    min-width:225px;
+    min-height:56px;
+    padding:12px 20px;
+    border-radius:13px;
+    border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);
+    background:var(--action-fill);
+    color:var(--action-ink);
+    font-size:16px;
+    font-weight:750;
+  }
+  #app[data-page="studio"] .studio-compose-generate > .studio-setup-generate-icon {
+    display:inline-flex;
+    width:24px;
+    height:24px;
+    color:inherit;
+  }
+  #app[data-page="studio"] .studio-compose-generate > .studio-setup-generate-icon svg {width:100%;height:100%}
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-footnote {
+    grid-column:2;
+    order:4;
+    align-self:center;
+    margin:21px 0 0;
+    padding-inline-start:20px;
+    border-inline-start:1px solid var(--glass-border);
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.65;
+  }
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-status {
+    grid-column:1/-1;
+    order:5;
+    margin:9px 0 0;
+  }
+  #app[data-page="studio"] .studio-setup-guide {
+    display:flex;
+    flex-direction:column;
+    grid-column:2;
+    grid-row:1/span 2;
+    align-self:stretch;
+    min-width:0;
+    margin-top:80px;
+    padding:29px 28px;
+    border:1px solid var(--glass-border);
+    border-radius:18px;
+    background:var(--glass-control);
+    color:var(--ink);
+  }
+  #app[data-page="studio"] .studio-setup-guide-head {
+    position:relative;
+    padding:0 0 22px;
+    border-bottom:1px solid var(--glass-border);
+  }
+  #app[data-page="studio"] .studio-setup-guide-head h3 {
+    margin:3px 0 9px;
+    font-size:clamp(18px,1.5vw,23px);
+    font-weight:800;
+    line-height:1.3;
+    letter-spacing:-.018em;
+  }
+  #app[data-page="studio"] .studio-setup-guide-head p {
+    max-width:36ch;
+    margin:0;
+    padding-inline-end:29px;
+    font-size:14px;
+    line-height:1.7;
+    color:var(--muted);
+  }
+  #app[data-page="studio"] .studio-setup-guide-art {
+    display:block;
+    position:absolute;
+    inset-block-start:0;
+    inset-inline-end:-6px;
+    width:53px;
+    height:53px;
+    color:var(--accent);
+    opacity:.76;
+  }
+  #app[data-page="studio"] .studio-setup-guide-art svg {width:100%;height:100%}
+  #app[data-page="studio"] .studio-setup-guide-steps {
+    display:flex;
+    flex-direction:column;
+    justify-content:space-evenly;
+    flex:1;
+    gap:15px;
+    padding-top:22px;
+  }
+  #app[data-page="studio"] .studio-setup-guide-step {
+    display:flex;
+    align-items:flex-start;
+    gap:15px;
+    min-width:0;
+  }
+  #app[data-page="studio"] .studio-setup-guide-step-icon {
+    display:grid;
+    flex:0 0 52px;
+    place-items:center;
+    width:52px;
+    height:52px;
+    border:1px solid var(--glass-border);
+    border-radius:12px;
+    background:var(--glass-selected);
+    box-shadow:var(--glass-soft-shadow);
+    color:var(--accent);
+  }
+  #app[data-page="studio"] .studio-setup-guide-step-icon svg {width:26px;height:26px}
+  #app[data-page="studio"] .studio-setup-guide-step-copy {min-width:0}
+  #app[data-page="studio"] .studio-setup-guide-step-copy strong {
+    display:block;
+    margin:1px 0 3px;
+    font-size:15px;
+    line-height:1.4;
+    font-weight:750;
+    overflow-wrap:anywhere;
+  }
+  #app[data-page="studio"] .studio-setup-guide-step-copy p {
+    margin:0;
+    font-size:13px;
+    line-height:1.65;
+    color:var(--muted);
+    overflow-wrap:anywhere;
+  }
+}
+@media screen and (min-width:900px) and (max-width:1110px) {
+  #app[data-page="studio"] .studio-compose {
+    gap:0 14px;
+    padding-inline:14px;
+    grid-template-columns:minmax(0,1.5fr) minmax(255px,1fr);
+  }
+  #app[data-page="studio"] .studio-compose-music,
+  #app[data-page="studio"] .studio-compose-ai:not([hidden]) {padding-inline:16px}
+  #app[data-page="studio"] .studio-setup-guide {padding:22px 18px}
+  #app[data-page="studio"] .studio-compose-fields .studio-signature-entry {min-width:160px;font-size:12px}
+  #app[data-page="studio"] .studio-compose-ai .studio-compose-generate {min-width:174px;font-size:14px}
+}

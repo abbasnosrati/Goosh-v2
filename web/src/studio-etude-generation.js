@@ -6,6 +6,35 @@ import { METER_PRESETS } from './model.js';
 import { generateStudioEtude } from './ai-etude.js?v=ai-meter-measure-choice-1';
 import { confirmStudioAction, showStudioMessage } from './studio-dialog.js';
 
+
+/* Desktop Etude Setup visual icons. Shapes are constant decorative SVGs. */
+const setupIconPaths = Object.freeze({
+  music: ['M9 18V5l12-2v13', 'M9 18c0 1.7-1.8 3-4 3s-4-1.3-4-3 1.8-3 4-3 4 1.3 4 3Z', 'M21 16c0 1.7-1.8 3-4 3s-4-1.3-4-3 1.8-3 4-3 4 1.3 4 3Z'],
+  layers: ['m12 3 9 5-9 5-9-5 9-5Z', 'm3 12 9 5 9-5', 'm3 16 9 5 9-5'],
+  dastgah: ['M14 8 20 2', 'm17 2 5 5', 'M14 8c-1.4 2.1-3.8 2.5-5.7 4.4-2.9 2.9-3.4 6.8-1.2 8.1 2.6 1.4 6.4-1.6 7.6-4.2 1.3-2.7.7-5.1-.7-8.3Z', 'M10 16h.01', 'M16 5l3 3'],
+  target: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z', 'M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z', 'M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z'],
+  metronome: ['M9 3h6l5 18H4L9 3Z', 'M12 4 16 16', 'M8 18h8', 'M7 21h10'],
+  wand: ['m4 20 11-11', 'm12 4 .6-2 .6 2 2 .6-2 .6-.6 2-.6-2-2-.6 2-.6Z', 'm19 12 .6-2 .6 2 2 .6-2 .6-.6 2-.6-2-2-.6 2-.6Z', 'm5 5 .5-1.5L6 5l1.5.5L6 6l-.5 1.5L5 6l-1.5-.5L5 5Z']
+});
+function appendSetupIcon(parent, kind, className='studio-setup-icon') {
+  const wrapper=create('span',parent,null,className);
+  wrapper.setAttribute('aria-hidden','true');
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 24 24');
+  svg.setAttribute('fill','none');
+  svg.setAttribute('stroke','currentColor');
+  svg.setAttribute('stroke-width','1.7');
+  svg.setAttribute('stroke-linecap','round');
+  svg.setAttribute('stroke-linejoin','round');
+  for (const d of setupIconPaths[kind]) {
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',d);
+    svg.append(path);
+  }
+  wrapper.append(svg);
+  return wrapper;
+}
+
 // The score remains canonical; composerMode and pending user selection are only
 // presentation state, never copies of musical data.
 const states = new WeakMap();
@@ -185,6 +214,7 @@ export function mountEtudeComposer(host, {
   host.className = 'studio-compose';
   // Manual/AI and the musical choices share one settings surface.
   const sharedMusic = create('div', host, null, 'studio-compose-music');
+  appendSetupIcon(sharedMusic,'music','studio-setup-hero-icon');
   create('h2', sharedMusic, t('Etude Setup', 'تنظیمات اتود'), 'studio-compose-heading');
   const tabs = create('div', sharedMusic, null, 'studio-compose-tabs');
   tabs.setAttribute('role', 'group');
@@ -202,7 +232,9 @@ export function mountEtudeComposer(host, {
     'قبل از تولید نت‌ها، هدف آموزشی را انتخاب کنید. سپس می‌توانید چند تمرین مختلف روی همان نت‌ها بسازید.'
   ), 'studio-compose-description');
   const musicSystem = create('fieldset', sharedMusic, null, 'studio-music-system');
-  create('legend', musicSystem, t('Musical system', 'سیستم موسیقایی'));
+  const musicLegend = create('legend', musicSystem, t('Musical system', 'سیستم موسیقایی'));
+  const musicLegendIcon=appendSetupIcon(musicLegend,'layers');
+  musicLegend.prepend(musicLegendIcon);
   const musicOptions = create('div', musicSystem, null, 'studio-music-choices');
   const radios = new Map();
   for (const [id, en, ir] of [
@@ -230,6 +262,7 @@ export function mountEtudeComposer(host, {
   // display:contents on Desktop preserves the original grid and labels.
   const styleField = create('div', fields, null, 'studio-select-field');
   const styleLabel = create('label', styleField, null, 'practice-field');
+  appendSetupIcon(styleLabel,'dastgah');
   const styleHeading = create('span', styleLabel);
   const styleInput = create('select', styleLabel);
   styleInput.classList.add('studio-native-music-select');
@@ -271,6 +304,7 @@ export function mountEtudeComposer(host, {
   };
   // Primary Practice Goal and Generate are AI-only, unlike the music selector.
   const goalLabel = create('label', content, null, 'practice-field studio-compose-goal');
+  appendSetupIcon(goalLabel,'target');
   create('span', goalLabel, t('Primary practice goal', 'هدف اصلی تمرین'));
   const goalInput = create('select', goalLabel);
   const placeholder = create('option', goalInput, t('Select a goal…', 'انتخاب هدف تمرین…'));
@@ -279,6 +313,7 @@ export function mountEtudeComposer(host, {
   // Shared AI mirror of the canonical Score time-signature selector.
   const meterField = create('div', content, null,
     'studio-select-field studio-compose-mobile-meter');
+  appendSetupIcon(meterField,'metronome');
   const meterLabel = create('label', meterField, null, 'practice-field');
   const meterHeading = create('span', meterLabel, t('Time signature', 'میزان‌نما'));
   const meterInput = create('select', meterLabel);
@@ -350,11 +385,53 @@ export function mountEtudeComposer(host, {
   const actions = create('div', content, null, 'studio-compose-actions');
   const generate = create('button', actions, null, 'primary studio-compose-generate');
   generate.type = 'button';
+  appendSetupIcon(generate,'wand','studio-setup-generate-icon');
+  const generateLabel=create('span',generate,null,'studio-setup-generate-label');
   const status = create('p', content, null, 'studio-compose-status');
   const note = create('p', content, t(
     'Adding a new practice below will never regenerate or replace these notes.',
     'افزودن تمرین جدید در بخش طراحی تمرین، نت‌های اتود را دوباره تولید یا جایگزین نمی‌کند.'
   ), 'studio-compose-footnote');
+
+  // Desktop-only visual guide from the approved reference; the existing
+  // music selector, tuner, goal, meter and Generate callbacks stay canonical.
+  const guide=create('aside',host,null,'studio-setup-guide');
+  guide.setAttribute('aria-label',t('Etude Setup Guide','راهنمای تنظیمات اتود'));
+  const guideHead=create('div',guide,null,'studio-setup-guide-head');
+  create('h3',guideHead,t('Etude Setup Guide','راهنمای تنظیمات اتود'));
+  create('p',guideHead,t(
+    'Configure the musical context and practice goal to generate a tailored etude.',
+    'سیستم موسیقی و هدف تمرین را مشخص کنید تا اتود متناسب با آن ساخته شود.'
+  ));
+  appendSetupIcon(guideHead,'music','studio-setup-guide-art');
+  const guideSteps=create('div',guide,null,'studio-setup-guide-steps');
+  function addGuideStep(icon,title,description){
+    const step=create('div',guideSteps,null,'studio-setup-guide-step');
+    appendSetupIcon(step,icon,'studio-setup-guide-step-icon');
+    const copy=create('div',step,null,'studio-setup-guide-step-copy');
+    create('strong',copy,title);
+    create('p',copy,description);
+    return copy;
+  }
+  addGuideStep('layers',t('Musical system','سیستم موسیقایی'),t(
+    'Choose the musical tradition for your etude (Iranian or Western).',
+    'موسیقی ایرانی یا غربی را برای اتود انتخاب کنید.'
+  ));
+  const guideSignature=addGuideStep('dastgah',
+    t('Dastgah & Key Signature','دستگاه و سرکلید'),t(
+    "Select a Dastgah, then fine-tune the score's key signature if needed.",
+    'دستگاه را انتخاب کنید و در صورت نیاز سرکلید را دقیق‌تر تنظیم کنید.'
+  ));
+  addGuideStep('target',t('Primary practice goal','هدف اصلی تمرین'),t(
+    'Set the main focus for the etude, such as technique or phrasing.',
+    'هدف اصلی اتود را مانند تکنیک یا جمله‌بندی مشخص کنید.'
+  ));
+  addGuideStep('metronome',t('Time signature','میزان‌نما'),t(
+    'Choose a meter, or keep it free for a more flexible etude.',
+    'میزان‌نما را انتخاب کنید یا برای اتود آزاد، بدون میزان نگه دارید.'
+  ));
+  const guideSignatureTitle=guideSignature.querySelector('strong');
+  const guideSignatureDescription=guideSignature.querySelector('p');
 
   let catalog = null;
   let busy = false;
@@ -380,6 +457,14 @@ export function mountEtudeComposer(host, {
           'با انتخاب دستگاه، سرکلید و کوک پیانو تنظیم می‌شود. برای تنظیم دقیق‌تر، از تنظیم سرکلید استفاده کنید.')
       : t('Selecting a scale or mode automatically sets the Score key signature.',
           'با انتخاب گام یا مد، سرکلید خط حامل به‌صورت خودکار تنظیم می‌شود.');
+    guideSignatureTitle.textContent=state.musicSystem==='iranian'
+      ? t('Dastgah & Key Signature','دستگاه و سرکلید')
+      : t('Scale/Mode & Key Signature','گام یا مد و سرکلید');
+    guideSignatureDescription.textContent=state.musicSystem==='iranian'
+      ? t("Select a Dastgah, then fine-tune the score's key signature if needed.",
+          'دستگاه را انتخاب کنید و در صورت نیاز سرکلید را دقیق‌تر تنظیم کنید.')
+      : t('Select a scale or mode and a tonic to set the score key signature.',
+          'با انتخاب گام یا مد و نت پایه، سرکلید خط حامل تنظیم می‌شود.');
     editSignature.disabled = busy;
     styleInput.disabled = busy || !musicCatalog;
     tonicInput.disabled = busy || !musicCatalog;
@@ -392,7 +477,7 @@ export function mountEtudeComposer(host, {
     meterPicker.sync();
     meterHint.hidden = state.mode !== 'ai' || state.meterConfirmed;
     const unsupported = state.goal === 'chord-recognition';
-    generate.textContent = isReplace()
+    generateLabel.textContent = isReplace()
       ? t('Regenerate Etude', 'تولید مجدد اتود')
       : t('Generate Etude', 'تولید اتود');
     generate.disabled = busy || !catalog || !musicCatalog || !state.goal ||

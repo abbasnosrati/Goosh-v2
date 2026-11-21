@@ -595,7 +595,6 @@ details[open]>summary{margin-bottom:12px}
 @media print {
   #app[data-page="studio"] .score-heading { display: none !important; }
 }
-[data-page=studio] section:has(.instrument){border-top:3px solid var(--accent)}
 [data-page=studio] .score{border:1px solid var(--glass-border);background:var(--glass-elevated)}
 .shelves{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px;align-items:start}
 .shelves h2{font-size:1.15rem;margin:0 0 12px}
