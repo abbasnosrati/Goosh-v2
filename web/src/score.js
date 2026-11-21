@@ -1,7 +1,7 @@
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
 import {orderedSignatureEntries} from './music-signature.js'
-import {meterTimeline} from './model.js?v=free-piano-overlap-drag-1'
+import {meterTimeline} from './model.js?v=free-piano-overlap-drag-2'
 
 const ns = 'http://www.w3.org/2000/svg',
   steps = [0,0,1,1,2,3,3,4,4,5,5,6]

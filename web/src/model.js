@@ -198,6 +198,43 @@ export function meterTimeline(etude) {
 }
 
 
+
+/* A Free recorded take may contain notes whose releases overlap later
+   onsets. Share one event timeline between note and rest reordering;
+   notation/playback still derive from the original e.notes array. */
+function overlappingFreeEvents(groups,EPS){
+  const blocks=[];
+  let soundingUntil=0;
+  for(const group of groups){
+    if(group.at>soundingUntil+EPS)
+      blocks.push({kind:'rest',at:soundingUntil,
+        duration:group.at-soundingUntil});
+    blocks.push(group);
+    soundingUntil=Math.max(soundingUntil,group.at+group.duration);
+  }
+  return blocks.map((block,index)=>({
+    ...block,
+    advance:block.kind==='rest'?block.duration:
+      blocks[index+1]?Math.max(0,blocks[index+1].at-block.at):
+      block.duration
+  }));
+}
+function reflowOverlappingFreeEvents(order){
+  const positions=new Map();
+  let cursor=0,activeUntil=0;
+  for(const block of order){
+    if(block.kind==='rest'){
+      // Start silence only after all preceding sounding notes end.
+      cursor=Math.max(cursor,activeUntil)+block.duration;
+    }else{
+      for(const index of block.indices)positions.set(index,cursor);
+      activeUntil=Math.max(activeUntil,cursor+block.duration);
+      cursor+=block.advance;
+    }
+  }
+  return positions;
+}
+
 // Score SELECT horizontal dragging reorders notation slots; it does NOT
 // drag note.at along a continuous timeline. All calculations use the same
 // e.notes and meterTimeline() as playback, Pen, Eraser and Practice.
@@ -272,23 +309,7 @@ export function planScoreNoteReorder(etude, sourceIndex, target) {
       // Free piano recordings can have overlapping note releases even
       // when their onsets are sequential. Treat them as ordered musical
       // events instead of rejecting every drag in the entire etude.
-      const blocks=[];
-      let soundingUntil=0;
-      for(const group of groups){
-        if(group.at>soundingUntil+EPS)
-          blocks.push({kind:'rest',at:soundingUntil,
-            duration:group.at-soundingUntil});
-        blocks.push(group);
-        soundingUntil=Math.max(soundingUntil,group.at+group.duration);
-      }
-      // Preserve onset-to-onset spacing for overlapping notes, and
-      // preserve each actual silence event's audible duration.
-      const events=blocks.map((block,index)=>({
-        ...block,
-        advance:block.kind==='rest'?block.duration:
-          blocks[index+1]?Math.max(0,blocks[index+1].at-block.at):
-          block.duration
-      }));
+      const events=overlappingFreeEvents(groups,EPS);
       const sourceSlot=events.findIndex(block=>block.kind==='note'&&
         block.indices.includes(sourceIndex));
       const destinationSlot=events.findIndex(block=>
@@ -303,17 +324,7 @@ export function planScoreNoteReorder(etude, sourceIndex, target) {
       const [moving]=order.splice(sourceSlot,1);
       order.splice(order.indexOf(destination)+
         (target.position==='after'?1:0),0,moving);
-      const positions=new Map();
-      let cursor=0,activeUntil=0;
-      for(const block of order){
-        if(block.kind==='rest'){
-          cursor=Math.max(cursor,activeUntil)+block.duration;
-        }else{
-          for(const index of block.indices)positions.set(index,cursor);
-          activeUntil=Math.max(activeUntil,cursor+block.duration);
-          cursor+=block.advance;
-        }
-      }
+      const positions=reflowOverlappingFreeEvents(order);
       const result=createMoves(positions);
       if(result.ok)result.kind='insert';
       return result;
@@ -496,16 +507,48 @@ export function planScoreRestEdit(etude, source, target = null) {
   // rest, not its neighboring note, owns this event's silence duration.
   if(!meter){
     const groups=[];
+    let unevenChord=false;
     const sorted=notes.map((note,index)=>({note,index}))
       .sort((a,b)=>a.note.at-b.note.at||a.index-b.index);
     for(const item of sorted){
       const last=groups[groups.length-1];
       if(last&&Math.abs(item.note.at-last.at)<EPS){
-        if(Math.abs(item.note.d-last.duration)>EPS)
-          return invalid('polyphony');
+        if(Math.abs(item.note.d-last.duration)>EPS)unevenChord=true;
+        last.duration=Math.max(last.duration,item.note.d);
         last.indices.push(item.index);
       }else groups.push({kind:'note',at:item.note.at,
         duration:item.note.d,indices:[item.index]});
+    }
+    let soundingUntil=0;
+    const overlaps=groups.some(group=>{
+      const overlapping=group.at<soundingUntil-EPS;
+      soundingUntil=Math.max(soundingUntil,group.at+group.duration);
+      return overlapping;
+    });
+    if(overlaps||unevenChord){
+      // REST editing must use the same Free event ordering as note Drag
+      // for piano takes with overlapping releases.
+      const events=overlappingFreeEvents(groups,EPS);
+      const sourceEvent=events.find(block=>block.kind==='rest'&&
+        Math.abs(block.at-source.at)<EPS&&
+        Math.abs(block.duration-source.duration)<EPS);
+      if(!sourceEvent)return invalid('missing-rest');
+      const order=events.filter(block=>block!==sourceEvent);
+      if(target){
+        if(target.type!=='note'&&target.type!=='rest')
+          return invalid('missing-slot');
+        const destination=events.find(block=>block.kind===target.type&&
+          Math.abs(block.at-target.at)<EPS);
+        if(!destination)return invalid('missing-slot');
+        if(destination===sourceEvent)return unchanged();
+        order.splice(order.indexOf(destination)+
+          (target.position==='after'?1:0),0,sourceEvent);
+        if(order.at(-1)?.kind==='rest')return invalid('trailing-rest');
+      }
+      const positions=reflowOverlappingFreeEvents(order);
+      const result=movedPositions(positions,target?'move-rest':'delete-rest');
+      if(result.ok&&!result.moves.length)return unchanged();
+      return result;
     }
     const blocks=[],positions=new Map();
     let cursor=0;
