@@ -3061,3 +3061,18 @@ The user confirmed that the *area-selection icon itself works correctly*. Do not
 **Checks actually performed:** Both current JavaScript modules parse; four runtime checks of the extracted shared `emphasizeNote()` confirm selected, recording, normal and hollow recording states; no extra ring SVG markup or separate `var(--danger)` note color remains in the Score renderer; cache-bust references agree. **No actual in-browser/mobile visual QA** was performed, and the user has not yet tested this latest revision.
 
 **Visual acceptance criterion:** When a note is selected or is the latest note being written by the live piano Recorder, highlight only the existing note drawing in the same accent (no surrounding circle or halo). Do not reintroduce the earlier ring/red treatment without explicit instruction.
+
+
+---
+
+## FOLLOW-UP VISUAL CLEANUP — Hide horizontal timing rulers (2026-11-21)
+
+**User request:** Remove the horizontal dark/black lines previously added above the Score to show note timing. Context: the prior user request already removed the horizontal blue progress bar and per-note follower; they repeatedly prefer **only the vertical dashed playback position indicator**.
+
+**Implemented on `feature/practice-sequence-studio`:**
+- **`web/src/score.js`, commit `9dcb009c44c95295b08761bbebb2f2bd38`:** Remove the Score seek ruler's visual horizontal baseline (`currentColor`), surrounding dark bordered track/background, small time ticks, and time labels from *each* staff row. Retain the same `points` event-to-x time mapping, per-row **vertical dashed** `cursor`, transparent clickable and keyboard-accessible `data-score-seek` hit target, and the shared `seek` callback. These are purely visual removals. Do **not** remove the five genuine musical staff lines, Score notation, the dashed playhead, or the ability to start Play from a clicked time.
+- **`web/src/app.js`, commit `f72b64f4771930ae30c93a8f621acc247bde465d`** and **`web/index.html`, commit `87e8c7f575c19e4934f87b423144c1e7738abd8a`:** Update only the module cache keys to `dashed-playhead-clean-ruler-1` so the revised Score renderer loads. No audio, selection, recording or note-model behavior changes.
+
+**Validation:** Both current JavaScript modules parse. Eight static source checks passed: horizontal timing line, border, ticks and labels are absent; vertical dashed cursor, transparent seek hitbox and time mapping remain; cache keys match. **No live browser, touchscreen or visual device test** was performed. User visual acceptance is pending.
+
+**Scope:** Keep the vertical dashed playhead as the only moving playback affordance. Do not restore timeline/ruler decoration without explicit user instruction.
