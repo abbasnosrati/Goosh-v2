@@ -1543,6 +1543,21 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   min-height: 38px;
   max-width: 225px;
 }
+/* Match the native Etude Setup dropdown on desktop while keeping a
+   single underlying select as the canonical Pen note-duration value. */
+#app[data-page="studio"] .score-pen-length > select {
+  height: 49px;
+  padding-inline: 13px;
+  border: 1px solid var(--glass-border);
+  border-radius: 11px;
+  background: var(--dropdown-control-surface);
+  color: var(--ink);
+  font-weight: 500;
+}
+/* This is the very same custom Select dialog used by Etude Setup. */
+#app[data-page="studio"] .score-pen-length > .studio-mobile-select-trigger {
+  display: none;
+}
 #app[data-page="studio"] .score-meter-status {
   flex: 1 1 100%;
   margin: 2px 0 0;
@@ -1799,6 +1814,54 @@ footer nav button{font-size:.9rem;color:var(--muted)}
   #app[data-page="studio"] .score-pen-length,
   #app[data-page="studio"] .score-meter-status {
     grid-column: 1 / -1;
+  }
+}
+
+/* Pen's mobile picker reuses the existing Etude Setup bottom sheet.
+   Only its field styling is local to Score; no second dialog implementation. */
+@media screen and (max-width: 700px),
+       screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  #app[data-page="studio"] .score-pen-length {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  #app[data-page="studio"] .score-pen-length > .studio-native-music-select {
+    display: none !important;
+  }
+  #app[data-page="studio"] .score-pen-length > .studio-mobile-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    min-height: 49px;
+    margin: 0;
+    padding: 10px 13px;
+    border: 1px solid var(--glass-border);
+    border-radius: 11px;
+    background: var(--dropdown-control-surface);
+    color: var(--ink);
+    font: inherit;
+    font-weight: 500;
+    text-align: start;
+  }
+  #app[data-page="studio"] .score-pen-length .studio-mobile-select-value {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #app[data-page="studio"] .score-pen-length .studio-mobile-select-chevron {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    margin-inline: 3px;
+    border-inline-end: 1.6px solid currentColor;
+    border-bottom: 1.6px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
   }
 }
 
