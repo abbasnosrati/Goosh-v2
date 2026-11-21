@@ -27,7 +27,7 @@ import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=mobile-signature-modal-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { mountEtudeComposer } from './studio-etude-generation.js?v=unified-guide-shell-1'
+import { mountEtudeComposer } from './studio-etude-generation.js?v=etude-setup-inline-modes-1'
 import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=music-toggle-reuse-1'
 import { renderHome } from './home.js?v=studio-capabilities-feature-card-1';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
