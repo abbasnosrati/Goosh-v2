@@ -76,8 +76,8 @@ function convertEtude(data, current, context) {
       throw new Error('The generated notes exceed the free-meter timeline.')
   } else if (metered) {
     const meter=meterInfo(current)
-    if (Math.abs(elapsedBeats - 4*meter.barQuarterBeats)>0.001)
-      throw new Error('AI notes and rests do not fill four exact measures.')
+    if (Math.abs(elapsedBeats - (current.measureCount||4)*meter.barQuarterBeats)>0.001)
+      throw new Error('AI notes and rests do not fill the selected number of measures.')
   } else if (Math.abs(elapsedBeats - 16) > 0.001) {
     throw new Error('Invalid free-meter etude duration.')
   }
@@ -116,13 +116,14 @@ export async function generateStudioEtude(context, current, signal, practiceGoal
   }
   const {musicSystem, dastgah, scale, tonic} = context;
   const selectedMeter = context.meter || 'none';
+  const selectedMeasureCount = context.measureCount || 4;
   let response
   try {
     response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({musicSystem, dastgah, scale, tonic, practiceGoals,
-        meter:selectedMeter,
+        meter:selectedMeter, measureCount:selectedMeasureCount,
         tuningCents: effectiveTuningCents(current)}),
       signal
     })
@@ -140,7 +141,8 @@ export async function generateStudioEtude(context, current, signal, practiceGoal
   if (!response.ok) throw new Error(payload.error || 'AI generation failed.')
   // The shared Etude may have been edited while awaiting the remote model.
   // Never apply a valid response to a different meter than was requested.
-  if ((current.meter||'none')!==selectedMeter)
-    throw new Error('Time signature changed during generation. Please generate again.');
+  if ((current.meter||'none')!==selectedMeter ||
+      (current.measureCount||4)!==selectedMeasureCount)
+    throw new Error('Time signature or measure count changed during generation. Please generate again.');
   return convertEtude(payload, current, context)
 }
