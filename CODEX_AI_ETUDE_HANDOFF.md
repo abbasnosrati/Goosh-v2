@@ -3260,3 +3260,13 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 **Implementation:** `web/src/app.js` groups the existing icon-only disclosure toggle and a new maximize/restore icon in `.studio-piano-view-controls` in the existing Piano toolbar. The fullscreen mode portals **the same DOM piano** to `document.body`, using a temporary comment anchor for exact restoration. All original piano note/key/touch/keyboard and recording handlers stay attached to that same keyboard. The two-state fullscreen button updates `aria-pressed`, localized label/title and SVG corner icon. While maximized, the Piano fills the viewport and scrolls horizontally when needed (especially phones). Horizontal key position is maintained proportionally when entering/exiting, and initially collapsed piano returns to its prior state after fullscreen closes. Escape exits fullscreen. Route changes, editor rerenders and cancel also restore the piano before the previous DOM is discarded, preventing orphan overlay nodes or audio notes. `web/style.css` adds scoped responsive fullscreen viewport sizing, key height and full-width layout plus coordinated glass/icon toolbar styling. `web/visual-system.css` subtly polishes the existing Etude Setup disclosure with the same visual language. `web/index.html` only updates stylesheet/app cache keys.
 
 **Scope:** No changes to piano sound, frequencies, sample bank, key creation, recording, music data, Score, Etude Setup fields, Practice or other pages. No duplicate piano instance. No browser/mobile-device runtime QA performed.
+
+---
+
+## 2026-11-21 — Fullscreen piano on mobile: prioritize width, normal key height
+
+**User correction:** The maximized piano on a phone must expand to the entire mobile screen **width**, not turn into a very tall vertical keyboard.
+
+**CSS-only update:** In `web/style.css`, the fullscreen phone/compact-touch-landscape override now keeps `.keys` at its natural height rather than stretching it with `flex:1`; the keyboard is centered vertically inside the fullscreen surface and remains horizontally scrollable. The key board uses a proportional width-based height, `clamp(128px,45vw,210px)`, with a dynamic viewport-height cap for short landscape screens. White-key width uses the existing 38px minimum-per-key strategy, with the octave rail matching the board. Overlay/backdrop, toolbar, maximize/restore button, same piano DOM and audio/recording events are untouched. `web/index.html` updates the CSS cache key only.
+
+**Verification:** Static source checks only; no live mobile/desktop browser or landscape visual QA performed.

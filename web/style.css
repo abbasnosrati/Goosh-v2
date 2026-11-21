@@ -2753,12 +2753,30 @@ body > .instrument.studio-piano-fullscreen .octave-rail {
 body > .instrument.studio-piano-fullscreen > .piano-scroll-hint {
   flex:none;
 }
-@media screen and (max-width:700px) {
+/* On phones the fullscreen surface uses the display WIDTH, not
+   a vertically stretched keyboard. Keep natural piano proportions and
+   center the playable strip within the available viewport height. */
+@media screen and (max-width:700px),
+       screen and (pointer:coarse) and (orientation:landscape) and (max-height:520px) {
   body > .instrument.studio-piano-fullscreen {
     padding:12px 10px max(14px,env(safe-area-inset-bottom))!important;
   }
+  body > .instrument.studio-piano-fullscreen > .keys {
+    flex:0 0 auto;
+    height:auto;
+    max-height:calc(100dvh - 135px);
+    min-height:0;
+    margin-block:auto;
+    overflow-x:auto;
+    overflow-y:hidden;
+  }
   body > .instrument.studio-piano-fullscreen .board {
-    height:clamp(140px,calc(100dvh - 175px),620px);
+    height:clamp(128px,45vw,210px);
+    max-height:calc(100dvh - 165px);
+    min-width:max(100%,calc(var(--whites)*38px));
+  }
+  body > .instrument.studio-piano-fullscreen .octave-rail {
+    min-width:max(100%,calc(var(--whites)*38px));
   }
 }
 @media (prefers-reduced-motion:reduce) {
