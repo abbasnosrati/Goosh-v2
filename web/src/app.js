@@ -22,7 +22,7 @@ import {
 import {
   score,
   paintScorePlayhead
-} from './score.js?v=score-note-emphasis-1'
+} from './score.js?v=dashed-playhead-only-1'
 import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=mobile-signature-modal-1'
 import {isPersianAccidental, appendPersianAccidental}
