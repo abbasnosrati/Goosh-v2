@@ -1,6 +1,14 @@
 
 /* Practice Sequence editor — Studio only. Theme tokens come from style.css. */
 #app[data-page="studio"] .practice-designer{margin-block:18px;border:1px solid var(--line);background:var(--glass-surface);border-radius:16px;padding:clamp(14px,2.4vw,24px)}
+/* Practice Design scrolls as a large translucent section. Avoid the global
+   section backdrop blur here: it can leave stale/partially painted layers
+   until a pointer event forces a repaint (especially in Light mode). */
+#app[data-page="studio"] .studio-practice-host > .practice-designer {
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+
 #app[data-page="studio"] .practice-heading{display:flex;justify-content:space-between;align-items:center}
 #app[data-page="studio"] .practice-heading h2{font-size:1.28rem;margin:0}
 #app[data-page="studio"] .practice-heading p{margin:.25rem 0 1rem;color:var(--muted,var(--ink));font-size:.91rem;opacity:.83}
