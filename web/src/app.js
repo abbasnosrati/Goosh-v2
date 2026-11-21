@@ -426,42 +426,17 @@ function refreshTake(take) {
   });
 }
 
-// Read the Web Audio clock so the notation marker follows scheduled sound,
-// including expressive rests and simultaneous notes. No transport changes.
-function paintPlaybackMarker(force = false) {
+// The dashed Score ruler playhead is the only visual playback indicator.
+// Keep it synced with the existing Web Audio clock; do not follow each note.
+function paintPlaybackMarker() {
   if (!playback) return;
   const elapsed = playback.clock.currentTime - playback.started;
   paintScorePlayhead($('.studio-score-surface > .score'),elapsed);
-  // Follow the latest note attack, not the releases of older notes that
-  // can still overlap it (especially after a live piano recording).
-  // Notes with the same onset are a chord and may share the indicator.
-  let currentOnset = -Infinity;
-  for (const note of playback.notes)
-    if (note.at <= elapsed + 1e-7 && note.at > currentOnset)
-      currentOnset = note.at;
-  const active = new Set(playback.notes.filter(note =>
-    Math.abs(note.at - currentOnset) < 1e-7 &&
-    elapsed < note.at + note.d).map(note => note.index));
-  // Check each engraved segment even when the active note stays the same:
-  // a long note tied across a barline has multiple arrow positions.
-  $('.score')?.querySelectorAll('[data-playback-note]').forEach(marker => {
-    const index = Number(marker.getAttribute('data-playback-note'));
-    const from = Number(marker.getAttribute('data-playback-from'));
-    const to = Number(marker.getAttribute('data-playback-to'));
-    const segmentMatches = Number.isFinite(from) && Number.isFinite(to)
-      ? elapsed >= from - 1e-7 && elapsed < to : true;
-    const opacity = active.has(index) && segmentMatches ? '1' : '0';
-    if (force || marker.getAttribute('opacity') !== opacity)
-      marker.setAttribute('opacity', opacity);
-  });
 }
 function clearPlaybackMarker() {
   if (!playback) return;
   cancelAnimationFrame(playback.frame);
   playback = null;
-  $('.score')?.querySelectorAll('[data-playback-note]').forEach(marker => {
-    marker.setAttribute('opacity', '0');
-  });
   paintScorePlayhead($('.studio-score-surface > .score'),scoreSeekPosition);
 }
 
@@ -1476,7 +1451,6 @@ async function startScorePlayback() {
   clearPlaybackMarker();
   playback = {
     clock, started:transport.anchor - transport.offset,
-    notes:notes.map(n => ({index:n.index, at:n.at, d:n.d})),
     end, frame:null
   };
   paintPlaybackMarker(true);
