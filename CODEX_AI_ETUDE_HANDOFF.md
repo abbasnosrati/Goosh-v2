@@ -3044,3 +3044,20 @@ The user confirmed that the *area-selection icon itself works correctly*. Do not
 **Validation actually performed:** Both modified JavaScript modules parse; seven static checks passed (old arrow IDs absent, progress/knob removed, dashed cursor/seek/clock code intact, cache keys updated); two runtime tests of the actual simplified `paintScorePlayhead()` passed for an in-range time and an out-of-row time. **No real browser, audio, touchscreen or cross-device visual test was performed; user acceptance of this change is still pending.**
 
 **Do not reintroduce** extra note-follow arrows, horizontal blue progress or redundant seeker dots without a specific user request. Keep one music-time/playhead path; the dashed vertical line should be the only moving playback affordance.
+
+
+---
+
+## USER VISUAL REVISION — Unified accent without notehead rings (2026-11-21)
+
+**Current user feedback:** They like the existing **selected note color**, but the added circle/ring around a selected notehead is excessive. They also explicitly ask that the **latest piano-recorded note use precisely that same selected-note color** instead of a separate red color.
+
+**Implemented on branch `feature/practice-sequence-studio`:**
+- In `web/src/score.js`, remove the extra outer ellipse/halo altogether (both for selected and most-recently recorded notes). Keep the existing selected head/stem/flag color **`var(--accent)`** and thicker head stroke. The newest note while Record is active now uses **the exact same `var(--accent)`** through the existing `emphasizeNote()` helper and keeps its ephemeral `recording` visual state; other notes revert to normal when it is no longer latest. Half/whole rhythmic head shapes remain hollow via the existing `var(--panel)` treatment.
+- This is **pure presentation**; there is no modification to `e.notes`, recording, selected indices, marquee event handling, deletion, Undo, seek or Play. No second style or selection path.
+- `web/src/app.js` and `web/index.html` only change the module query cache key to `unified-note-accent-no-ring-1` so browsers reload the revised `score.js`.
+- Commits: `1ad4461e648e1c43f7a20febcf97c64839ec6233` first removed rings around selected notes; `6c2fbdeb1705e3340b170d50dcd34c410a8d883d` then removed the remaining recording halo and unified colors; `098adb40db18ea874fc3a5708661b82f896fca34` and `336c805edc2750528faba50cf0f3d45eb23d45ab` update module cache keys.
+
+**Checks actually performed:** Both current JavaScript modules parse; four runtime checks of the extracted shared `emphasizeNote()` confirm selected, recording, normal and hollow recording states; no extra ring SVG markup or separate `var(--danger)` note color remains in the Score renderer; cache-bust references agree. **No actual in-browser/mobile visual QA** was performed, and the user has not yet tested this latest revision.
+
+**Visual acceptance criterion:** When a note is selected or is the latest note being written by the live piano Recorder, highlight only the existing note drawing in the same accent (no surrounding circle or halo). Do not reintroduce the earlier ring/red treatment without explicit instruction.
