@@ -2,7 +2,8 @@ import { loadPracticeCatalog } from './studio-practice.js?v=practice-flow-2';
 import { loadMusicSystems } from './music-catalog.js';
 import { signatureForMusic } from './music-signature.js';
 import { newPracticeStep, localized } from './practice-model.js';
-import { generateStudioEtude } from './ai-etude.js?v=meter-one-timeline-1';
+import { METER_PRESETS } from './model.js';
+import { generateStudioEtude } from './ai-etude.js?v=ai-meter-measure-choice-1';
 import { confirmStudioAction, showStudioMessage } from './studio-dialog.js';
 
 // The score remains canonical; composerMode and pending user selection are only
@@ -152,7 +153,8 @@ function showMobileAIGuide(fa){
 
 export function mountEtudeComposer(host, {
   etude, fa, isRecording, isCurrent, onGenerated, onModeChange, onSignatureChange,
-  onToggleKeySignature, signatureIcon, returnSignatureIcon, signatureEditing = false
+  onToggleKeySignature, signatureIcon, returnSignatureIcon, signatureEditing = false,
+  onMeterSelect
 }) {
   const t = (en, ir) => fa ? ir : en;
   let state = states.get(etude);
@@ -166,7 +168,10 @@ export function mountEtudeComposer(host, {
         ? {[previous.musicSystem]:previous.musicSystem === 'iranian' ? previous.dastgah : previous.scale}
         : {},
       tonic:previous?.tonic || 'C',
-      controller:null, awaitingFirstAI:false
+      controller:null, awaitingFirstAI:false,
+      // An empty default-Free etude needs a deliberate choice for AI.
+      meterConfirmed: Boolean(etude.notes?.length || etude.practiceSequence?.length ||
+        (etude.meter && etude.meter !== 'none'))
     };
     states.set(etude,state);
   }
@@ -272,6 +277,35 @@ export function mountEtudeComposer(host, {
   const placeholder = create('option', goalInput, t('Select a goal…', 'انتخاب هدف تمرین…'));
   placeholder.value = '';
 
+  // Mobile mirror of the canonical Score time-signature selector.
+  const meterField = create('div', content, null,
+    'studio-select-field studio-compose-mobile-meter');
+  const meterLabel = create('label', meterField, null, 'practice-field');
+  const meterHeading = create('span', meterLabel, t('Time signature', 'میزان‌نما'));
+  const meterInput = create('select', meterLabel);
+  meterInput.classList.add('studio-native-music-select');
+  const meterPlaceholder = create('option', meterInput,
+    t('Select a time signature…', 'انتخاب میزان‌نما…'));
+  meterPlaceholder.value = '';
+  meterPlaceholder.disabled = true;
+  for (const value of METER_PRESETS) {
+    const option = create('option', meterInput,
+      value === 'none' ? t('Free (no meter)', 'آزاد (بدون میزان)') : value);
+    option.value = value;
+  }
+  create('span', meterField, t('Time signature', 'میزان‌نما'),
+    'studio-ai-meter-title');
+  meterInput.onchange = () => {
+    if (!meterInput.value || busy) return;
+    onMeterSelect?.(meterInput.value);
+    sync();
+  };
+  const meterPicker = attachMusicBottomSheet(meterField, meterInput, meterHeading, fa);
+  const meterHint = create('p', content, t(
+    'Choose a time signature in Score before generating. Free is also valid.',
+    'برای تولید اتود میزان‌نما را انتخاب کنید؛ حالت آزاد نیز مجاز است.'
+  ), 'studio-ai-meter-hint');
+
   let musicCatalog = null;
   const currentSystem = () => musicCatalog?.systems.find(entry => entry.id === state.musicSystem);
   const selectedContext = () => state.musicSystem === 'iranian'
@@ -347,12 +381,16 @@ export function mountEtudeComposer(host, {
     tonicField.hidden = tonicLabel.hidden;
     stylePicker.sync();
     tonicPicker.sync();
+    meterInput.value = state.meterConfirmed ? (etude.meter || 'none') : '';
+    meterInput.disabled = busy || isRecording();
+    meterPicker.sync();
+    meterHint.hidden = state.mode !== 'ai' || state.meterConfirmed;
     const unsupported = state.goal === 'chord-recognition';
     generate.textContent = isReplace()
       ? t('Regenerate Etude', 'تولید مجدد اتود')
       : t('Generate Etude', 'تولید اتود');
     generate.disabled = busy || !catalog || !musicCatalog || !state.goal ||
-      !state.styles[state.musicSystem] || unsupported;
+      !state.styles[state.musicSystem] || !state.meterConfirmed || unsupported;
     goalInput.disabled = busy;
     manual.disabled = ai.disabled = busy;
     if (unsupported) showStudioMessage(status, t(
@@ -370,7 +408,7 @@ export function mountEtudeComposer(host, {
       state.mode = value;
     }
     sync();
-    onModeChange?.(practiceLocked());
+    onModeChange?.(practiceLocked(), state.mode === 'ai' && !state.meterConfirmed);
   };
   manual.onclick = () => changeMode('manual');
   ai.onclick = () => {
@@ -428,7 +466,7 @@ export function mountEtudeComposer(host, {
   });
 
   generate.onclick = async () => {
-    if (busy || !catalog || !musicCatalog || !state.goal ||
+    if (busy || !catalog || !musicCatalog || !state.goal || !state.meterConfirmed ||
         !state.styles[state.musicSystem] || state.goal === 'chord-recognition') return;
     if (isRecording()) {
       showStudioMessage(status, t(
@@ -438,7 +476,8 @@ export function mountEtudeComposer(host, {
       return;
     }
     const goal = state.goal;
-    const context = {...selectedContext(),meter:etude.meter||'none'};
+    const context = {...selectedContext(),meter:etude.meter||'none',
+      measureCount:etude.measureCount||4};
     if (isReplace()) {
       const approved = await confirmStudioAction({
         title: t('Replace this etude?', 'اتود فعلی جایگزین شود؟'),
@@ -478,5 +517,11 @@ export function mountEtudeComposer(host, {
     }
   };
 
-  return { selectAI: () => changeMode('ai'), isPracticeLocked: practiceLocked };
+  return {
+    selectAI: () => changeMode('ai'),
+    isPracticeLocked: practiceLocked,
+    needsMeterChoice: () => state.mode === 'ai' && !state.meterConfirmed,
+    confirmMeterSelection: () => {state.meterConfirmed = true; if (host.isConnected) sync();},
+    syncMeter: () => {if (host.isConnected) sync();}
+  };
 }
