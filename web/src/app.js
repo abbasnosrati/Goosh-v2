@@ -2076,10 +2076,21 @@ function renderLibraryEtudeCard(section, id, entry, destination) {
 
 function etudeList(){
   const actions=row(app);
-  if(page==='studio')btn(actions,t('New etude','ساخت اتود'),()=>{
+  // Same buttons and click callbacks on every viewport; only labels and
+  // their container position adapt to the narrow library header.
+  const responsiveAction=(button,shortLabel)=>{
+    const originalLabel=button.textContent;
+    button.textContent='';
+    el('span',button,originalLabel,'library-desktop-action-label');
+    el('span',button,shortLabel,'library-mobile-action-label');
+    button.setAttribute('aria-label',originalLabel);
+    return button;
+  };
+  if(page==='studio')responsiveAction(btn(actions,t('New etude','ساخت اتود'),()=>{
     navigateTo('studio',addEtude(fresh(),'own'));
-  }).className='primary';
-  btn(actions,t('Import etude','وارد کردن اتود'),()=>$('#file').click());
+  }),t('New','جدید')).className='primary';
+  responsiveAction(btn(actions,t('Import etude','وارد کردن اتود'),
+    ()=>$('#file').click()),t('Import','وارد کردن'));
   const grid=el('div',app,undefined,'shelves');
   for(const [origin,title] of [['own',t('My etudes','اتودهای من')],['imported',t('Imported etudes','اتودهای واردشده')]]){
     const section=el('section',grid);
@@ -2173,6 +2184,33 @@ function openMobileSettings(trigger) {
   dialog.showModal();
 }
 
+
+// Reparent the EXISTING library actions only on narrow mobile layouts.
+// The original row is restored before the shelves when widened to Desktop.
+// Old detached controls are discarded after route changes/re-renders.
+const mobileLibraryLayout=window.matchMedia('(max-width: 719px)');
+function syncMobileLibraryActions(){
+  const library=app.querySelector(':scope > .shelves');
+  const intro=page==='studio'
+    ?document.querySelector('#etudes-design-controls .etudes-design-intro')
+    :page==='practice'
+      ?document.querySelector('#practice-design-controls .practice-design-intro')
+      :null;
+  const fromApp=app.querySelector(':scope > .row.controls');
+  const current=library?(fromApp||intro?.querySelector('.mobile-library-actions')):null;
+  for(const stale of document.querySelectorAll('.mobile-library-actions'))
+    if(stale!==current)stale.remove();
+  if(!library||!intro||!current)return;
+  if(mobileLibraryLayout.matches){
+    if(current.parentElement!==intro)intro.append(current);
+    current.classList.add('mobile-library-actions');
+  }else{
+    if(current.parentElement!==app)app.insertBefore(current,library);
+    current.classList.remove('mobile-library-actions');
+  }
+}
+mobileLibraryLayout.addEventListener('change',syncMobileLibraryActions);
+
 function render() {
   document.documentElement.lang = fa ? 'fa' : 'en';
   document.documentElement.dir = fa ? 'rtl' : 'ltr';
@@ -2194,6 +2232,12 @@ function render() {
     const item=btn(nav,name,()=>navigate(key));
     item.dataset.route=key;
     if(key===page){item.className='active';item.setAttribute('aria-current','page')}
+    // Preserve full Desktop nav text, show concise mobile tab titles.
+    item.textContent='';
+    el('span',item,name,'desktop-nav-label');
+    el('span',item,key==='studio'?t('Etudes','اتودها')
+      :key==='practice'?t('Practices','تمرین‌ها')
+      :t('Home','خانه'),'mobile-nav-label');
     item.prepend(mobileNavigationIcon(key));
     btn(footNav,name,()=>navigate(key));
   }
@@ -2225,6 +2269,7 @@ function render() {
       practice();
     }
   }
+  syncMobileLibraryActions();
 }
 $('#lang').onclick = () => {
   cancel();

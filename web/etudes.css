@@ -931,3 +931,176 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
   .etude-delete-actions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
   .etude-delete-actions button { padding-inline: 8px; }
 }
+
+
+/* Mobile Etudes & Practices: SAME compact card component and header actions.
+   Desktop card grid, header, and all callbacks remain unchanged. */
+.library-mobile-action-label {display: none;}
+@media screen and (max-width: 719px) {
+  body:has(#app[data-page="studio"] > .shelves) #etudes-design-controls,
+  body:has(#app[data-page="practice"] > .shelves) #practice-design-controls {
+    padding-top: 12px;
+  }
+  #etudes-design-controls .etudes-design-intro,
+  #practice-design-controls .practice-design-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
+    min-height: 64px;
+  }
+  #etudes-design-controls .etudes-design-intro-text,
+  #practice-design-controls .practice-design-intro > h1 {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+  #etudes-design-controls h1,
+  #practice-design-controls h1 {
+    margin: 0;
+    font-size: clamp(24px, 7vw, 31px);
+    white-space: nowrap;
+    line-height: 1.25;
+  }
+  #etudes-design-controls .mobile-library-actions,
+  #practice-design-controls .mobile-library-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-width: 0;
+    width: auto;
+    margin: 0;
+    padding: 0;
+  }
+  .mobile-library-actions .library-desktop-action-label {display: none;}
+  .mobile-library-actions .library-mobile-action-label {display: inline;}
+  #etudes-design-controls .mobile-library-actions > button,
+  #practice-design-controls .mobile-library-actions > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 0;
+    min-height: 44px;
+    margin: 0;
+    padding: 8px 9px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    box-shadow: none;
+  }
+  #etudes-design-controls .mobile-library-actions > button.primary {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--panel);
+  }
+  .mobile-library-actions > button.primary::before {
+    content: '+';
+    font-size: 19px;
+    line-height: 1;
+  }
+  /* Both galleries use the same source renderer; a single mobile rule
+     produces full-width, low-height rows for Studio AND Practice. */
+  #app:has(> .shelves) .shelves {
+    grid-template-columns: minmax(0,1fr);
+    grid-auto-rows: auto;
+    gap: 10px;
+    margin-top: 13px;
+  }
+  #app:has(> .shelves) .etude-card {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+  }
+  #app:has(> .shelves) .etude-card > .etude-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100px;
+    margin: 0;
+    padding: 14px 15px;
+    padding-inline-start: 78px;
+    padding-inline-end: 65px;
+    border-radius: 15px;
+    background-size: 0;
+    background-image: none;
+    box-shadow: 0 4px 15px color-mix(in srgb,var(--ink) 5%,transparent);
+  }
+  #app:has(> .shelves) .shelves > section .etude-item::before {
+    content: '♫' !important;
+    display: grid;
+    place-items: center;
+    position: absolute;
+    inset-inline-start: 14px;
+    inset-inline-end: auto;
+    left: auto;
+    right: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    padding: 4px;
+    border-radius: 12px;
+    background: color-mix(in srgb,var(--accent) 10%,var(--panel));
+    color: var(--accent);
+    font: 30px/1 Georgia,serif;
+    text-align: center;
+    letter-spacing: 0;
+  }
+  #app:has(> .shelves) .shelves > section .etude-item::after {
+    display: none;
+  }
+  #app:has(> .shelves) .etude-item > strong {
+    max-width: 100%;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+  #app:has(> .shelves) .etude-item > strong::after {
+    content: none;
+  }
+  #app:has(> .shelves) .etude-item > small {
+    margin-top: 5px;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  #app[data-page="studio"] .etude-card > .etude-delete,
+  #app[data-page="practice"] .etude-card > .etude-delete {
+    inset-inline-end: 11px;
+    inset-inline-start: auto;
+    left: auto;
+    right: auto;
+    bottom: 50%;
+    transform: translateY(50%);
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    border-radius: 12px;
+  }
+  /* With the buttons beside the heading there is no floating Create action. */
+  #app:has(> .shelves) > .row.controls button.primary {
+    position: static;
+  }
+  #app:has(> .shelves) {
+    padding-top: 0;
+    padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+}
+@media screen and (max-width: 359px) {
+  #etudes-design-controls .mobile-library-actions > button,
+  #practice-design-controls .mobile-library-actions > button {
+    padding-inline: 7px;
+    font-size: 11px;
+  }
+  #etudes-design-controls h1,
+  #practice-design-controls h1 {font-size: 24px;}
+}

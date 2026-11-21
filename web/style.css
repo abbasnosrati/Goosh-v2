@@ -1529,3 +1529,12 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     transition: none;
   }
 }
+
+
+/* Route text on the mobile dock only. Keep Desktop labels untouched. */
+#nav .mobile-nav-label {display: none;}
+@media screen and (max-width: 700px),
+       screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  #nav .desktop-nav-label {display: none;}
+  #nav .mobile-nav-label {display: inline;}
+}
