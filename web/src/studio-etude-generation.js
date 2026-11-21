@@ -67,7 +67,7 @@ export function tonicDisplayName(tonic, fa) {
 // Shared Etude Setup picker. The original native select remains the single
 // source of truth for all musical settings, generation and persistence.
 let studioMusicPickerId=0;
-function attachStudioSelectDialog(wrapper, select, heading, fa){
+export function attachStudioSelectDialog(wrapper, select, heading, fa){
   const trigger=create('button',wrapper,null,'studio-mobile-select-trigger');
   trigger.type='button';
   trigger.setAttribute('aria-haspopup','dialog');
