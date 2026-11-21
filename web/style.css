@@ -1285,3 +1285,195 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     height: 104px;
   }
 }
+
+
+/* The added Settings tab/icons are not part of the desktop navbar. */
+#nav .mobile-settings-tab,
+#nav .mobile-nav-icon {
+  display: none;
+}
+
+/* Mobile-only header/navigation; desktop remains exactly as before. */
+@media screen and (max-width: 700px),
+       screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  body > header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 62px;
+    padding: 8px 14px;
+  }
+  body > header > .wordmark {
+    width: 116px;
+    height: 44px;
+    object-fit: contain;
+    margin: 0;
+  }
+  body > header > aside {
+    display: none !important;
+  }
+
+  /* Higher specificity overrides Home's older mobile nav display:none. */
+  body > header > #nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 3px;
+    width: 100%;
+    padding: 5px max(7px, env(safe-area-inset-right))
+             calc(5px + env(safe-area-inset-bottom))
+             max(7px, env(safe-area-inset-left));
+    margin: 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--panel);
+    box-shadow: 0 -5px 20px rgb(0 0 0 / 6%);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  body > header > #nav > button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    min-height: 55px;
+    margin: 0;
+    padding: 6px 2px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.2;
+    white-space: normal;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  body > header > #nav > button.active {
+    border-color: transparent;
+    background: color-mix(in srgb,var(--accent) 10%,var(--panel));
+    color: var(--accent);
+  }
+  body > header > #nav > .mobile-settings-tab {
+    display: flex;
+  }
+  body > header > #nav .mobile-nav-icon {
+    display: block;
+    flex: none;
+    width: 20px;
+    height: 20px;
+  }
+  body > header > #nav > .mobile-settings-tab[aria-expanded="true"] {
+    background: color-mix(in srgb,var(--accent) 10%,var(--panel));
+    color: var(--accent);
+  }
+  body {
+    padding-bottom: calc(82px + env(safe-area-inset-bottom));
+  }
+
+  dialog.mobile-settings-dialog {
+    position: fixed;
+    inset: auto 12px calc(82px + env(safe-area-inset-bottom));
+    width: min(420px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 108px - env(safe-area-inset-bottom));
+    margin: 0 auto;
+    padding: 16px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: 0 18px 42px rgb(0 0 0 / 23%);
+  }
+  dialog.mobile-settings-dialog::backdrop {
+    background: rgb(6 18 28 / 36%);
+  }
+  .mobile-settings-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .mobile-settings-heading h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 750;
+  }
+  .mobile-settings-close {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    font-size: 25px;
+    background: transparent;
+  }
+  .mobile-settings-group {
+    display: block;
+    margin: 12px 0 0;
+    padding: 12px 0 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .mobile-settings-group h3 {
+    margin: 0 0 9px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .mobile-settings-choices {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 8px;
+  }
+  .mobile-settings-choice {
+    min-width: 0;
+    min-height: 46px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 650;
+  }
+  .mobile-settings-choice.active {
+    border-color: var(--accent);
+    background: var(--soft);
+    color: var(--accent);
+  }
+  .mobile-settings-close:focus-visible,
+  .mobile-settings-choice:focus-visible,
+  body > header > #nav > button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+/* Home has an additional IN-PAGE dashboard switcher, which must not hide
+   or overlap the new shared bottom navigation on phone screens. */
+@media screen and (max-width: 699px) {
+  body.home-screen > header > #nav {
+    display: grid;
+  }
+  body.home-screen .g-home-tabs {
+    bottom: calc(91px + env(safe-area-inset-bottom));
+  }
+  body.home-screen {
+    padding-bottom: calc(165px + env(safe-area-inset-bottom));
+  }
+  body.home-screen main {
+    padding-bottom: calc(165px + env(safe-area-inset-bottom));
+  }
+}

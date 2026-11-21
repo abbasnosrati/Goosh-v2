@@ -2451,3 +2451,19 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 **Validation:** Static stylesheet structure/guard review and changed-file scope verification, including mobile portrait/landscape CSS branch inspection. No real browser, screenshot, phone, Android APK, actual touch, or desktop visual smoke test was performed; treat runtime visual appearance as unverified.
 
 **Follow-up:** Test 320px, 375px, 430px, 600px and desktop >= 1100px visually before any further UI refinements. If user prefers another layout, adjust only mobile CSS and preserve the desktop selectors and open Metered Record bug.
+
+
+---
+
+## Mobile-only: four-tab bottom navigation and logo-only header / Settings sheet (2026-11-21)
+
+**User request:** On mobile phones, remove top-header navbar and the separate language/theme buttons, show **only the Goosh logo** at the top, and make the existing bottom navbar contain **Home | Etudes (Studio route) | Practice | Settings**. Place Persian/English and Light/Dark controls in the new Settings tab. Keep Desktop **exactly unchanged**. The user explicitly approved proceeding with four tabs and keeping Home.
+
+**Implemented:**
+- `web/src/app.js`: The existing `render()` still uses the same original three routes and callbacks. Added CSS-hidden-on-desktop icons to the route buttons and a **mobile-only Settings tab**, not a new route. `openMobileSettings(trigger)` creates a small native accessible `dialog` settings sheet. It delegates to the **existing desktop `#lang` / `#theme` click handlers**, so preference persistence, translation, theme class and data remain single-source. Language change closes the sheet and follows the original render lifecycle; theme updates in place. Dialog Close, Escape and backdrop dismissal are supported; cleanup removes the dialog. No new state storage or changes to the original preference handlers.
+- `web/style.css`: Additive desktop-default rules **hide only the new** settings tab and icons; all actual header, bottom navbar and settings sheet styling is inside mobile-only media. Fixed a **Home-specific overlap**: `web/home.css` originally hides the global mobile navbar on Home and draws its own `g-home-tabs` at the bottom. Mobile-specific selector `body.home-screen > header > #nav` now shows the global four-tab navigation, and the existing Home internal panel tabs move above it; both remain available. Existing desktop navbar, header controls and footer are untouched. The same responsive mobile condition as the existing app covers compact phone landscape; no desktop CSS rules were edited.
+- `web/index.html`: Bump **only** the `style.css` and `app.js` version query strings to `mobile-settings-nav-1`.
+
+**Safety/verification:** New JS parsed successfully; source checks confirm existing route callbacks, keyboard/audio, piano recording, metronome, Score, Practice and key signature functions were not edited. New CSS appended to previous stylesheet; desktop page styles remain byte-for-byte unchanged, apart from intentional hide rules for newly created mobile-only DOM. Settings option actions require separate real-device check for focus/backdrop/soft keyboard and Persian/English / Light/Dark. Static media review covers 320/375/430/700px plus landscape small-height. No physical browser/mobile screenshot, actual visual regression, or APK test has been performed.
+
+**Unrelated unresolved:** Metered live piano Record -> rhythmic transcription remains **NOT FIXED**, and Codex must still get the user's explicit approval on understanding and proposed plan before any changes to that recording logic.

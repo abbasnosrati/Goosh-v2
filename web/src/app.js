@@ -2091,6 +2091,88 @@ function etudeList(){
   }
 }
 
+
+function mobileNavigationIcon(route) {
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.classList.add('mobile-nav-icon');
+  svg.setAttribute('viewBox','0 0 24 24');
+  svg.setAttribute('aria-hidden','true');
+  svg.setAttribute('focusable','false');
+  svg.setAttribute('fill','none');
+  svg.setAttribute('stroke','currentColor');
+  svg.setAttribute('stroke-width','1.8');
+  svg.setAttribute('stroke-linecap','round');
+  svg.setAttribute('stroke-linejoin','round');
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',{
+    home:'M3 10 12 3l9 7v11h-6v-7H9v7H3V10Z',
+    studio:'M9 19V6l11-2v12M9 19c0 2-2 3-4 3s-3-1-3-2 2-3 4-3 3 1 3 2Zm11-3c0 2-2 3-4 3s-3-1-3-2 2-3 4-3 3 1 3 2Z',
+    practice:'M5 5h14M5 12h14M5 19h14M9 2v20',
+    settings:'M4 7h16M4 17h16M9 4v6M15 14v6'
+  }[route]||'');
+  svg.append(path);
+  return svg;
+}
+
+// Mobile preferences delegate to the existing desktop actions. The
+// underlying language/theme state and persistence remain single-source.
+function openMobileSettings(trigger) {
+  document.querySelector('.mobile-settings-dialog')?.close();
+  const dialog=el('dialog',document.body,undefined,'mobile-settings-dialog');
+  dialog.setAttribute('aria-labelledby','mobile-settings-title');
+  const top=el('div',dialog,undefined,'mobile-settings-heading');
+  const heading=el('h2',top,t('Settings','تنظیمات'));
+  heading.id='mobile-settings-title';
+  const close=btn(top,'×',()=>dialog.close(),t('Close settings','بستن تنظیمات'));
+  close.className='mobile-settings-close';
+  close.setAttribute('aria-label',t('Close settings','بستن تنظیمات'));
+
+  const language=el('section',dialog,undefined,'mobile-settings-group');
+  el('h3',language,t('Language','زبان'));
+  const langChoices=el('div',language,undefined,'mobile-settings-choices');
+  for(const [value,label] of [['fa','فارسی'],['en','English']]){
+    const selected=(value==='fa')===fa;
+    const option=btn(langChoices,label,()=>{
+      if((value==='fa')===fa){dialog.close();return;}
+      dialog.close();
+      $('#lang').click();
+    });
+    option.className='mobile-settings-choice';
+    option.setAttribute('aria-pressed',String(selected));
+    option.classList.toggle('active',selected);
+  }
+
+  const appearance=el('section',dialog,undefined,'mobile-settings-group');
+  el('h3',appearance,t('Appearance','ظاهر'));
+  const themeChoices=el('div',appearance,undefined,'mobile-settings-choices');
+  const choices=[];
+  for(const [value,en,ir] of [['light','Light','روشن'],['dark','Dark','تاریک']]){
+    const option=btn(themeChoices,t(en,ir),()=>{
+      if((value==='dark')!==dark)$('#theme').click();
+      for(const choice of choices){
+        const current=(choice.value==='dark')===dark;
+        choice.button.classList.toggle('active',current);
+        choice.button.setAttribute('aria-pressed',String(current));
+      }
+    });
+    option.className='mobile-settings-choice';
+    option.setAttribute('aria-pressed',String((value==='dark')===dark));
+    option.classList.toggle('active',(value==='dark')===dark);
+    choices.push({value,button:option});
+  }
+
+  trigger.setAttribute('aria-expanded','true');
+  dialog.addEventListener('close',()=>{
+    trigger.setAttribute('aria-expanded','false');
+    dialog.remove();
+    if(trigger.isConnected)trigger.focus();
+  },{once:true});
+  dialog.addEventListener('click',event=>{
+    if(event.target===dialog)dialog.close();
+  });
+  dialog.showModal();
+}
+
 function render() {
   document.documentElement.lang = fa ? 'fa' : 'en';
   document.documentElement.dir = fa ? 'rtl' : 'ltr';
@@ -2112,8 +2194,16 @@ function render() {
     const item=btn(nav,name,()=>navigate(key));
     item.dataset.route=key;
     if(key===page){item.className='active';item.setAttribute('aria-current','page')}
+    item.prepend(mobileNavigationIcon(key));
     btn(footNav,name,()=>navigate(key));
   }
+  const settingsTab=btn(nav,t('Settings','تنظیمات'),()=>{
+    openMobileSettings(settingsTab);
+  },t('Settings','تنظیمات'));
+  settingsTab.className='mobile-settings-tab';
+  settingsTab.setAttribute('aria-haspopup','dialog');
+  settingsTab.setAttribute('aria-expanded','false');
+  settingsTab.prepend(mobileNavigationIcon('settings'));
   app.replaceChildren();
   app.dataset.page=page;
   document.body.classList.toggle('home-screen',page==='home');
