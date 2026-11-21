@@ -3200,3 +3200,13 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 **Scope safeguard:** No DOM changes, control duplication, state edits, time signature/tempo/note duration behavior, audio, score renderer, Practice player or other page changes. This commit also restores the unrelated previous Etude Setup header modifications because they were outside the circled request.
 
 **Verification:** Source-level CSS scope and cache paths reviewed; no browser screenshot or device interaction test performed.
+
+---
+
+## 2026-11-21 — Manual / AI creation-method selector: clearer and more prominent
+
+**User feedback:** The existing two icon-only buttons near the Etude Setup heading were hard to understand and visually underemphasized; this affects both desktop and mobile. Previous desktop-only labeled treatment was insufficient. Improve both controls without changing their purpose.
+
+**Implementation:** In `web/src/studio-etude-generation.js`, append one visible, localized label to **each existing button** after its existing icon: `Manual / دستی` and `AI Assist / هوش مصنوعی`. The established two controls, handlers, selected/disabled state and accessibility attributes are untouched. `web/visual-system.css` adds a narrowly scoped override: a refined two-button segmented surface, consistent compact icon and readable label, clear selected contrast and subtle tinted depth, hover/focus states, and a full-width equal-column layout on mobile/tablet. Only the established light/dark Goosh tokens are used. The layout still places the control beside the title on desktop. `web/src/app.js` and `web/index.html` only bump the required module/style cache keys.
+
+**Scope:** No other buttons, navigation, audio, score settings, generation, Practice, catalog or data model are modified. Responsive visual validation in a real browser remains outstanding.

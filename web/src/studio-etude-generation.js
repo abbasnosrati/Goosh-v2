@@ -240,6 +240,8 @@ export function mountEtudeComposer(host, {
   ai.title = t('AI', 'هوش مصنوعی');
   appendSetupIcon(manual, 'pen', 'studio-compose-mode-icon');
   appendSetupIcon(ai, 'wand', 'studio-compose-mode-icon');
+  create('span',manual,t('Manual','دستی'),'studio-compose-mode-label');
+  create('span',ai,t('AI Assist','هوش مصنوعی'),'studio-compose-mode-label');
 
   // A shared musical foundation: Manual and AI always use the same
   // canonical Etude key signature, piano and score playback frequencies.
