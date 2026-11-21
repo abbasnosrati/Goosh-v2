@@ -36,7 +36,7 @@ export function tonicDisplayName(tonic, fa) {
 
 // Mobile-only presentation adapter: original native select remains authoritative.
 let mobileMusicPickerId=0;
-function attachMusicBottomSheet(wrapper, select, heading, fa){
+function attachMusicBottomSheet(wrapper, select, heading, fa, alwaysEnabled=false){
   const trigger=create('button',wrapper,null,'studio-mobile-select-trigger');
   trigger.type='button';
   trigger.setAttribute('aria-haspopup','dialog');
@@ -53,9 +53,10 @@ function attachMusicBottomSheet(wrapper, select, heading, fa){
     trigger.disabled=select.disabled;
   }
   trigger.onclick=()=>{
-    if(select.disabled||!select.isConnected||!window.matchMedia(
-      '(max-width: 700px), (pointer: coarse) and (orientation: landscape) and (max-height: 520px)'
-    ).matches)return;
+    if(select.disabled||!select.isConnected||
+       (!alwaysEnabled && !window.matchMedia(
+         '(max-width: 700px), (pointer: coarse) and (orientation: landscape) and (max-height: 520px)'
+       ).matches))return;
     const dialog=create('dialog',wrapper,null,'studio-mobile-picker-dialog');
     const header=create('div',dialog,null,'studio-mobile-picker-header');
     const label=create('h2',header,title());
@@ -153,8 +154,7 @@ function showMobileAIGuide(fa){
 
 export function mountEtudeComposer(host, {
   etude, fa, isRecording, isCurrent, onGenerated, onModeChange, onSignatureChange,
-  onToggleKeySignature, signatureIcon, returnSignatureIcon, signatureEditing = false,
-  isMobileSignatureView = () => false, onMeterSelect
+  onToggleKeySignature, signatureIcon, onMeterSelect
 }) {
   const t = (en, ir) => fa ? ir : en;
   let state = states.get(etude);
@@ -183,7 +183,6 @@ export function mountEtudeComposer(host, {
 
   host.replaceChildren();
   host.className = 'studio-compose';
-  host.classList.toggle('studio-mobile-signature-view', isMobileSignatureView());
   // Manual/AI and the musical choices share one settings surface.
   const sharedMusic = create('div', host, null, 'studio-compose-music');
   create('h2', sharedMusic, t('Etude Setup', 'تنظیمات اتود'), 'studio-compose-heading');
@@ -225,9 +224,6 @@ export function mountEtudeComposer(host, {
       showStudioMessage(status, '');
       sync();
       // Western music has an automatic signature, not the manual Iranian editor.
-      // Leave the editor if the user changes systems while it is open.
-      if (id === 'western' && signatureEditing)
-        onToggleKeySignature?.(false);
     };
   }
   const fields = create('div', sharedMusic, null, 'studio-compose-fields');
@@ -257,19 +253,13 @@ export function mountEtudeComposer(host, {
   const tonicPicker = attachMusicBottomSheet(tonicField, tonicInput, tonicHeading, fa);
   tonicField.hidden = state.musicSystem !== 'western';
   const signatureHint = create('p', sharedMusic, null, 'studio-compose-music-hint');
-  // One persistent-position toggle beside the Iranian/Western radios:
-  // it opens the existing editor and becomes Back to Score in-place.
-  const mobileSignaturePlacement = isMobileSignatureView();
-  const signatureActions = create('div',
-    mobileSignaturePlacement ? fields : musicOptions, null, 'studio-signature-actions');
+  // Same signature action below Dastgah and same modal for all screen sizes.
+  const signatureActions = create('div', fields, null, 'studio-signature-actions');
   const editSignature = create('button', signatureActions, null, 'signature-toggle studio-signature-entry');
   editSignature.type = 'button';
-  const signatureLabel = signatureEditing
-    ? t('Back to Score','بازگشت به خط حامل')
-    : t('Set Key Signature','تنظیم سرکلید');
+  const signatureLabel = t('Set Key Signature','تنظیم سرکلید');
   editSignature.setAttribute('aria-label', signatureLabel);
-  editSignature.setAttribute('aria-pressed', String(signatureEditing));
-  const editIcon = (signatureEditing ? returnSignatureIcon : signatureIcon)?.();
+  const editIcon = signatureIcon?.();
   if (editIcon) {
     editIcon.classList.add('score-switch-symbol');
     editSignature.append(editIcon);
@@ -277,7 +267,7 @@ export function mountEtudeComposer(host, {
   create('span', editSignature, signatureLabel, 'signature-toggle-label');
   editSignature.onclick = () => {
     if (!busy && state.musicSystem === 'iranian')
-      onToggleKeySignature?.(!signatureEditing);
+      onToggleKeySignature?.();
   };
   // Primary Practice Goal and Generate are AI-only, unlike the music selector.
   const goalLabel = create('label', content, null, 'practice-field studio-compose-goal');
@@ -286,7 +276,7 @@ export function mountEtudeComposer(host, {
   const placeholder = create('option', goalInput, t('Select a goal…', 'انتخاب هدف تمرین…'));
   placeholder.value = '';
 
-  // Mobile mirror of the canonical Score time-signature selector.
+  // Shared AI mirror of the canonical Score time-signature selector.
   const meterField = create('div', content, null,
     'studio-select-field studio-compose-mobile-meter');
   const meterLabel = create('label', meterField, null, 'practice-field');
@@ -309,7 +299,7 @@ export function mountEtudeComposer(host, {
     onMeterSelect?.(meterInput.value);
     sync();
   };
-  const meterPicker = attachMusicBottomSheet(meterField, meterInput, meterHeading, fa);
+  const meterPicker = attachMusicBottomSheet(meterField, meterInput, meterHeading, fa, true);
   const meterHint = create('p', content, t(
     'Choose a time signature in Score before generating. Free is also valid.',
     'برای تولید اتود میزان‌نما را انتخاب کنید؛ حالت آزاد نیز مجاز است.'
@@ -424,7 +414,7 @@ export function mountEtudeComposer(host, {
       state.mode = value;
     }
     sync();
-    onModeChange?.(practiceLocked(), state.mode === 'ai' && !state.meterConfirmed);
+    onModeChange?.(practiceLocked(), state.mode === 'ai' && !state.meterConfirmed, state.mode);
   };
   manual.onclick = () => changeMode('manual');
   ai.onclick = () => {
@@ -534,6 +524,7 @@ export function mountEtudeComposer(host, {
   };
 
   return {
+    currentMode: () => state.mode,
     selectAI: () => changeMode('ai'),
     isPracticeLocked: practiceLocked,
     needsMeterChoice: () => state.mode === 'ai' && !state.meterConfirmed,

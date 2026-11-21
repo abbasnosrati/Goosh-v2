@@ -26,7 +26,7 @@ import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=mobile-signature-modal-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { mountEtudeComposer } from './studio-etude-generation.js?v=etude-setup-heading-1'
+import { mountEtudeComposer } from './studio-etude-generation.js?v=studio-unified-setup-1'
 import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=music-toggle-reuse-1'
 import { renderHome } from './home.js?v=mobile-home-ticker-speed-2';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
@@ -64,6 +64,8 @@ let fa = localStorage.lang !== 'en',
   metronomeEnabled = false,
   recordingMetronome = null
 const collection = new Map();
+// Per-Etude UI preference; no note/audio model changes.
+const studioPianoExpanded = new WeakMap();
 const prefix = 'goosh.etude.';
 for(let i=0;i<localStorage.length;i++){
   const key=localStorage.key(i);
@@ -1479,6 +1481,7 @@ function studio() {
   pdfButton.setAttribute('aria-label', t('Export PDF', 'خروجی PDF'));
   pdfButton.append(studioFileIcon('pdf'));
   const panel = el('section', app);
+  const composeHost = el('div', panel, undefined, 'studio-compose-host');
 
   function toggle() {
     stopKeys();
@@ -1537,22 +1540,33 @@ function studio() {
       refreshTake(take);
     }
   });
-  // The Manual/AI choice lives beside the existing score. The notes stay
-  // canonical on this etude; generated exercises only store practice steps.
-  // This single predicate controls both mobile entry placement and modal display.
-  // Coarse-touch wider WebViews must not fall back to the desktop Score editor.
-  const isMobileSignatureView = () => window.matchMedia(
-    '(max-width: 767px), (pointer: coarse) and (max-width: 1100px)'
-  ).matches || ['android','ios'].includes(window.Capacitor?.getPlatform?.());
-  const showSignatureEditor = editing => {
+  // Preserve the original piano and recording handlers; only its visibility
+  // is controlled by Manual/AI and the user's own expand/collapse button.
+  const studioPiano = panel.querySelector(':scope > .instrument');
+  const pianoTools = studioPiano.querySelector(':scope > .row');
+  const pianoKeys = studioPiano.querySelector(':scope > .keys');
+  const pianoOctaveLabel = pianoTools.querySelector('label');
+  const pianoToggle = btn(pianoTools, '', () => setPianoExpanded(pianoKeys.hidden),
+    t('Show or hide piano', 'نمایش یا جمع‌کردن پیانو'));
+  pianoToggle.type = 'button';
+  pianoToggle.className = 'studio-piano-toggle';
+  const setPianoExpanded = expanded => {
+    const open = Boolean(expanded);
+    pianoKeys.hidden = !open;
+    if(pianoOctaveLabel)pianoOctaveLabel.hidden = !open;
+    studioPiano.classList.toggle('studio-piano-collapsed', !open);
+    pianoToggle.textContent = open ? t('Hide piano','جمع‌کردن پیانو') : t('Show piano','نمایش پیانو');
+    pianoToggle.setAttribute('aria-expanded',String(open));
+    pianoToggle.setAttribute('aria-label',pianoToggle.textContent);
+    studioPianoExpanded.set(e,open);
+  };
+  // Single Set Key Signature dialog for every viewport.
+  const showSignatureEditor = () => {
     stopSignaturePreview();
-    if(isMobileSignatureView()){
-      if(!editing){mobileSignatureDialog?.close();return}
-      if(mobileSignatureDialog?.open)return;
+    if(mobileSignatureDialog?.open)return;
       stopScorePlayback();
       signaturePitch = SIGNATURE_PITCHES.find(p=>e.key[p.pc])?.pc ?? 0;
-      // Portal outside the styled Studio section so showModal paints above
-      // the Score rather than participating in the editor card layout.
+      // This modal floats above the unchanged Score on every device.
       const dialog=el('dialog',app,undefined,'studio-mobile-signature-dialog');
       const card=el('div',dialog,undefined,'studio-mobile-signature-card');
       const header=el('div',card,undefined,'studio-mobile-signature-header');
@@ -1588,32 +1602,20 @@ function studio() {
       mobileSignatureDialog=dialog;
       dialog.showModal();
       renderMobileSignatureDialog();
-      return;
-    }
-    if (editing) {
-      stopScorePlayback();
-      signaturePitch = SIGNATURE_PITCHES.find(p => e.key[p.pc])?.pc ?? 0;
-      scoreTool = 'select';
-    }
-    signatureMode = editing;
-    render();
   };
-  const composeHost = el('div', panel, undefined, 'studio-compose-host');
   const composerTarget = e, composerId = activeId;
   let practiceHost = null;
   let meterSelect = null;
   const composer = mountEtudeComposer(composeHost, {
     etude: composerTarget, fa,
-    signatureEditing: signatureMode,
-    isMobileSignatureView,
     signatureIcon: scoreSignatureIcon,
-    returnSignatureIcon: scoreReturnStaffIcon,
     onToggleKeySignature: showSignatureEditor,
     isRecording: () => Boolean(rec),
     isCurrent: () => page === 'studio' && activeId === composerId && e === composerTarget,
-    onModeChange: (locked, needsMeterChoice) => {
+    onModeChange: (locked, needsMeterChoice, mode) => {
       if (practiceHost) setStudioPracticeLocked(practiceHost, locked, fa);
       if (meterSelect) meterSelect.value = needsMeterChoice ? '' : (e.meter || 'none');
+      setPianoExpanded(mode !== 'ai');
     },
     onMeterSelect: selected => {
       if (!meterSelect || meterSelect.disabled) return;
@@ -1644,6 +1646,8 @@ function studio() {
       render();
     }
   });
+  setPianoExpanded(studioPianoExpanded.has(e)
+    ? studioPianoExpanded.get(e) : composer.currentMode() !== 'ai');
   // Presentation wrapper: groups the existing Score, controls, meter and
   // tempo as one mobile section without altering any musical behavior.
   const scoreSurface = el('div', panel, undefined, 'studio-score-surface');

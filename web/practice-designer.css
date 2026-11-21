@@ -136,18 +136,15 @@
   grid-template-columns: repeat(2,minmax(0,1fr));
   gap: 12px;
 }
-/* Keep the Dastgah action directly below its selector on touch/mobile UI. */
-#app[data-page="studio"] .studio-compose.studio-mobile-signature-view .studio-compose-fields {
-  grid-template-columns: minmax(0,1fr);
+/* Same entry beneath Dastgah across desktop and mobile. */
+#app[data-page="studio"] .studio-compose-fields > .studio-signature-actions {
+  width:fit-content;
+  justify-self:start;
+  margin-top:-2px;
 }
-#app[data-page="studio"] .studio-compose.studio-mobile-signature-view .studio-compose-fields > .studio-signature-actions {
-  width: fit-content;
-  justify-self: start;
-  margin-top: -2px;
-}
-#app[data-page="studio"] .studio-compose.studio-mobile-signature-view .studio-compose-fields > .studio-signature-actions .studio-signature-entry {
-  width: auto;
-  min-height: 42px;
+#app[data-page="studio"] .studio-compose-fields > .studio-signature-actions .studio-signature-entry {
+  width:auto;
+  min-height:42px;
 }
 #app[data-page="studio"] .studio-compose-actions { display: flex;gap: 10px;flex-wrap: wrap;margin-top: 14px; }
 #app[data-page="studio"] .studio-compose-generate { min-width: 180px; }
@@ -506,7 +503,12 @@
     outline:2px solid var(--accent);
     outline-offset:2px;
   }
-  dialog.studio-mobile-picker-dialog {
+
+}
+
+
+/* One shared selector popup, used for music and Time Signature on any screen. */
+dialog.studio-mobile-picker-dialog {
     position:fixed;
     inset:auto 0 0;
     box-sizing:border-box;
@@ -591,8 +593,6 @@
   .studio-mobile-picker-option:focus-visible,
   .studio-mobile-picker-close:focus-visible {outline:2px solid var(--accent);outline-offset:-2px}
   .studio-mobile-picker-option:disabled {opacity:.45}
-}
-
 
 /* Mobile AI-specific fields retain their existing ordering and behavior. */
 @media screen and (max-width: 700px),
@@ -767,7 +767,7 @@
   dialog.studio-ai-guide-dialog { animation: none; }
 }
 
-/* AI meter mirror — a second mobile view of the existing Score selector. */
+/* Shared AI meter mirror of the original Score selector. */
 #app[data-page="studio"] .studio-compose-mobile-meter {display:none}
 #app[data-page="studio"] .studio-ai-meter-hint {
   margin:9px 0 0;
@@ -776,8 +776,7 @@
   color:var(--muted);
 }
 #app[data-page="studio"] .studio-ai-meter-hint[hidden] {display:none}
-@media screen and (max-width:700px),
-       screen and (pointer:coarse) and (orientation:landscape) and (max-height:520px) {
+@media screen {
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai:not([hidden]) .studio-compose-mobile-meter {
     display:block;
     order:1;
@@ -835,4 +834,18 @@
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-footnote {order:3}
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-status {order:4}
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-ai .studio-compose-actions {order:5}
+}
+
+/* Responsive presentation of the SAME selector-dialog implementation. */
+@media screen and (min-width:701px) and (hover:hover) {
+  dialog.studio-mobile-picker-dialog {
+    inset:0;
+    width:min(440px,calc(100vw - 32px));
+    max-width:440px;
+    max-height:min(75dvh,620px);
+    margin:auto;
+    padding:4px 16px 15px;
+    border:1px solid var(--glass-border);
+    border-radius:18px;
+  }
 }
