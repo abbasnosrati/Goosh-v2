@@ -222,7 +222,6 @@ function piano(parent, onStart) {
     viewport.scrollLeft=(12*(oct+1)-low)/12*7*box.clientWidth/whiteCount;
 
   }
-  field(tools,t('Octave','اکتاو'),oct,jump,Array.from({length:whiteCount/7},(_,i)=>{const v=low/12-1+i;return [v,v.toLocaleString(fa?'fa':'en')]}));
   for(let m=low;m<=high;m++){
     const black=names[m%12].includes('♯'), b=el('button',box);
     b.dataset.midi=m;
@@ -264,6 +263,13 @@ function piano(parent, onStart) {
   const octaveRail=el('div',viewport,undefined,'octave-rail');
   octaveRail.style.setProperty('--whites',whiteCount);
   for(let midi=low;midi<=high;midi+=12)el('span',octaveRail,'C'+(midi/12-1));
+  // A subtle mobile-only cue for the horizontal keyboard scroll area.
+  // It is purely decorative, leaving the original keys and scrolling intact.
+  const scrollHint=el('div',p,undefined,'piano-scroll-hint');
+  scrollHint.setAttribute('aria-hidden','true');
+  el('span',scrollHint,'←','piano-scroll-hint-arrow');
+  el('span',scrollHint,undefined,'piano-scroll-hint-track');
+  el('span',scrollHint,'→','piano-scroll-hint-arrow');
   requestAnimationFrame(()=>jump(oct));
   const fingers = new Map();
   function moveTo(id, position, key, time, audioTime) {
