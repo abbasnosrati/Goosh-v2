@@ -2484,3 +2484,16 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 **Verification:** Source/static review only: all changed UI declarations are inside existing mobile media or tiny additional <=359px mobile/reduced-motion blocks, no desktop selector changes, CSS braces balanced, and existing app script unchanged. No browser screenshots, physical mobile, APK, or desktop visual testing was performed.
 
 **Unrelated open issue:** The metered piano live-recording transcription remains UNRESOLVED, and Codex must ask the user for explicit understanding/plan approval before changing it.
+
+
+---
+
+## Mobile Home: remove duplicate two-tab Etudes / Practice navigation (2026-11-21)
+
+**User request:** On a phone, Home currently shows TWO fixed bottom menus: the newly introduced four-item shared dock (Home, Etudes, Practice, Settings), and an older two-item Home-specific Etudes/Practice switcher. Keep **only** the shared four-item dock and remove the two-item one. Do not alter Desktop or any recording/transcription functionality.
+
+**Fix (mobile CSS only):** In `web/style.css`, replace the existing `@media screen and (max-width:699px)` Home-tab offset block. The new mobile-only rule hides `.g-home-tabs` and, crucially, makes **both** `.g-dashboard-panel` sections visible in the normal vertical scroll, including whichever was previously `:not(.is-selected)`. This avoids hiding user-accessible Home content behind a removed switcher. Add a 16px separation between the Etudes and Practice dashboard panels and return Home bottom padding to room for just the single floating four-tab dock. Home navigation itself remains available; the existing functions, buttons, and routes are unchanged. `web/index.html` only bumps the `style.css` cache version to `mobile-home-single-nav-1`. No edit to `web/home.css` or `web/src/home.js` is needed; their preexisting mobile tab UI is suppressed by the higher-specificity `body.home-screen` override.
+
+**Desktop/logic protection:** At viewport width 700px and up, this CSS block is inactive and the original design is unchanged. No JavaScript, Score/audio/piano/recording code, schema, navigation handlers, or theme controls are modified. The separate Metered piano recording transcription bug remains unresolved and requires explicit user approval before Codex changes its logic.
+
+**Validation:** Exact CSS-block replacement, mobile-breakpoint gate, rule precedence relative to the existing `web/home.css` mobile tab and `.g-dashboard-panel:not(.is-selected)` selectors, stylesheet-brace check, and cache-only HTML change checks passed. **No real mobile or desktop screenshot/browser/APK validation was performed.**
