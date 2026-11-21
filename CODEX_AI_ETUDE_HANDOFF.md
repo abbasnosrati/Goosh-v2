@@ -3294,3 +3294,5 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 **Style:** `web/style.css` scopes a compact, scrollable, non-interactive Score preview above the live keyboard, keeps the one Record icon visually distinct and red, and reduces fullscreen key height on mobile landscape and CSS-rotated portrait fallback. The ordinary embedded Studio Score and Piano stay unmodified. `web/index.html` only updates cache keys.
 
 **Verification:** Static code path checked for single Score, single Record handler, manual/AI and import flows unchanged, and original slots restored. Actual browser/Android landscape, recording-to-score, screenshot and pointer QA have not been performed.
+
+**Scroll/focus follow-up:** The compact fullscreen Score itself must accept swipe/wheel scrolling when a composition spans more than one row. Restrict `pointer-events:none` to its engraved SVGs rather than the `.score` scroll viewport: note editing remains disabled in the fullscreen read-only preview, but users can navigate the staff by scrolling. Only the fullscreen CSS rule and its cache key change.

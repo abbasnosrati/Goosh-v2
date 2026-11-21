@@ -2850,7 +2850,6 @@ body > .instrument.studio-piano-fullscreen .studio-piano-score > .score {
   background:transparent;
   overflow:auto;
   direction:ltr;
-  pointer-events:none;
   touch-action:pan-x pan-y;
   overscroll-behavior:contain;
 }
@@ -2859,6 +2858,7 @@ body > .instrument.studio-piano-fullscreen .studio-piano-score > .score > svg {
   max-width:none!important;
   max-height:none;
   height:auto;
+  pointer-events:none;
 }
 body > .instrument.studio-piano-fullscreen .studio-piano-view-controls > .score-record {
   border-color:color-mix(in srgb,var(--danger) 34%,var(--glass-border));
