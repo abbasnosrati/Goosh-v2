@@ -275,7 +275,80 @@ function renderDashboard({el,app,t,collection,navigate,createEtude,importEtude})
   setTab('etudes');
   return dashboard;
 }
+
+/* Phone-only feature chip carousel. The second visual copy allows a seamless
+   wrap without changing original labels, links, or Desktop composition. */
+function startMobileFeatureTicker(features) {
+  const phone=window.matchMedia('(max-width: 699px)');
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+  const originals=[...features.children];
+  let copies=[],frame=0,previous=0,pauseUntil=0,disposed=false;
+  const stop=()=>{
+    if(frame)cancelAnimationFrame(frame);
+    frame=0;previous=0;
+    for(const copy of copies)copy.remove();
+    copies=[];
+    features.classList.remove('g-feature-auto');
+    features.scrollLeft=0;
+  };
+  const onUserInput=()=>{pauseUntil=performance.now()+6500;previous=0;};
+  const cleanup=()=>{
+    if(disposed)return;
+    disposed=true;
+    stop();
+    phone.removeEventListener('change',update);
+    reduced.removeEventListener('change',update);
+    features.removeEventListener('pointerdown',onUserInput);
+    features.removeEventListener('touchstart',onUserInput);
+    features.removeEventListener('wheel',onUserInput);
+    features.removeEventListener('keydown',onUserInput);
+    observer.disconnect();
+  };
+  const tick=now=>{
+    if(!features.isConnected){cleanup();return;}
+    frame=requestAnimationFrame(tick);
+    if(!phone.matches||reduced.matches||document.hidden){previous=now;return;}
+    const firstCopy=copies[0];
+    if(!firstCopy){previous=now;return;}
+    const distance=Math.abs(firstCopy.offsetLeft-originals[0].offsetLeft);
+    if(!distance||features.scrollWidth<=features.clientWidth){previous=now;return;}
+    const dt=previous?Math.min(50,now-previous):0;
+    previous=now;
+    if(now<pauseUntil)return;
+    const direction=getComputedStyle(features).direction==='rtl'?-1:1;
+    let position=features.scrollLeft+direction*(dt*.027);
+    // The second copy is visually identical to the original at this seam.
+    if(Math.abs(position)>=distance)position-=direction*distance;
+    features.scrollLeft=position;
+  };
+  const update=()=>{
+    if(disposed)return;
+    stop();
+    if(!phone.matches||reduced.matches||!features.isConnected)return;
+    for(const item of originals){
+      const copy=item.cloneNode(true);
+      copy.setAttribute('aria-hidden','true');
+      copies.push(copy);
+      features.append(copy);
+    }
+    features.classList.add('g-feature-auto');
+    pauseUntil=performance.now()+1200;
+    frame=requestAnimationFrame(tick);
+  };
+  const observer=new MutationObserver(()=>{
+    if(!features.isConnected)cleanup();
+  });
+  observer.observe(features.closest('#app'),{childList:true});
+  for(const event of ['pointerdown','touchstart','wheel','keydown'])
+    features.addEventListener(event,onUserInput,{passive:true});
+  phone.addEventListener('change',update);
+  reduced.addEventListener('change',update);
+  update();
+}
+
 export function renderHome(context) {
-  renderDesktop(context);
+  const desktop=renderDesktop(context);
   renderDashboard(context);
+  const features=desktop.querySelector('.g-feature-chips');
+  if(features)startMobileFeatureTicker(features);
 }

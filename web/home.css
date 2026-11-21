@@ -603,10 +603,14 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
 /* Mobile editorial Home — uses the ORIGINAL desktop hero and musical cards.
    Only the phone viewport gets this visual composition. */
 @media screen and (max-width: 699px) {
+  /* Avoid accumulating body + main + hub bottom gaps below the last card. */
+  body.home-screen {
+    padding-bottom: 0;
+  }
   body.home-screen main {
     width: 100%;
     max-width: 100%;
-    padding: 10px 14px calc(122px + env(safe-area-inset-bottom));
+    padding: 10px 14px calc(86px + env(safe-area-inset-bottom));
   }
   .home-screen .g-desktop {display: block;}
   .home-screen .g-dashboard {display: none;}
@@ -658,6 +662,9 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
     scrollbar-width: none;
     scroll-snap-type: x proximity;
     overscroll-behavior-inline: contain;
+  }
+  .home-screen .g-feature-chips.g-feature-auto {
+    scroll-snap-type: none;
   }
   .home-screen .g-feature-chips::-webkit-scrollbar {display: none;}
   .home-screen .g-feature-chip {
@@ -739,7 +746,7 @@ html.dark .home-screen {--g-shadow:0 15px 42px rgb(0 0 0 / .14);}
   .home-screen .g-float-card small {font-size: 9px;}
   .home-screen .g-float-card strong {font-size: 13px;}
 
-  .home-screen .g-hub {margin: 0 0 22px;scroll-margin-top: 18px;}
+  .home-screen .g-hub {margin: 0;scroll-margin-top: 18px;}
   .home-screen .g-section-heading {display: block;margin-bottom: 16px;}
   .home-screen .g-section-heading h2 {
     margin: 7px 0 0;
