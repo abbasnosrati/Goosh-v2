@@ -3132,3 +3132,14 @@ The user confirmed that the *area-selection icon itself works correctly*. Do not
 `web/index.html` commit `67fbb36201cbc96712d6473d9ecceef7606d14af` updates only the stylesheet cache key to `studio-piano-score-spacing-1`.
 
 **Validation:** Verified desktop-only selector and 18px rule, unchanged mobile overrides, CSS brace balance, unchanged piano baseline styles, and updated cache key. **No live browser/screenshot comparison** of rendered result performed. User visual acceptance is pending.
+
+
+---
+
+## CURSOR CORRECTION — Select Area must not look like a crosshair (2026-11-21)
+
+**Explicit repeated user feedback:** The mouse cursor in *selection mode* looks like a gun/game aiming reticle, and the user strongly dislikes it. Earlier changes replaced `grab` on individual Select note/rest targets but **missed the global CSS crosshair override** for the *Select Area* marquee tool. Do not repeat that mistake. The user wants the ordinary system mouse arrow, NOT a target sight, custom icon, or grabbing hand while choosing an area.
+
+**Minimal fix, `feature/practice-sequence-studio`:** `web/style.css` commit `e0ced0df0f9951621a03023eca731499a837014b` changes the **scoped `.score[data-tool="range"]` and its SVG descendants** from `cursor:crosshair !important` to `cursor:default !important`. `web/index.html` commit `04b81df1580e34249c4a3755ccd51e9c939d2eca` refreshes only the stylesheet query version to `select-area-standard-arrow-1`. Individual Select note/rest cursors are already `default` on hover and `move` only once an actual drag begins. The area marquee selection gesture, SVG hit testing, preview, canonical selected indices, Eraser, Play, Pen and recording logic are untouched. The independent seek hit region retains its own pointer cursor.
+
+**Verification:** Confirmed exactly one scoped default-arrow rule, no `crosshair` cursor declaration in Select Area, existing marquee logic and seek callback, matching CSS cache key, and balanced braces in CSS. **No live desktop/mobile pointer UI test was performed.** If user still sees a crosshair, verify that the updated stylesheet is actually loaded and the Score's `data-tool` value is `range`; do not try changing note hit handlers again blindly.
