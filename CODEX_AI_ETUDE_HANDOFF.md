@@ -3210,3 +3210,13 @@ Do not revert it to a crosshair/aiming reticle or an unadorned system pointer wi
 **Implementation:** In `web/src/studio-etude-generation.js`, append one visible, localized label to **each existing button** after its existing icon: `Manual / دستی` and `AI Assist / هوش مصنوعی`. The established two controls, handlers, selected/disabled state and accessibility attributes are untouched. `web/visual-system.css` adds a narrowly scoped override: a refined two-button segmented surface, consistent compact icon and readable label, clear selected contrast and subtle tinted depth, hover/focus states, and a full-width equal-column layout on mobile/tablet. Only the established light/dark Goosh tokens are used. The layout still places the control beside the title on desktop. `web/src/app.js` and `web/index.html` only bump the required module/style cache keys.
 
 **Scope:** No other buttons, navigation, audio, score settings, generation, Practice, catalog or data model are modified. Responsive visual validation in a real browser remains outstanding.
+
+---
+
+## 2026-11-21 — Fix AI Guide music icon overlapping Persian heading
+
+**User screenshot:** In Persian RTL mode, the decorative musical-note icon in the desktop AI Setup Guide overlaps the heading «راهنمای حالت هوش مصنوعی». The old design absolutely positioned the 39px icon at the inline end without reserving heading width; only the introduction paragraph had padding.
+
+**CSS-only solution:** In `web/practice-designer.css`, change the existing desktop-only `.studio-setup-guide-head` to a two-column CSS grid, with a flexible text column and a fixed 39px icon column separated by 12px. Place the existing heading and paragraph in the text column, the original icon in the icon column (no absolute positioning), and remove the obsolete paragraph padding. Grid direction follows the active document direction automatically: icon remains left of text in RTL and right in LTR, with no overlap. This also applies to the Manual Guide using the same shared component. All text, SVG paths, sizes, AI/Manual mode state, callbacks and mobile layout remain untouched. `web/index.html` only bumps the CSS cache key.
+
+**Verification:** Verified source-only that desktop guide fields occupy distinct grid columns and that the stylesheet reference points to the updated CSS. Browser/device visual QA not performed.

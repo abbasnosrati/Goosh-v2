@@ -1260,10 +1260,17 @@ dialog.studio-mobile-picker-dialog {
   }
   #app[data-page="studio"] .studio-setup-guide-head {
     position:relative;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 39px;
+    column-gap:12px;
+    align-items:start;
     padding:0 0 11px;
     border-bottom:1px solid var(--glass-border);
   }
   #app[data-page="studio"] .studio-setup-guide-head h3 {
+    grid-column:1;
+    grid-row:1;
+    min-width:0;
     margin:1px 0 6px;
     font-size:clamp(18px,1.35vw,21px);
     font-weight:800;
@@ -1271,18 +1278,23 @@ dialog.studio-mobile-picker-dialog {
     letter-spacing:-.018em;
   }
   #app[data-page="studio"] .studio-setup-guide-head p {
+    grid-column:1;
+    grid-row:2;
+    min-width:0;
     max-width:36ch;
     margin:0;
-    padding-inline-end:35px;
+    padding-inline-end:0;
     font-size:12.5px;
     line-height:1.5;
     color:var(--muted);
   }
   #app[data-page="studio"] .studio-setup-guide-art {
     display:block;
-    position:absolute;
-    inset-block-start:0;
-    inset-inline-end:0;
+    position:static;
+    grid-column:2;
+    grid-row:1 / span 2;
+    align-self:start;
+    justify-self:center;
     width:39px;
     height:39px;
     color:var(--accent);
