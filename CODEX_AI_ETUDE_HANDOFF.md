@@ -3028,3 +3028,19 @@ The user confirmed that the *area-selection icon itself works correctly*. Do not
 - **No physical browser, touch, Play/audio, device, screenshot, PDF print, or visual cross-theme inspection was performed.** The user has not yet confirmed how these updated colors look on their device. Test at least 4/4 and Free, repeated same-pitch recordings, multiple wrapped staff rows, and Light/Dark.
 
 **Restrictions:** This is a UI-only highlight change to shared notation rendering. Do not introduce blinking animations, modify rhythms or pitch, duplicate selection state, auto-scroll the page, change metronome behavior, or treat the mock tests as completed real-user visual acceptance.
+
+
+---
+
+## IMPLEMENTED — Keep only dashed Score playhead during playback (2026-11-21)
+
+**User request (Persian):** Remove the unnecessary per-note follower shown during Play and the horizontal blue progress line. The existing **vertical dashed/dotted play-position line alone is sufficient**. Preserve the upper interactive time/seek ruler and audio behavior.
+
+**Actual change on `feature/practice-sequence-studio`:**
+- **`web/src/app.js`**: Simplify `paintPlaybackMarker()` to update **only** the existing `paintScorePlayhead()` with the Web Audio clock. Delete the per-note latest-attack scan, active-index calculation, and old `[data-playback-note]` arrow toggling. `clearPlaybackMarker()` still cancels the same animation frame and paints the current seek position. Remove the now-unused `playback.notes` snapshot, **without changing** `scoreTransport`, note sound scheduling, selected-only Play, seek, Pause/Resume, or recording. Audio and timing data remain canonical.
+- **`web/src/score.js`**: Remove the per-note arrow SVG with the `data-playback-note` tracking attributes; remove the horizontal accent-colored `progress` line and its small `thumb` circle from the ruler; keep the **single vertical dashed** `cursor` and the existing unobtrusive base ruler, time labels, clickable/keyboard-accessible seek hitbox and `rulerMap()`. The shared `paintScorePlayhead()` now updates only the cursor's X/opacity and the seek control's ARIA value.
+- **`web/index.html`** and the app Score import: bump module cache keys to `dashed-playhead-only-1` so the slimmer renderer is loaded. No CSS, audio engine, note model, Score selection/record highlight, Free timeline, or other screens were changed.
+
+**Validation actually performed:** Both modified JavaScript modules parse; seven static checks passed (old arrow IDs absent, progress/knob removed, dashed cursor/seek/clock code intact, cache keys updated); two runtime tests of the actual simplified `paintScorePlayhead()` passed for an in-range time and an out-of-row time. **No real browser, audio, touchscreen or cross-device visual test was performed; user acceptance of this change is still pending.**
+
+**Do not reintroduce** extra note-follow arrows, horizontal blue progress or redundant seeker dots without a specific user request. Keep one music-time/playhead path; the dashed vertical line should be the only moving playback affordance.
