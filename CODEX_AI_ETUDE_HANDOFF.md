@@ -2608,3 +2608,21 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 
 - **CLOSED / FIXED:** Persian/RTL compact Etudes and Practices cards on mobile. User confirmed success after commit `2aa8bd0bd82b64e5c5c8bc262a1be3ea96dbe91d`. Previous "STILL OPEN" statements about this exact issue describe historical failed attempts and are superseded by this update. **Do not work on this issue unless the user reports a new regression.**
 - **SEPARATE ISSUE, STILL OPEN:** Metered piano live Record → Score transcription. Unchanged; explicit user approval before any Codex fix remains required.
+
+
+---
+
+## Mobile Etude Studio: move shared dock to top, remove accent border, reclaim horizontal width (2026-11-21)
+
+**User instructions (MOBILE ONLY):** In the actual **Etude Studio editor**, remove the green (light theme) / blue (dark theme) line over the main Studio content box; reduce excessive nested horizontal gutters from the page → outer section → piano container → musical and exercise panels, while still leaving a modest gap from phone edges. User further instructed: **move the entire four-item Home / Etudes / Practices / Settings menu to the TOP inside Etude Studio**.
+
+**Root causes found:** `web/style.css` has the cross-theme rule `[data-page=studio] section:has(.instrument){border-top:3px solid var(--accent)}` which creates the unwanted colored line. At phone width, `#app` main has 12px left/right padding, nested `section` adds ~12px each side, and `.instrument` adds 10px each side. Further composer and practice sequence components add another 12px of nested padding. The shared header navbar is fixed to the bottom at mobile widths by the global dock rule, which is appropriate for Home and library views but not for the editing workspace.
+
+**Fix, CSS ONLY:**
+- In `web/style.css`, append a rule under `@media screen and (max-width:700px)` scoped specifically to `body:has(#app[data-page="studio"]:not(:has(> .shelves)))` for the actual editor **not the Etudes library**. Make the existing header a small vertical stack, keeping the Goosh logo first, then the **same real four-route navbar** in normal document flow (replaces `position:fixed;bottom` with `position:static`, does NOT duplicate or reimplement nav or Settings). Bottom docking on Home, Etudes LIST and Practices remains unchanged; no new route or app logic. Reduce now-unneeded body bottom allowance. Keep navbar touch targets.
+- For the same editor on phone, reduce main padding-inline to 10px, outer `section:has(.instrument)` padding-inline to 8px, and piano `.instrument` padding-inline to 6px; retain the panel border but set **`border-top:0`** so the green/blue accent stripe goes away. Keep the piano horizontally scrollable and retain native keyboard dimensions and audio behavior. The content doesn't touch screen edges.
+- In `web/practice-designer.css`, append mobile-only, editor-only selectors for composer, practice-designer, advanced section and practice steps: reduce nested inline padding to 9px, without changing controls, text, breakpoints or functions.
+- In `web/index.html`, change only cache query strings for `style.css` and `practice-designer.css` so the new mobile styling loads immediately.
+- **Other code unchanged:** `web/src/app.js`, score, piano, metered record logic, key signatures, note deletion, desktop, both libraries, Home, and native code.
+
+**Static validation:** Confirmed accent stripe root selector, distinct Studio EDITOR vs list DOM, mobile-only selectors, no change to existing base/desktop CSS, preserved original CSS as byte prefix, stylesheet braces, and HTML cache-only edit. **No live phone or browser visual test was performed; user must verify new mobile spacing / top menu.** Metered piano live-recording transcription is a separate still-open issue requiring explicit user approval before changes. The Persian mobile cards were user-confirmed FIXED earlier and remain closed.
