@@ -86,7 +86,7 @@ export async function renderStudioPractice(host, etude, options) {
   const title = create('div', head);
   create('h2', title, tr('Practice Design','طراحی تمرین'));
   create('p', title, tr('Add ordered exercises to this etude. Each has its own settings.',
-    'برای این اتود چند بخش تمرینی مستقل و مرتب بسازید.'));
+    'با ساخته شدن اتود میتوانید تمرین های دیگری رو هم روی این اتود پیاده کنید.'));
   const catalog = await loadPracticeCatalog().catch(error => {
     create('p',section,tr('Cannot load practice goals: ','بارگیری اهداف تمرین ناموفق بود: ')+error.message,'practice-warning');
     return null;
