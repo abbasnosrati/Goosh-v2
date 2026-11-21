@@ -867,7 +867,7 @@ function sheet() {
   score(h, e, {
     zoom,
     wrap,
-    seek:rec?undefined:seekScorePlayback,
+    seek:seekScorePlayback,
     tool: scoreTool,
     fa,
     selected: sel,
@@ -1091,14 +1091,13 @@ function renderFreeTimeline(host) {
   const track=el('div',viewport,undefined,'free-timeline-track');
   track.style.width=width+'px';
   track.style.height=height+'px';
-  const ticks=Math.min(300,Math.ceil(end));
   const every=Math.max(1,Math.ceil(end/80));
-  for(let sec=0;sec<=ticks;sec+=every){
+  for(let sec=0;sec<=end;sec+=every){
     const tick=el('div',track,undefined,'free-timeline-tick');
     tick.style.left=(startX+sec*scale)+'px';
     el('span',tick,sec+'s');
   }
-  const durationLabel=seconds=>seconds.toFixed(2).replace(/\\.?0+$/,'')+'s';
+  const durationLabel=seconds=>seconds.toFixed(2).replace(/\.?0+$/,'')+'s';
   for(const {note,index,lane} of positioned){
     const clip=el('div',track,undefined,'free-timeline-note');
     const left=startX+note.at*scale;
@@ -1140,8 +1139,12 @@ function renderFreeTimeline(host) {
       drag=null;
       if(handle.hasPointerCapture?.(ev.pointerId))handle.releasePointerCapture(ev.pointerId);
       ev.stopPropagation();
-      setFreeNoteDuration(note,duration);
+      if(!setFreeNoteDuration(note,duration)){
+        clip.style.width=Math.max(18,note.d*scale)+'px';
+        length.textContent=durationLabel(note.d);
+      }
     };
+    handle.onclick=ev=>ev.stopPropagation();
     handle.onpointercancel=()=>{drag=null;clip.style.width=Math.max(18,note.d*scale)+'px';length.textContent=durationLabel(note.d)};
     handle.onkeydown=ev=>{
       if(!['ArrowLeft','ArrowRight'].includes(ev.key)||rec)return;
