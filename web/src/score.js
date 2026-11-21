@@ -39,16 +39,12 @@ export function paintScorePlayhead(host,time) {
   for(const svg of host.querySelectorAll('svg[data-score-ruler]')){
     const ruler=svg.gooshRuler
     if(!ruler)continue
-    const {points,cursor,thumb,progress,hit}=ruler
+    const {points,cursor,hit}=ruler
     const from=points[0].at,to=points[points.length-1].at
     const active=time>=from-1e-7&&time<=to+1e-7
     cursor.setAttribute('opacity',active?'0.75':'0')
-    thumb.setAttribute('opacity',active?'1':'0')
     const x=rulerMap(points,Math.max(from,Math.min(to,time)),'at','x')
     cursor.setAttribute('x1',x);cursor.setAttribute('x2',x)
-    thumb.setAttribute('cx',x)
-    progress.setAttribute('x2',x)
-    progress.setAttribute('opacity',active?'1':'0.2')
     hit.setAttribute('aria-valuenow',String(Math.max(from,Math.min(to,time)).toFixed(2)))
   }
 }
@@ -506,18 +502,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
       }else if(accidental){
         draw('text',{x:x-17,y:y+4,'font-size':16,fill:'currentColor'},accidental)
       }
-      // Small arrow near (not around) the note. Keep the original index for
-      // playback highlighting across sorted and wrapped score rows.
-      const indicatorX = x + (y >= 86 ? -12 : 12);
-      draw('path',{
-        d:'M'+indicatorX+' '+(y-25)+' V'+(y-14)+
-          ' m-4 -4 4 4 4-4',
-        fill:'none',stroke:'var(--accent)','stroke-width':2,
-        'stroke-linecap':'round','stroke-linejoin':'round',opacity:0,
-        'pointer-events':'none','data-playback-note':index,
-        'data-playback-from':onset,'data-playback-to':onset+n.d
-      })
-      const hit=draw('circle',{cx:x,cy:y,r:10,fill:'transparent',
+       const hit=draw('circle',{cx:x,cy:y,r:10,fill:'transparent',
         'data-score-note':index})
       if(tool==='range')rangeHeads.push({...highlight,hit})
       let pointer=null,ignoreClick=false
@@ -759,15 +744,9 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
       drawRuler('text',{x:endX-3,y:14,'font-size':9,
         fill:'currentColor','fill-opacity':.8,'text-anchor':'end',
         'pointer-events':'none'},endAt.toFixed(1)+'s')
-      const progress=drawRuler('line',{x1:startX,y1:22,x2:startX,y2:22,
-        stroke:'var(--accent)','stroke-width':2.5,
-        'stroke-linecap':'round','pointer-events':'none'})
       const cursor=drawRuler('line',{x1:startX,y1:10,x2:startX,y2:151,
         stroke:'var(--accent)','stroke-width':1.5,
         'stroke-dasharray':'3 3','stroke-opacity':.75,
-        'pointer-events':'none'})
-      const thumb=drawRuler('circle',{cx:startX,cy:22,r:4.1,
-        fill:'var(--accent)',stroke:'var(--panel)','stroke-width':1.1,
         'pointer-events':'none'})
       const hit=drawRuler('rect',{x:startX-7,y:3,width:endX-startX+14,
         height:32,rx:8,fill:'transparent',
@@ -778,7 +757,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
         'aria-valuemin':String(points[0].at),
         'aria-valuemax':String(endAt),
         'aria-valuenow':String(points[0].at)})
-      svg.gooshRuler={points,cursor,thumb,progress,hit,currentTime:points[0].at}
+      svg.gooshRuler={points,cursor,hit}
       hit.style.cursor='pointer'
       // A click on the ruler must never bubble to the Pen's SVG onclick
       // (which would otherwise create an unintended note at that position).
