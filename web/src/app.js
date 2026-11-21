@@ -1489,8 +1489,10 @@ function studio() {
   pdfButton.className = 'studio-file-action';
   pdfButton.setAttribute('aria-label', t('Export PDF', 'خروجی PDF'));
   pdfButton.append(studioFileIcon('pdf'));
+  // Etude Setup is its own stage, above the separate Piano / Score section.
+  // Keep the same composer instance and all original handlers intact.
+  const composeHost = el('div', app, undefined, 'studio-compose-host');
   const panel = el('section', app);
-  const composeHost = el('div', panel, undefined, 'studio-compose-host');
 
   function toggle() {
     stopKeys();
