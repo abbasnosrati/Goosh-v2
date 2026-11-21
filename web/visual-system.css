@@ -1012,3 +1012,20 @@ html:not(.dark) #app:has(> .shelves) .etude-card {
   width: 23px;
   height: 23px;
 }
+
+
+/* Compact icon-only creation method switch: remove the former text-label
+   widths and equal-width mobile stretch without moving the control. */
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-tabs {
+  grid-template-columns: repeat(2, 48px);
+  width: max-content;
+  max-width: 100%;
+  gap: 4px;
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-tab {
+  width: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  flex: none;
+}
