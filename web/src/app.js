@@ -52,6 +52,7 @@ let fa = localStorage.lang !== 'en',
   wrap = false,
   oct = 4,
   sel = new Set(),
+  rangeSelectionActive = false,
   held = new Map(),
   session = null,
   playback = null,
@@ -93,6 +94,7 @@ function loadRoute(){
   activeId=page!=='home' && collection.has(id)?id:null;
   e=activeId?collection.get(activeId).data:fresh();
   sel.clear();
+  rangeSelectionActive=false;
   scoreTool='select';
   signatureMode=false;
   signaturePitch=0;
@@ -491,9 +493,14 @@ function undoScoreEdit() {
     for(const {note,at} of action.shifted || [])
       if(e.notes.includes(note))note.at=at;
   } else if (action.kind==='erase') {
-    if (e.notes.includes(action.note)) {scoreUndoStack.pop();return false;}
+    const removed=action.items||[{note:action.note,index:action.index}];
+    if(removed.some(({note})=>e.notes.includes(note))) {
+      scoreUndoStack.pop();return false;
+    }
     stopScorePlayback();
-    e.notes.splice(Math.min(action.index,e.notes.length),0,action.note);
+    // A marquee deletion is one undoable edit, including non-adjacent notes.
+    for(const {note,index} of [...removed].sort((a,b)=>a.index-b.index))
+      e.notes.splice(Math.min(index,e.notes.length),0,note);
   } else if (action.kind==='rest-edit') {
     stopScorePlayback();
     for(const {note,at} of action.shifted||[])
@@ -516,6 +523,7 @@ function undoScoreEdit() {
   } else return false;
   scoreUndoStack.pop();
   sel.clear();
+  rangeSelectionActive=false;
   save();
   sheet();
   return true;
@@ -778,6 +786,7 @@ function editScoreRest(source, destination=null) {
   e.measureCount=count;
   rememberScoreEdit({kind:'rest-edit',shifted,measureCount:oldCount});
   sel.clear();
+  rangeSelectionActive=false;
   meterMessage('','');
   save();
   sheet();
@@ -796,6 +805,32 @@ function renderMobileSignatureDialog(){
     onSelect:pc=>{stopSignaturePreview();signaturePitch=pc;sheet()}
   });
   renderSignatureControls(controls,true);
+}
+
+// One eraser path for a single clicked note AND an entire marquee selection.
+// Keep the canonical notes array (and Undo's identity reference) intact.
+function eraseScoreNotes(indices) {
+  if(page!=='studio'||!activeId||signatureMode||rec)return false;
+  const selected=[...new Set(indices)].filter(i=>
+    Number.isInteger(i)&&i>=0&&i<e.notes.length).sort((a,b)=>a-b);
+  if(!selected.length)return false;
+  const chosen=new Set(selected);
+  const remaining=e.notes.filter((_,index)=>!chosen.has(index));
+  if(!measuredEditAllowed(remaining)){
+    meterMessage('This deletion would create an invalid measure.',
+      'حذف این نت‌ها باعث نامعتبر شدن میزان می‌شود.');
+    return false;
+  }
+  stopScorePlayback();
+  const removed=selected.map(index=>({note:e.notes[index],index}));
+  e.notes.splice(0,e.notes.length,...remaining);
+  rememberScoreEdit({kind:'erase',items:removed});
+  sel.clear();
+  rangeSelectionActive=false;
+  meterMessage('','');
+  save();
+  sheet();
+  return true;
 }
 
 function sheet() {
@@ -824,29 +859,24 @@ function sheet() {
     tool: scoreTool,
     fa,
     selected: sel,
+    selectRange: rec ? undefined : indices => {
+      stopScorePlayback();
+      sel.clear();
+      for(const index of indices)
+        if(Number.isInteger(index)&&index>=0&&index<e.notes.length)sel.add(index);
+      rangeSelectionActive=sel.size>0;
+      sheet();
+    },
     moveRest: rec ? undefined : (source,slot) => editScoreRest(source,slot),
     eraseRest: rec ? undefined : source => editScoreRest(source),
     pick: (i, multi) => {
       if (rec) return;
       if (scoreTool === 'eraser') {
-        if (i < 0 || i >= e.notes.length) return;
-        stopScorePlayback();
-        const updated=e.notes.filter((_,index)=>index!==i);
-        if(!measuredEditAllowed(updated)){
-          meterMessage('This deletion would create an invalid measure.',
-            'حذف این نت باعث نامعتبر شدن میزان می‌شود.');
-          return;
-        }
-        const [removed] = e.notes.splice(i, 1);
-        // Erasing a note leaves its exact temporal space as a rest.
-        // The shared meter timeline derives the rest and any barlines.
-        rememberScoreEdit({kind:'erase', note:removed, index:i});
-        sel.clear();
-        save();
-        sheet();
+        eraseScoreNotes([i]);
         return;
       }
       if (scoreTool !== 'select') return;
+      rangeSelectionActive=false;
       if (!multi) { sel.clear(); sel.add(i); sheet(); noteSettings(e.notes[i]); return; }
       if (sel.has(i)) sel.delete(i);
       else sel.add(i);
@@ -886,6 +916,7 @@ function sheet() {
       e.notes.push(inserted);
       rememberScoreEdit({kind:'pen',note:inserted,shifted});
       sel.clear();
+      rangeSelectionActive=false;
       save();
       sheet();
     },
@@ -955,6 +986,7 @@ function sheet() {
       }
       rememberScoreEdit({kind:'move',note,before,shifted});
       sel.clear();
+      rangeSelectionActive=false;
       sel.add(index);
       meterMessage('','');
       save();
@@ -1173,6 +1205,7 @@ function scoreToolIcon(mode) {
     select: 'M4 3 19 12l-7 1-3 7L4 3Zm8 10 5 7',
     pen: 'm4 20 5-1 11-11a2.8 2.8 0 0 0-4-4L5 15l-1 5ZM14 6l4 4',
     eraser: 'M4 14 14 4a2.8 2.8 0 0 1 4 0l3 3a2.8 2.8 0 0 1 0 4l-9 9H9l-5-5a2 2 0 0 1 0-1ZM9 9l7 7M12 20h9',
+    range: 'M4 8V4h4m8 0h4v4m0 8v4h-4m-8 0H4v-4M10 4h4M20 10v4M14 20h-4M4 14v-4',
     wrap: 'M3 5h18M3 10h18M3 15h11m4-3 3 3-3 3M21 15h-5a5 5 0 0 0-5 5'
   }[mode]);
   svg.append(shape);
@@ -1326,6 +1359,9 @@ async function startScorePlayback() {
   // samples are still loading in the background.
   const clock = unlock();
   const requestedEtude = e;
+  // Snapshot the same selected note indices used by marquee/eraser.
+  // All playback below still uses the ONE existing score transport.
+  const selectedIndices=rangeSelectionActive&&sel.size?new Set(sel):null;
   const requestId = ++scorePlaybackRequestId;
   scorePlaybackPending = true;
   updateScoreTransportButtons();
@@ -1352,12 +1388,17 @@ async function startScorePlayback() {
   }
   const status = $('[data-score-audio-status]');
   if (status) { status.textContent = ''; status.hidden = true; }
-  const notes = e.notes.map((n,index) => ({
-    index, at:n.at, d:Math.min(n.d,6), hz:freq(e,n.m)
-  }));
+  const notes = e.notes.flatMap((n,index) =>
+    selectedIndices&&!selectedIndices.has(index)?[]:[{
+      index, at:n.at, d:Math.min(n.d,6), hz:freq(e,n.m)
+    }]);
+  if(!notes.length){updateScoreTransportButtons();return;}
   const end = Math.max(0, ...notes.map(n => n.at + n.d));
+  // Start at the first selected onset; preserve absolute score timestamps
+  // so the existing pause/resume scheduler and note markers stay aligned.
+  const start=selectedIndices?Math.min(...notes.map(n=>n.at)):0;
   const transport = {
-    clock, notes, end, offset:0, anchor:0, paused:false,
+    clock, notes, end, offset:start, anchor:0, paused:false,
     output:null, releases:[], timer:null
   };
   scoreTransport = transport;
@@ -1511,6 +1552,8 @@ function studio() {
     }
     else {
       stopScorePlayback();
+      sel.clear();
+      rangeSelectionActive=false;
       unlock();
       const meter=meterInfo(e);
       rec = {
@@ -1658,6 +1701,7 @@ function studio() {
       composerTarget.rule = fresh().rule;
       scoreUndoStack.length = 0;
       sel.clear();
+      rangeSelectionActive=false;
       save();
       render();
     }
@@ -1677,9 +1721,16 @@ function studio() {
   for (const [mode, en, ir] of [
     ['select', 'Select', 'انتخاب'],
     ['pen', 'Pen', 'قلم'],
-    ['eraser', 'Eraser', 'پاک‌کن']
+    ['eraser', 'Eraser', 'پاک‌کن'],
+    ['range', 'Select area', 'انتخاب ناحیه']
   ]) {
     const tool = btn(scoreActions, '', () => {
+      // Eraser removes a marked area in one operation; otherwise it stays
+      // the original click-to-erase tool for individual notes.
+      if(mode==='eraser'&&rangeSelectionActive&&sel.size){
+        eraseScoreNotes([...sel]);
+        return;
+      }
       if (scoreTool === mode && !signatureMode) return;
       stopSignaturePreview();
       signatureMode=false;
@@ -2476,6 +2527,14 @@ document.onkeydown = ev => {
   if (page==='studio' && activeId && !rec && !typing && !ev.repeat &&
       ev.code==='KeyZ' && (ev.ctrlKey || ev.metaKey) && !ev.shiftKey && !ev.altKey) {
     if (undoScoreEdit()) ev.preventDefault();
+    return;
+  }
+  if(page==='studio'&&activeId&&!rec&&!typing&&!ev.repeat&&
+     !ev.ctrlKey&&!ev.altKey&&!ev.metaKey&&
+     rangeSelectionActive&&sel.size&&
+     (ev.code==='Delete'||ev.code==='Backspace')){
+    ev.preventDefault();
+    eraseScoreNotes([...sel]);
     return;
   }
   if (ev.repeat || ev.ctrlKey || ev.altKey || ev.metaKey || typing) return;
