@@ -63,9 +63,10 @@ export function tonicDisplayName(tonic, fa) {
 }
 
 
-// Mobile-only presentation adapter: original native select remains authoritative.
-let mobileMusicPickerId=0;
-function attachMusicBottomSheet(wrapper, select, heading, fa, alwaysEnabled=false){
+// Shared Etude Setup picker. The original native select remains the single
+// source of truth for all musical settings, generation and persistence.
+let studioMusicPickerId=0;
+function attachStudioSelectDialog(wrapper, select, heading, fa){
   const trigger=create('button',wrapper,null,'studio-mobile-select-trigger');
   trigger.type='button';
   trigger.setAttribute('aria-haspopup','dialog');
@@ -82,14 +83,11 @@ function attachMusicBottomSheet(wrapper, select, heading, fa, alwaysEnabled=fals
     trigger.disabled=select.disabled;
   }
   trigger.onclick=()=>{
-    if(select.disabled||!select.isConnected||
-       (!alwaysEnabled && !window.matchMedia(
-         '(max-width: 700px), (pointer: coarse) and (orientation: landscape) and (max-height: 520px)'
-       ).matches))return;
+    if(select.disabled||!select.isConnected)return;
     const dialog=create('dialog',wrapper,null,'studio-mobile-picker-dialog');
     const header=create('div',dialog,null,'studio-mobile-picker-header');
     const label=create('h2',header,title());
-    label.id='studio-music-picker-'+(++mobileMusicPickerId);
+    label.id='studio-music-picker-'+(++studioMusicPickerId);
     dialog.setAttribute('aria-labelledby',label.id);
     const close=create('button',header,'×','studio-mobile-picker-close');
     close.setAttribute('aria-label',fa?'بستن فهرست انتخاب':'Close choices');
@@ -97,7 +95,15 @@ function attachMusicBottomSheet(wrapper, select, heading, fa, alwaysEnabled=fals
     close.onclick=()=>dialog.close();
     const choices=create('div',dialog,null,'studio-mobile-picker-options');
     let selectedButton=null;
+    let previousGroup=null;
     for(const option of select.options){
+      // Goal options have categories; preserve their headings in the shared
+      // dialog without copying or changing the underlying select values.
+      const group=option.parentElement?.tagName==='OPTGROUP'?option.parentElement:null;
+      if(group!==previousGroup){
+        if(group)create('div',choices,group.label,'studio-mobile-picker-group');
+        previousGroup=group;
+      }
       const button=create('button',choices,null,'studio-mobile-picker-option');
       button.type='button';
       button.disabled=option.disabled;
@@ -272,7 +278,7 @@ export function mountEtudeComposer(host, {
     showStudioMessage(status, '');
     sync();
   };
-  const stylePicker = attachMusicBottomSheet(styleField, styleInput, styleHeading, fa);
+  const stylePicker = attachStudioSelectDialog(styleField, styleInput, styleHeading, fa);
   const tonicField = create('div', fields, null, 'studio-select-field');
   const tonicLabel = create('label', tonicField, null, 'practice-field');
   const tonicHeading = create('span', tonicLabel, t('Tonic', 'تونیک'));
@@ -283,7 +289,7 @@ export function mountEtudeComposer(host, {
     applySelectedSignature();
     tonicPicker.sync();
   };
-  const tonicPicker = attachMusicBottomSheet(tonicField, tonicInput, tonicHeading, fa);
+  const tonicPicker = attachStudioSelectDialog(tonicField, tonicInput, tonicHeading, fa);
   tonicField.hidden = state.musicSystem !== 'western';
   const signatureHint = create('p', sharedMusic, null, 'studio-compose-music-hint');
   // Same signature action below Dastgah and same modal for all screen sizes.
@@ -303,12 +309,15 @@ export function mountEtudeComposer(host, {
       onToggleKeySignature?.();
   };
   // Primary Practice Goal and Generate are AI-only, unlike the music selector.
-  const goalLabel = create('label', content, null, 'practice-field studio-compose-goal');
+  const goalLabel = create('div', content, null, 'practice-field studio-compose-goal');
   appendSetupIcon(goalLabel,'target');
   create('span', goalLabel, t('Primary practice goal', 'هدف اصلی تمرین'));
   const goalInput = create('select', goalLabel);
   const placeholder = create('option', goalInput, t('Select a goal…', 'انتخاب هدف تمرین…'));
   placeholder.value = '';
+  goalInput.classList.add('studio-native-music-select');
+  const goalHeading=goalLabel.querySelector('span:not(.studio-setup-icon)');
+  const goalPicker=attachStudioSelectDialog(goalLabel, goalInput, goalHeading, fa);
 
   // Shared AI mirror of the canonical Score time-signature selector.
   const meterField = create('div', content, null,
@@ -334,7 +343,7 @@ export function mountEtudeComposer(host, {
     onMeterSelect?.(meterInput.value);
     sync();
   };
-  const meterPicker = attachMusicBottomSheet(meterField, meterInput, meterHeading, fa, true);
+  const meterPicker = attachStudioSelectDialog(meterField, meterInput, meterHeading, fa);
   const meterHint = create('p', content, t(
     'Choose a time signature in Score before generating. Free is also valid.',
     'برای تولید اتود میزان‌نما را انتخاب کنید؛ حالت آزاد نیز مجاز است.'
@@ -508,6 +517,7 @@ export function mountEtudeComposer(host, {
     generate.disabled = busy || !catalog || !musicCatalog || !state.goal ||
       !state.styles[state.musicSystem] || !state.meterConfirmed || unsupported;
     goalInput.disabled = busy;
+    goalPicker.sync();
     manual.disabled = ai.disabled = busy;
     if (unsupported) showStudioMessage(status, t(
       'Chord recognition needs polyphonic notation, which the current score does not support.',

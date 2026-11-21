@@ -511,7 +511,69 @@
 }
 
 
-/* One shared selector popup, used for music and Time Signature on any screen. */
+
+/* One Etude Setup selector UI on desktop and mobile: music, tonic, goal, meter.
+   Hidden native selects remain authoritative for all onchange callbacks. */
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-fields > .studio-select-field[hidden] {
+  display:none!important;
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-fields .studio-native-music-select,
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-goal > .studio-native-music-select {
+  display:none!important;
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-fields > .studio-select-field > .studio-mobile-select-trigger,
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-goal > .studio-mobile-select-trigger {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  width:100%;
+  min-width:0;
+  min-height:49px;
+  margin:0;
+  padding:10px 13px;
+  border:1px solid var(--glass-border);
+  border-radius:11px;
+  background:var(--dropdown-control-surface);
+  color:var(--ink);
+  font:inherit;
+  font-weight:500;
+  text-align:start;
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-fields > .studio-select-field > .studio-mobile-select-trigger.is-placeholder,
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-goal > .studio-mobile-select-trigger.is-placeholder {
+  color:var(--muted);
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-fields .studio-mobile-select-value,
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-goal > .studio-mobile-select-trigger .studio-mobile-select-value {
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-fields .studio-mobile-select-chevron,
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-goal > .studio-mobile-select-trigger .studio-mobile-select-chevron {
+  flex:none;
+  width:9px;
+  height:9px;
+  margin-inline:3px;
+  border-inline-end:1.6px solid currentColor;
+  border-bottom:1.6px solid currentColor;
+  transform:rotate(45deg) translateY(-2px);
+}
+#app[data-page="studio"]:not(:has(> .shelves)) .studio-compose-goal > .studio-mobile-select-trigger:focus-visible {
+  outline:none;
+}
+.studio-mobile-picker-group {
+  margin:13px 6px 4px;
+  padding:6px 8px 3px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:750;
+}
+
+/* One shared selector popup, used for all Etude Setup fields on any screen. */
 dialog.studio-mobile-picker-dialog {
     position:fixed;
     inset:auto 0 0;
@@ -991,7 +1053,10 @@ dialog.studio-mobile-picker-dialog {
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
   #app[data-page="studio"] .studio-compose-fields .studio-select-field {
-    display:contents;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    gap:8px;
   }
   #app[data-page="studio"] .studio-compose-fields > .studio-select-field > .practice-field {
     position:relative;
