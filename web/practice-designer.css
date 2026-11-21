@@ -989,9 +989,9 @@ dialog.studio-mobile-picker-dialog {
   #app[data-page="studio"] .studio-compose-tabs {
     position:static;
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    width:270px;
-    flex:0 0 270px;
+    grid-template-columns:repeat(2,48px);
+    width:max-content;
+    flex:0 0 auto;
     gap:4px;
     padding:4px;
     border-radius:14px;
