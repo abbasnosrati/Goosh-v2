@@ -746,6 +746,9 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),selectRange,se
         'aria-valuenow':String(points[0].at)})
       svg.gooshRuler={points,cursor,thumb,progress,hit,currentTime:points[0].at}
       hit.style.cursor='pointer'
+      // A click on the ruler must never bubble to the Pen's SVG onclick
+      // (which would otherwise create an unintended note at that position).
+      hit.onclick=event=>event.stopPropagation()
       hit.onpointerdown=event=>{
         if(event.button!==undefined&&event.button!==0)return
         event.stopPropagation()
