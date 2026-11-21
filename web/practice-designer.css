@@ -236,3 +236,74 @@
 @media print {
   #app[data-page="studio"] .practice-frozen-message {display:none!important;}
 }
+
+
+/* Mobile-only Studio composer and Practice Sequence touch layout. */
+@media screen and (max-width: 700px) {
+  #app[data-page="studio"] .studio-compose,
+  #app[data-page="studio"] .practice-designer {
+    min-width: 0;
+    padding: 12px;
+    margin-block: 12px 16px;
+  }
+  #app[data-page="studio"] .studio-compose-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  #app[data-page="studio"] .studio-compose-tab {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+  #app[data-page="studio"] .studio-music-choices {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  #app[data-page="studio"] .studio-music-choice {
+    min-width: 0;
+    min-height: 46px;
+    justify-content: center;
+    padding: 9px 8px;
+    line-height: 1.4;
+  }
+  #app[data-page="studio"] .studio-signature-actions,
+  #app[data-page="studio"] .studio-signature-entry {
+    width: 100%;
+    min-width: 0;
+    min-inline-size: 0;
+  }
+  #app[data-page="studio"] .studio-compose-fields,
+  #app[data-page="studio"] .practice-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #app[data-page="studio"] .practice-goal-picker {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  #app[data-page="studio"] .practice-add-row select {
+    min-width: 0;
+  }
+  #app[data-page="studio"] .practice-step {
+    min-width: 0;
+    padding: 12px;
+  }
+  #app[data-page="studio"] .practice-step > summary {
+    min-width: 0;
+    gap: 8px;
+  }
+  #app[data-page="studio"] .practice-step-index {
+    min-width: 28px;
+  }
+  #app[data-page="studio"] .practice-step-identity {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  #app[data-page="studio"] .practice-step-actions button {
+    min-height: 44px;
+  }
+  #app[data-page="studio"] .studio-compose-generate {
+    width: 100%;
+  }
+}

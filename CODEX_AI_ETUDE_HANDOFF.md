@@ -2432,3 +2432,22 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 5. **Only after explicit approval**, implement the **minimum** change in the existing shared functions, validate actual time-signature/tempo examples, note/rest durations, score display and sound, and check regressions in Free mode and other app features. Update this handoff with exact findings, changed files, tests *actually performed*, and any remaining limitations. Do not claim browser/device/audio tests unless truly run.
 
 **Important:** The earlier programmatic/mock test results are not a substitute for the user's observed behavior and approval. **No code repair is authorized by the user's present message; they requested only this documentation warning and the pre-fix confirmation gate.**
+
+
+---
+
+
+## Mobile-only design pass: Studio toolbars, keyboard and Practice Sequence (2026-11-21)
+
+**User instruction:** Improve Goosh's mobile UI but **do not break or change Desktop**. This is a visual/responsive-only pass and does **not** authorize edits to audio, piano recording/notation, transport, music systems, score model, Practice logic or navigation behavior. The separate **Metered live piano transcription bug remains OPEN**, and the prior Codex approval gate remains in force.
+
+**Changes:** Only two CSS files get new `@media screen and (max-width: 700px)` scoped rules, with a nested `min-width:480px` / `max-width:700px` subsection for wider phones and a landscape-height guard. The existing non-mobile CSS declarations remain byte-for-byte untouched.
+- `web/style.css`: opened Studio's title and Share/PDF actions form a stable mobile grid. The original Select/Pen/Eraser, wrap and zoom buttons become three equal-width touch targets per row; Play/Pause/Metronome/Record receive a dedicated full-width four-column row, with visible audio status occupying its own row. Staff and piano remain horizontally scrollable, and the piano keys **retain their current width and touch handlers**; only the mobile keyboard height/padding changes. Meter, Pen value, measure count and tempo fields use a predictable stacked layout on narrow phones and two columns when 480–700px. Existing hidden controls remain hidden, and all button callbacks are untouched.
+- `web/practice-designer.css`: mobile-only composition and Practice Sequence sections receive consistent inset/padding, full-width Manual/AI tabs, two balanced musical-system choices, an accessible full-width key-signature entry, single-column fields, and 44px action touch heights. No hiding, duplicating or moving DOM nodes.
+- `web/index.html`: update **only** style.css and practice-designer.css stylesheet cache query strings to `mobile-studio-layout-1`.
+
+**Desktop safety:** Both changes are appended within **`@media screen and (max-width: 700px)`** only. At 701px or wider, original desktop CSS is unchanged. No JavaScript, model, audio, Score renderer, HTML structure or other stylesheets were changed.
+
+**Validation:** Static stylesheet structure/guard review and changed-file scope verification, including mobile portrait/landscape CSS branch inspection. No real browser, screenshot, phone, Android APK, actual touch, or desktop visual smoke test was performed; treat runtime visual appearance as unverified.
+
+**Follow-up:** Test 320px, 375px, 430px, 600px and desktop >= 1100px visually before any further UI refinements. If user prefers another layout, adjust only mobile CSS and preserve the desktop selectors and open Metered Record bug.

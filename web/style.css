@@ -1116,3 +1116,172 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score-actions .score-metronome[hidden] {
   display: none !important;
 }
+
+
+/* Mobile-only Studio layout pass. Desktop and editor behavior stay untouched. */
+@media screen and (max-width: 700px) {
+  #app[data-page="studio"]:not(:has(> .shelves)) {
+    min-width: 0;
+    padding-inline: 12px;
+  }
+
+  #app[data-page="studio"]:not(:has(> .shelves)) .project-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    align-items: center;
+    gap: 7px;
+    padding-block: 9px;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .project-actions .etude-title-edit {
+    min-width: 0;
+    flex: initial;
+    margin-inline-end: 0;
+  }
+  #app[data-page="studio"]:not(:has(> .shelves)) .project-actions .etude-title-input {
+    font-size: 16px;
+    min-width: 0;
+    max-width: calc(100% - 38px);
+    text-overflow: ellipsis;
+  }
+
+  #app[data-page="studio"] .score-heading {
+    margin-block: 14px 10px;
+    gap: 8px;
+  }
+  #app[data-page="studio"] .score-heading .signature-toggle {
+    max-width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+  #app[data-page="studio"] .score-heading .signature-toggle-label {
+    white-space: normal;
+  }
+
+  /* Selection and notation tools: three consistently sized touch targets per row. */
+  #app[data-page="studio"] .score-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 7px;
+    width: 100%;
+  }
+  #app[data-page="studio"] .score-actions > button {
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    margin: 0;
+  }
+  /* Playback, metronome and Record have a dedicated full-width row. */
+  #app[data-page="studio"] .score-actions .score-transport-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 7px;
+    width: 100%;
+    min-width: 0;
+    margin: 2px 0 0;
+  }
+  #app[data-page="studio"] .score-transport-actions > button {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 8px;
+    margin: 0;
+  }
+  #app[data-page="studio"] .score-transport-actions .score-audio-status {
+    grid-column: 1 / -1;
+    min-width: 0;
+    margin: 0;
+  }
+
+  /* Keep the staff and piano horizontally scrollable without shrinking keys. */
+  #app[data-page="studio"] .score,
+  #app[data-page="studio"] .keys {
+    max-width: 100%;
+    min-width: 0;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
+  }
+  #app[data-page="studio"] .instrument {
+    min-width: 0;
+    padding: 10px;
+    margin-block: 10px 14px;
+  }
+  #app[data-page="studio"] .instrument > .row {
+    gap: 8px;
+    justify-content: space-between;
+  }
+  #app[data-page="studio"] .board {
+    height: 148px;
+  }
+
+  /* Note values, meter, measures and tempo are not squeezed into
+     unpredictable flex rows on narrow devices. */
+  #app[data-page="studio"] .score-below-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 9px;
+    width: 100%;
+    margin-block: 10px 14px;
+  }
+  #app[data-page="studio"] .score-below-actions > * {
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+  }
+  #app[data-page="studio"] .score-meter-control,
+  #app[data-page="studio"] .score-pen-length,
+  #app[data-page="studio"] .score-measure-count {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 44px;
+  }
+  #app[data-page="studio"] .score-meter-control select,
+  #app[data-page="studio"] .score-pen-length select {
+    flex: 1 1 160px;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+  #app[data-page="studio"] .score-tempo {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+  #app[data-page="studio"] .score-meter-status,
+  #app[data-page="studio"] .score-meter-record-hint {
+    width: 100%;
+    line-height: 1.55;
+  }
+
+  /* The Studio-only tuner and editor remain within the mobile viewport. */
+  #app[data-page="studio"] .signature-editor-controls {
+    min-width: 0;
+  }
+}
+
+@media screen and (min-width: 480px) and (max-width: 700px) {
+  #app[data-page="studio"] .score-below-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #app[data-page="studio"] .score-meter-control,
+  #app[data-page="studio"] .score-pen-length,
+  #app[data-page="studio"] .score-meter-status,
+  #app[data-page="studio"] .score-meter-record-hint {
+    grid-column: 1 / -1;
+  }
+}
+
+@media screen and (max-width: 700px) and (orientation: landscape) and (max-height: 520px) {
+  #app[data-page="studio"] .board {
+    height: 104px;
+  }
+}
