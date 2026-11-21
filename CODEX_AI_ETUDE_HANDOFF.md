@@ -2850,3 +2850,46 @@ The original implementation already had a mobile `<dialog>` / `showModal()` bran
 - **Strict exclusions:** No extra symbol buttons (bb or bbb), new pitch/audio state, duplicate editor engine, score/recording modifications, other page changes or new UI features. The independent **metered live piano recording-to-Score defect remains OPEN** and still requires explicit user permission before implementation.
 
 **Documentation-only update:** This entry records the already committed `595ef12e` fix, user feedback and outstanding QA. No application code is changed by the handoff-document commit itself.
+
+
+---
+
+## APPROVED IMPLEMENTATION — Metered live piano recording follows consecutive attacks (2026-11-21)
+
+**Current state: CODE IMPLEMENTED, programmatically checked, NOT YET USER-VERIFIED ON A REAL DEVICE.** This new entry supersedes the **approval-required** gate under “CRITICAL OPEN BUG — Metered live piano recording” at lines ~2414ff: the user explicitly discussed and approved the exact proposed musical rule in the conversation (“خب بریم این رو انجام بدیم”). The older status was correct before approval, but it is no longer a prohibition on this *already approved* narrowly scoped implementation. Do not interpret approval or simulation passes as confirmation that their real phone/browser now records correctly.
+
+### Explicitly agreed musical behavior
+
+- In **Metered** recording, the rhythmic onset is the physical piano key **attack** (Note On), snapped to the preexisting 1/32-note grid with the existing `snapRecordedOnset()` near-beat heuristics. The first played key still anchors the take at relative time 0; Record-arm time does not create an implicit pickup.
+- Group simultaneous notes at one snapped onset. **Each onset group's notated duration extends exactly to the next distinct snapped onset**, however far away, including across a barline. The existing Score/meterTimeline derives any necessary ties. **A gap between attacks never automatically becomes a rest** and releasing the piano key early never shortens a metered written note.
+- Physical key release still controls the *live piano sound envelope* as before; it is **not** used for metered written duration. The key release callback still supplies physical duration to **Free** recording only, retaining the prior free-performance behavior.
+- **Last note/group:** before stopping, provisionally ends at the next full quarter-beat or earlier barline. On Record Stop, project the stop instant onto the next full quarter-beat (if later than the minimum) **but cap the final note at the end of its current measure**. Stop is a user action, not a perfect musical event, so this is a consistent editing default rather than definitive intent detection; long sustains across several measures can be edited explicitly.
+- The existing meter's **empty measures / trailing rests** may still be engraved to honor `measureCount`. This rule only prevents a release-induced or long-gap rest *between successive recorded attacks*. Deliberate rests remain available from the Score tools. The metronome remains optional and unchanged, and is not automatically phase-aligned to Note On; this limitation should not be misrepresented as solved.
+- A measured take remains stored in the **same** canonical `e.notes[{m,at,d}]`, with no second recording engine, note arrays, new dependencies, or new serialization fields. Simultaneous note groups still share their duration to the next onset.
+
+### Exact code changes (branch `feature/practice-sequence-studio`)
+
+- **`web/src/app.js`, commit `601e43988a9fc59bdba53608e3df443db07aa38e`:** Replace previous `reconcileMeteredTake()` heuristic that capped gaps over 1.5 beats to one quarter and inferred sustain from `entry.held`; now compute duration strictly onset-to-onset for all nonfinal groups. Add `barSeconds` to the ephemeral `rec` take, and optionally pass Stop time for final-group ending. Never persist key hold or consult it for metered engraving. Preserve the original key hold / sound envelope and Free recording callback. Update the bilingual recording hint to match the rule. No changes to `model.js`, `score.js`, Audio, meter selectors, Practice or other pages.
+- **`web/index.html`, commit `52ac1d3e05cb8dfff535ef05f590af647215d61c`:** Update only the app module cache query key to `metered-onset-to-onset-1` so browsers fetch the modified recording logic.
+
+### Tests actually executed
+
+A pure JavaScript runtime test was run using `snapRecordedOnset` and **the actual extracted latest implementations** of `reconcileMeteredTake()`, `meterInfo()`, and `meterTimeline()` from the connected GitHub source. **11/11 cases passed**, with expected durations, zero notation issues and no internal rests in the newly recorded sounding span:
+
+- 4/4, BPM 60, attacks 0/1/2/3, stop 3.7 => four quarter notes (1/1/1/1 seconds).
+- 4/4, BPM 60, attacks 0/2, stop 2.4 => 2 seconds then 1 second, **not quarter + automatic rest**.
+- Same attacks, stop 3.7 => 2/2 seconds ending at barline.
+- Attacks 0/5 => first 5-second note tied across barline, last 1 second.
+- Simultaneous attacks 0/0/1 => 1/1/1 seconds.
+- Four sixteenths at 0/.25/.5/.75 => .25 seconds each.
+- 6/8 attacks 0/1.5 => 1.5/1.5 seconds.
+- 6/16 attacks 0/.75 => .75/.75 seconds.
+- 7/8 attacks 0/2.5 => 2.5/1 seconds, last capped at 3.5-second barline.
+- 4/4 BPM 120 attacks 0/.5/1/1.5 => four .5-second quarters.
+- Single attack at 0, stop .3 => provisional/final 1-second quarter.
+
+These are **extracted-function / data-model runtime tests**, not an interactive browser, live piano, audio, mobile, Android/iOS, touch or visual acceptance test. No such end-to-end test was performed; the user has not confirmed success. Do not mark the original user-observed recording defect closed until they test the actual playing/Score and confirm.
+
+**Out of scope / remaining ambiguity:** Early key-off cannot distinguish a long staccato-notated note from short note plus silence; this version deliberately assumes sustain-in-notation until next attack. True rests between hits must be set deliberately, not inferred. A stop after several beats may lengthen the last note up to (but never beyond) its enclosing barline. The optional metronome's phase is not synchronized to the first attack; it remains an auditory guide. The snap grid can map extremely close attacks to the same notated onset, forming a group. These are currently explicit limits rather than claimed fixes.
+
+**Scope assurance:** This patch was specifically requested after the rule and ambiguity were explained; the unrelated Key Signature dialog documentation above and the older warning do not authorize unrelated code changes.
