@@ -2137,6 +2137,12 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .studio-score-surface {
   display: contents;
 }
+/* Give the desktop piano card and the Score toolbar their own breathing room. */
+@media screen and (min-width: 701px) {
+  #app[data-page="studio"] .studio-score-surface > .score-actions {
+    margin-block-start: 18px;
+  }
+}
 @media screen and (max-width: 700px) {
   #app[data-page="studio"]:not(:has(> .shelves)) > section:has(.instrument) {
     background: var(--glass-surface);
