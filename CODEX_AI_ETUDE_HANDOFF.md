@@ -2293,3 +2293,61 @@ This section takes priority over the earlier handoff passage that described Free
 - **Still needs an actual desktop browser and touchscreen visual smoke test**, especially clicks on quarter/eighth/whole-measure rest glyphs, text-selection highlighting on the staff, user-visible feedback for unavailable final rests, and SVG scaling/scroll coordinates. No actual audio output or APK test was performed.
 
 **Important design constraint for later Codex work:** Never add a separate rest playback engine or second note timeline to resolve this task; rests still arise from the single canonical `e.notes`. A user may request persistent *trailing* Free silence or independent rest lengths in a future feature, but they have not approved extending the data format here. Respect musical measure capacity; do not silently make bars shorter.
+
+
+---
+
+# Post-handoff bug fixes: Free piano-recorded overlap Drag, rest editing, recording onset and score playback marker (2026-11-21)
+
+This section records **confirmed user-reported bugs and subsequent assistant fixes** after the original rest-edit / SVG text-selection handoff. It supersedes any older assumptions that **Free recordings must be monophonic/non-overlapping**, or that **Score arrows represent all still-sounding notes**. These updates were committed **only** to `feature/practice-sequence-studio`, not `main`.
+
+## Bug 1 — old and newly recorded Free piano etudes could not reorder notes or edit rests
+
+**User reproduction:** A Free (no meter) etude made with piano recording displayed:
+`This overlapping or chord passage cannot be reordered safely.`
+Dragging notes with Select failed, even though notes handwritten with Pen in newly created etudes could be reordered. The same problem affected dragging/erasing rests in passages containing overlapping recorded notes.
+
+**Root cause:** In `web/src/model.js`, `planScoreNoteReorder()`'s Free path used `validateGroups()`, rejecting **the entire etude** whenever any adjacent notes overlapped (`next.at < prior.at + prior.d`). `planScoreRestEdit()` had an equivalent blanket overlapping/polyphony guard. Live piano recording deliberately preserves original key-on times and key-held lengths without quantizing in Free mode, so a later note may begin before the previous note releases. This can occur in **new** recordings too; it is not inherently a legacy-etude or bad-data problem. Normal Pen insertion does not usually exhibit this because it creates sequential notes.
+
+**Fix:**
+- `web/src/model.js`: The existing pure Free planners now support ordered note/rest events when recorded note **releases overlap later onsets**. Shared helper `overlappingFreeEvents(groups, EPS)` derives ephemeral event blocks without a second persisted notes/rests collection. Each note event retains its **onset-to-next-event advance**, while actual rest events retain their silence durations. `reflowOverlappingFreeEvents(order)` computes new canonical note onsets for **both** note Drag and rest Drag/Eraser; an explicit rest begins after preceding sounding notes finish. Original note objects' durations, pitches and accidentals remain unchanged.
+- For Free horizontal note Drag, remove source event and **insert** before or after the selected note/rest event. **Never swap** the target into the vacated source position; other unaffected events retain their relative order. The standard non-overlapping Free path and all Metered timing rules remain unchanged.
+- True **same-onset chords** remain grouped. Moving a **single member of a simultaneous chord** is intentionally rejected; moving other independent notes among overlapping groups is supported. Free trailing rests after the final sounded note remain unrepresentable under the existing `e.notes` format and are still rejected.
+- `web/src/app.js`, `web/src/score.js`, `web/index.html`: ESM cache-query updates accompany the revised shared model to prevent stale browser modules. **No new UI tools**, note schema, audio engine, or persistence format were added.
+
+**Commits:**
+- `a5dde5e8b7210980ec5221c48f10ec560dea4307` — initial Free piano-overlap note Drag support.
+- `795e0a3d4ca321180b95f1daad3d226527b8f690` — shared Free overlap event reflow for **both notes and rests**; final version for this bug.
+
+**Validation:** Isolated real-model planner tests demonstrated overlapping-recorded note reordering, overlapping-recorded rest dragging/erasing, unchanged handwritten Free and Metered behavior, no swap of other notes, true chord safety, and rejected trailing Free rest. The assistant also ran 6,000 randomized note-drag scenarios plus focused rest/meter regressions. These are **programmatic tests, not a real-browser mouse, native-device, or live-audio end-to-end test**.
+
+## Bug 2 — Record began timing when Record button was clicked, rather than on first piano key
+
+**User requirement:** Pressing Record should arm recording, but the timing for the new take must begin **on the first piano key-on**, regardless of how long the user waits before playing.
+
+**Root cause:** `web/src/app.js` previously initialized `rec.start = unlock().currentTime` on Record click. The first created note used `rec.base + Math.max(0, at - rec.start)`, so pre-performance waiting became an unintended initial rest.
+
+**Fix:** In the existing `studio()` Record toggle, initialize `rec.start = null` while keeping `rec.base` equal to the end of existing notes and preserving the Metered rhythm step. On the **first** existing piano `onStart(m, at)` callback, assign `rec.start = at`, then continue using the unchanged `rec.base + Math.max(0, at - rec.start)` formula. This preserves later notes' exact relative performance intervals and allows append-recording onto an existing etude. No changes to live piano sample playback, capture release/duration, meter quantization, or data schema.
+
+## Bug 3 — playback arrows followed overlapping sustained notes instead of latest note onset
+
+**User requirement:** The score's arrows should advance according to **the note that has most recently begun**, not every note whose audio is still ringing.
+
+**Root cause:** `paintPlaybackMarker()` selected all `playback.notes` whose `elapsed` fell inside `[note.at, note.at+note.d)`, so notes overlapping the following note could display **multiple outdated arrows**. The sounding piano sample's natural decay is separately controlled by the audio transport and must not dictate the displayed current-note arrow.
+
+**Fix:** `web/src/app.js` now finds the **latest note onset at or before playback elapsed time**, displays arrows only for notes having that exact onset **while their written duration remains active**, and preserves **simultaneous chord** arrows. No arrows appear during genuine later silence, even when an earlier note's sample remains audible. Marker segments' `data-playback-from`/`data-playback-to` are checked on **every frame**, avoiding stale arrows when a sustained note is tied/split into multiple engraved sections. Pause/resume keeps the original transport clock and logic; only obsolete marker-signature caching is removed. The audio scheduler and note lengths were **not** altered.
+
+**Combined commit for Bugs 2–3:**
+- `cfe6207518766850031d2d3b698a8d631147df06` — first piano key anchors recording, Score marker follows latest note onset.
+- Changed files: **`web/src/app.js` and `web/index.html` only**. The HTML change updates the app-module cache version to `piano-record-onset-marker-1`; `model.js`, `score.js`, audio, and the musical data model were not modified in this commit.
+
+**Validation:** JavaScript syntax verification; isolated marker checks across ten onset/overlap/chord/silence boundaries, a tied-score-note segment transition, and three first-key recording timing scenarios passed. **Full desktop browser, mobile pointer interactions, real piano recording, live audio, and APK end-to-end tests are still not confirmed.** Do not claim those tests occurred.
+
+## Guidance for future Codex / assistants
+
+1. Treat the latest code on `feature/practice-sequence-studio` and **these newer sections** as authoritative over superseded handoff text.
+2. Keep `e.notes[{m, at, d}]` as the single canonical musical-time and pitch/audio source; derived rest events are not a second persisted model. Keep Pen, Select, Eraser, Studio transport, Practice, and piano timing consistent.
+3. A Free piano recording may legitimately have **overlapping note releases**. Do not reinstate whole-etude monophony validation for Free note/rest Drag. Do not silently collapse or round performance time; do not rewrite every recorded note into a sequential score.
+4. Free Drag is **remove + insert**, never swap. Preserve unrelated order, note durations, rests, and undo. Metered drag and bar capacity validation are separate and must remain constrained.
+5. Record's start clock is established by **the first actual piano key-on** after arming; `rec.base` remains the append point. Score arrows indicate **the latest performed/notated onset**, not every continuing voice/sample tail; simultaneous notes at identical onsets are an intentional exception.
+6. Every future user-reported bug fix must be appended to **this very handoff file** with reproduction, root cause, actual changed files, behavior/limits, commit(s), tests performed, and tests **not** performed. Do not present mocked tests as browser/device validation. Avoid unrelated code changes.
