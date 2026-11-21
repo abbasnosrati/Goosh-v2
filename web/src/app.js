@@ -27,7 +27,7 @@ import {SIGNATURE_PITCHES,SIGNATURE_MARKS,drawKeySignatureEditor}
   from './key-signature.js?v=mobile-signature-modal-1'
 import {isPersianAccidental, appendPersianAccidental}
   from './persian-accidentals.js?v=persian-marks-1'
-import { mountEtudeComposer } from './studio-etude-generation.js?v=etude-setup-inline-modes-1'
+import { mountEtudeComposer, attachStudioSelectDialog } from './studio-etude-generation.js?v=shared-pen-picker-1'
 import { renderStudioPractice, setStudioPracticeLocked } from './studio-practice.js?v=music-toggle-reuse-1'
 import { renderHome } from './home.js?v=studio-capabilities-feature-card-1';
 import {readRoute,navigateTo,listenToRoutes,upgradeLegacyHash} from './router.js';
@@ -1989,23 +1989,28 @@ function studio() {
     save();
     sheet();
   };
-  const penValue=el('label',scoreBelowActions,undefined,'score-pen-length');
-  el('span',penValue,t('Pen note value','کشش نت با مداد'));
+  const penValue=el('div',scoreBelowActions,undefined,'score-pen-length');
+  const penLabel=el('span',penValue,t('Pen note value','کشش نت با مداد'));
   const penSelect=el('select',penValue);
+  penSelect.classList.add('studio-native-music-select');
+  penSelect.setAttribute('aria-label',t('Pen note value','کشش نت با مداد'));
+  // The musical values remain canonical; only the displayed language changes.
   const values=[
-    [4,'Whole / گرد'],[3,'Dotted half / سفید نقطه‌دار'],
-    [2,'Half / سفید'],[1.5,'Dotted quarter / سیاه نقطه‌دار'],
-    [1,'Quarter / سیاه'],[.75,'Dotted eighth / چنگ نقطه‌دار'],
-    [.5,'Eighth / چنگ'],[.375,'Dotted sixteenth / دولاچنگ نقطه‌دار'],
-    [.25,'Sixteenth / دولاچنگ'],[.125,'Thirty-second / سه‌لاچنگ']
+    [4,'Whole','گرد'],[3,'Dotted half','سفید نقطه‌دار'],
+    [2,'Half','سفید'],[1.5,'Dotted quarter','سیاه نقطه‌دار'],
+    [1,'Quarter','سیاه'],[.75,'Dotted eighth','چنگ نقطه‌دار'],
+    [.5,'Eighth','چنگ'],[.375,'Dotted sixteenth','دولاچنگ نقطه‌دار'],
+    [.25,'Sixteenth','دولاچنگ'],[.125,'Thirty-second','سه‌لاچنگ']
   ];
-  for(const [beats,display] of values){
-    const option=el('option',penSelect,display);
+  for(const [beats,en,ir] of values){
+    const option=el('option',penSelect,t(en,ir));
     option.value=String(beats);
   }
   if(!values.some(([value])=>value===penQuarterBeats))penQuarterBeats=1;
   penSelect.value=String(penQuarterBeats);
   penSelect.onchange=()=>{penQuarterBeats=Number(penSelect.value)};
+  // Same shared accessible picker as the Etude Setup dropdowns on phones.
+  attachStudioSelectDialog(penValue,penSelect,penLabel,fa);
   const timelineToggle=btn(scoreBelowActions,'',()=>{
     freeTimelineOpen=!freeTimelineOpen;
     timelineToggle.setAttribute('aria-pressed',String(freeTimelineOpen));
