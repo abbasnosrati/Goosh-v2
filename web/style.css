@@ -1351,6 +1351,9 @@ footer nav button{font-size:.9rem;color:var(--muted)}
     border-bottom: 0;
     box-shadow: none;
     background: transparent;
+    /* A backdrop filter on the header traps its fixed-position dock. */
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   body > header > .wordmark {
     width: 116px;
@@ -1602,43 +1605,10 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 }
 
 
-/* Mobile Etude Studio editor: compact gutters with the dock BELOW the logo.
-   Use the explicit editor-only body class; older WebViews need not parse
-   nested :has() selectors to move navigation. */
+/* Mobile Etude Studio editor: preserve its compact content gutters.
+   The navigation uses the same fixed bottom dock as every other page. */
 @media screen and (max-width: 700px),
        screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
-  body.studio-editor-screen > header {
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 3px;
-    min-height: 0;
-    padding: 7px 12px 8px;
-  }
-
-  /* The same existing four-tab navigation moves into header flow BELOW
-     the Goosh logo only while editing an etude. Other routes retain
-     their fixed bottom dock, including the Etudes library route. */
-  body.studio-editor-screen > header > #nav {
-    /* The SAME dock, now in normal flow below the Goosh wordmark. */
-    position: static;
-    inset: auto;
-    inset-block: auto;
-    inset-inline: auto;
-    transform: none;
-    z-index: auto;
-    flex: none;
-    align-self: center;
-    width: min(100%, 460px);
-    max-width: 460px;
-    margin: 0;
-    padding: 5px;
-    border-radius: 22px;
-  }
-  body.studio-editor-screen {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
-  }
-
   /* One clear phone-edge gutter rather than main > section > instrument
      each independently consuming large chunks of the available width. */
   #app[data-page="studio"]:not(:has(> .shelves)) {
