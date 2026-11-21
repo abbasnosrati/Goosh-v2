@@ -1174,8 +1174,8 @@ function scoreToolIcon(mode) {
 // Browser-safe custom cursors; the hotspot is the tip of the pen/eraser.
 function scoreEditingCursor(mode) {
   const shape = mode === 'pen'
-    ? '<path d="M3 29 6 21 23 4Q26 1 29 4Q31 6 28 9L11 26Z" fill="white" stroke="#163949" stroke-width="2" stroke-linejoin="round"/><path d="m20 7 5 5M3 29l8-3" fill="none" stroke="#163949" stroke-width="2"/>'
-    : '<path d="M4 19 18 5Q20 3 22 5l7 7q2 2 0 4L17 28h-6z" fill="white" stroke="#163949" stroke-width="2" stroke-linejoin="round"/><path d="m11 12 10 10" fill="none" stroke="#163949" stroke-width="2"/>';
+    ? '<path d="M3 29 6 21 23 4Q26 1 29 4Q31 6 28 9L11 26Z" fill="#F7FAFC" stroke="#102637" stroke-width="2" stroke-linejoin="round"/><path d="m20 7 5 5M3 29l8-3" fill="none" stroke="#102637" stroke-width="2"/>'
+    : '<path d="M4 19 18 5Q20 3 22 5l7 7q2 2 0 4L17 28h-6z" fill="#F7FAFC" stroke="#102637" stroke-width="2" stroke-linejoin="round"/><path d="m11 12 10 10" fill="none" stroke="#102637" stroke-width="2"/>';
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">' + shape + '</svg>';
   return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") ' +
     (mode === 'pen' ? '3 29' : '7 23') + ', crosshair';

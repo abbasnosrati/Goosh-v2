@@ -277,7 +277,7 @@ html.dark .home-screen {--g-shadow:var(--glass-shadow);}
   .home-screen .g-hero h1 {font-size:52px;}
 }
 @media(hover:hover) {
-  .home-screen .g-hub-card:hover {transform:translateY(-4px);border-color:var(--accent);box-shadow:0 20px 52px rgb(16 45 64 / .12);}
+  .home-screen .g-hub-card:hover {transform:translateY(-4px);border-color:var(--accent);box-shadow:0 20px 52px rgb(36 102 153 / .12);}
   .home-screen .g-action:hover {border-color:var(--accent);}
   .home-screen .g-etude-row:hover,.home-screen .g-practice-link:hover {color:var(--accent);}
 }

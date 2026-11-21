@@ -851,7 +851,7 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
 }
 @media (hover:hover) {
   .etude-delete:hover {
-    color: #B53249;
+    color: var(--danger);
     border-color: currentColor;
   }
 }
@@ -914,12 +914,12 @@ body:has(#practice-imported:checked) #app[data-page="practice"] .shelves section
   color: var(--ink);
 }
 .etude-delete-confirm {
-  background: #B53249;
-  border: 1px solid #B53249;
+  background: var(--danger);
+  border: 1px solid var(--danger);
   color: white;
 }
 @media (hover:hover) {
-  .etude-delete-confirm:hover { background: #B53249; border-color: #B53249; }
+  .etude-delete-confirm:hover { background: var(--danger); border-color: var(--danger); }
   .etude-delete-cancel:hover { background: var(--soft); }
 }
 @media (max-width: 420px) {
