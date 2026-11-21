@@ -1768,11 +1768,13 @@ function studio() {
   // Presentation wrapper: groups the existing Score, controls, meter and
   // tempo as one mobile section without altering any musical behavior.
   const scoreSurface = el('div', panel, undefined, 'studio-score-surface');
-  const scoreHeading = el('div', scoreSurface, undefined, 'score-heading');
-  scoreHeading.tabIndex = -1;
-  el('h2',scoreHeading,signatureMode
-    ? t('Key Signature Editor','تنظیم سرکلید')
-    : t('Score','خط حامل'),'score-title');
+  // The Score itself needs no redundant caption below the piano.
+  // Preserve the signature editor's contextual title only in that mode.
+  if(signatureMode){
+    const scoreHeading=el('div',scoreSurface,undefined,'score-heading');
+    scoreHeading.tabIndex=-1;
+    el('h2',scoreHeading,t('Key Signature Editor','تنظیم سرکلید'),'score-title');
+  }
   const scoreActions = row(scoreSurface);
   scoreActions.classList.add('score-actions');
   for (const [mode, en, ir] of [
