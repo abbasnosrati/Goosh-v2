@@ -191,13 +191,7 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
   const emphasizeNote=(item,chosen)=>{
     const latest=item.index===recordingIndex
     const emphasized=latest||chosen
-    const accent=latest?'var(--danger)':'var(--accent)'
-    if(item.halo){
-      item.halo.setAttribute('fill',accent)
-      item.halo.setAttribute('stroke',accent)
-      item.halo.setAttribute('fill-opacity',emphasized?'.22':'0')
-      item.halo.setAttribute('stroke-opacity',emphasized?'1':'0')
-    }
+    const accent='var(--accent)'
     item.head.setAttribute('stroke',emphasized?accent:'currentColor')
     // Keep a half/whole note hollow so a highlight never changes its
     // apparent rhythmic value.
@@ -458,21 +452,15 @@ export function score(host,e,{zoom=1,wrap=true,selected=new Set(),recordingIndex
       const hollow=s.kind==='whole'||s.kind==='half'
       const isSelected=selected.has(index)
       const latest=index===recordingIndex
-      const accent=latest?'var(--danger)':'var(--accent)'
-      // Selection is distinguished by its colored notehead/stem alone.
-      // Keep the separate ring only for the latest live-recorded note.
-      const halo=latest
-        ?draw('ellipse',{cx:x,cy:y,rx:14,ry:10.5,
-          fill:accent,'fill-opacity':0,stroke:accent,
-          'stroke-width':2.3,'stroke-opacity':0,
-          'pointer-events':'none','data-score-emphasis':index})
-        :null
+      // A newly recorded note has the same clean accent as a selected note.
+      // No surrounding ring: its head, stem and flags carry the emphasis.
+      const accent='var(--accent)'
       const head=draw('ellipse',{cx:x,cy:y,
         rx:s.kind==='whole'?7.5:5.8,ry:s.kind==='whole'?4.5:3.9,
         transform:'rotate(-20 '+x+' '+y+')',
         fill:hollow?'none':'currentColor',stroke:'currentColor',
         'stroke-width':hollow?1.8:1.1,'data-note-type':s.kind})
-      const highlight={index,head,halo,hollow,baseStroke:hollow?1.8:1.1}
+      const highlight={index,head,hollow,baseStroke:hollow?1.8:1.1}
       emphasizeNote(highlight,isSelected)
       if(s.kind!=='whole'){
         const up=y>=86,stemX=x+(up?5.8:-5.8),end=y+(up?-31:31)
