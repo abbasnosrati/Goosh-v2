@@ -2641,3 +2641,16 @@ Dragging notes with Select failed, even though notes handwritten with Pen in new
 **Static validation:** Exact source reversal confirms the global selector change + added phone media rule are the entire CSS diff. CSS braces and cache-only HTML changes checked. Existing selected/keyboard focus state styles and desktop mouse click accent retained. No real device/browser tap validation performed.
 
 **Open issue separation:** The Persian/RTL compact Etudes/Practices cards were FIXED and verified by the user and must not be reopened without a new report. Metered live piano Record→Score rhythmic transcription remains an unrelated OPEN issue; Codex needs explicit user approval before changing it.
+
+
+---
+
+## Mobile Etude Studio navigation still bottom after previous patch — explicit route-class correction (2026-11-21)
+
+**User says previous attempt did not work:** In **open Etude Studio editor on MOBILE**, the same four-tab Home / Etudes / Practices / Settings menu must appear **at top under Goosh logo**, not at the bottom. Prior commit `df71f642b34f485f3771a9de0a3815419bb4e092` tried CSS selectors `body:has(#app[data-page="studio"]:not(:has(> .shelves)))`, but the user reports that navigation was still on the bottom. This issue remains pending device confirmation; do not assume success from static validation.
+
+**Correction:** Add a deterministic `document.body.classList.toggle('studio-editor-screen',page==='studio' && Boolean(activeId))` in the existing `render()` function in `web/src/app.js`. The class is present only when an etude is actually being edited; it is absent on `/etudes` (the Etudes list, where `activeId` is null), Home, and Practices. Replace only three previous editor nav/header/bottom-padding CSS selectors with simple `body.studio-editor-screen` selectors in the original mobile Studio block in `web/style.css`, removing dependence on nested CSS `:has()` for the menu position. Widen the mobile media condition to include coarse-touch landscape (matching the app's existing bottom nav media). Use the original header flow: logo first, then the **existing original nav** with `position:static`, cleared insets and transform, full reasonable phone width, normal flow above content. Nav buttons/active state/Settings callbacks remain untouched. Studio's removed green/blue accent line and tightened inline padding remain untouched. Other routes retain the existing bottom fixed dock, and Desktop layout stays unchanged.
+
+**Cache busting:** `web/index.html` only updates the `style.css` and entry JS version query strings to `mobile-editor-top-nav-2`. Do not change navigation/route, piano, audio, editing, metered recording, or theme logic. **No new menu, buttons, duplicated event handlers or different desktop navbar.**
+
+**Validation:** JS syntax parsed; CSS braces, stricter explicit marker/selector and media rules checked, single route marker update per render, exact diff scope and cache-only HTML change checked. Physical mobile-browser layout still requires verification by the user. Other known open issue: metered piano recording → Score still requires explicit user approval. Persian mobile Etudes/Practices RTL list bug remains user-verified FIXED.

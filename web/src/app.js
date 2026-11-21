@@ -2282,6 +2282,8 @@ function render() {
   app.replaceChildren();
   app.dataset.page=page;
   document.body.classList.toggle('home-screen',page==='home');
+  // Explicit editor-only marker for phone navigation (not the Etudes list).
+  document.body.classList.toggle('studio-editor-screen',page==='studio' && Boolean(activeId));
   const name=routes.find(([key])=>key===page)[1];
   document.title=name+' · Goosh';
   if(page!=='home')el('h1',app,name);
