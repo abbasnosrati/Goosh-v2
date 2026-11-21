@@ -736,8 +736,31 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 #app[data-page="studio"] .score[data-tool="pen"] svg *,
 #app[data-page="studio"] .score[data-tool="eraser"],
 #app[data-page="studio"] .score[data-tool="eraser"] svg,
+
 #app[data-page="studio"] .score[data-tool="eraser"] svg * {
   cursor: var(--score-tool-cursor, crosshair) !important;
+}
+
+/* A single score-wide selection overlay; never intercepts mouse or touch. */
+#app[data-page="studio"] .score[data-tool="range"] {
+  position: relative;
+  touch-action: none;
+}
+#app[data-page="studio"] .score[data-tool="range"],
+#app[data-page="studio"] .score[data-tool="range"] svg,
+#app[data-page="studio"] .score[data-tool="range"] svg * {
+  cursor: crosshair !important;
+}
+#app[data-page="studio"] .score .score-range-marquee {
+  position: absolute;
+  z-index: 2;
+  border: 1.5px dashed var(--accent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  pointer-events: none;
+}
+#app[data-page="studio"] .score .score-range-marquee[hidden] {
+  display: none;
 }
 
 /* Compact numeric Tempo and Score zoom controls below the staff. */
@@ -2116,12 +2139,12 @@ footer nav button{font-size:.9rem;color:var(--muted)}
 }
 
 
-/* Mobile Studio Score: one transport row above six editing controls. */
+/* Mobile Studio Score: one transport row above seven editing controls. */
 @media screen and (max-width: 700px),
        screen and (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
   #app[data-page="studio"]:not(:has(> .shelves)) .studio-score-surface > .score-actions {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     grid-template-rows: auto auto;
     align-items: stretch;
     gap: 6px 4px;
